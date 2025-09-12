@@ -10,8 +10,7 @@ python-multipart>=0.0.9
 # Database (SQLAlchemy 2.x, async)
 SQLAlchemy>=2.0,<3.0
 alembic>=1.13,<2.0
-asyncpg>=0.29,<1.0  # For Postgres async (replace if using another DB)
-aiosqlite>=0.20,<1.0  # For local/dev sqlite async
+aiomysql>=0.2.0,<1.0  # For MySQL async
 
 # Auth & security
 passlib[bcrypt]>=1.7,<2.0
