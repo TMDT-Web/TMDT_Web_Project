@@ -1,46 +1,50 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1.routers import health, auth, shop, catalog, order
-from app.core.config import settings
+from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(
-    title="C2C Marketplace API",
-    version="1.0.0",
-    description="API for C2C Marketplace - Consumer to Consumer e-commerce platform",
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
+from app.core import config
+from app.core.database import create_database
+from app.users.routes import router as users_router
+from app.products.routes import router as products_router
+from app.cart.routes import router as cart_router
+from app.orders.routes import router as orders_router
+from app.inventory.routes import router as inventory_router
+from app.payments.routes import router as payments_router
+from app.rewards.routes import router as rewards_router
 
-# Setup CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # React Router dev server
-        "http://localhost:5173",  # Vite dev server
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# Mount API v1 routers
-app.include_router(health.router, prefix="/api/v1")
-app.include_router(auth.router, prefix="/api/v1")
-app.include_router(shop.router, prefix="/api/v1")
-app.include_router(catalog.router, prefix="/api/v1")
-app.include_router(order.router, prefix="/api/v1")
+def get_application() -> FastAPI:
+    app = FastAPI(
+        title=config.settings.project_name,
+        version="1.0.0",
+        debug=config.settings.debug,
+        openapi_url=f"{config.settings.api_prefix}/openapi.json",
+        docs_url=f"{config.settings.api_prefix}/docs",
+        redoc_url=f"{config.settings.api_prefix}/redoc",
+    )
 
-@app.get("/")
-async def root():
-    return {
-        "message": "C2C Marketplace API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "redoc": "/redoc"
-    }
+    if config.settings.cors_allow_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=config.settings.cors_allow_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    app.add_event_handler("startup", create_database)
+
+    app.include_router(users_router, prefix=config.settings.api_prefix)
+    app.include_router(products_router, prefix=config.settings.api_prefix)
+    app.include_router(cart_router, prefix=config.settings.api_prefix)
+    app.include_router(orders_router, prefix=config.settings.api_prefix)
+    app.include_router(inventory_router, prefix=config.settings.api_prefix)
+    app.include_router(payments_router, prefix=config.settings.api_prefix)
+    app.include_router(rewards_router, prefix=config.settings.api_prefix)
+
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+    return app
+
+
+app = get_application()

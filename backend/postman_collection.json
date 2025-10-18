@@ -1,0 +1,1402 @@
+{
+  "info": {
+    "name": "Furniture Store Backend",
+    "_postman_id": "7fb05d4c-f7a9-4b51-a212-0c4160817d9f",
+    "description": "Postman collection covering the Furniture Store backend API. All requests use {{base_url}} as prefix.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth & Users",
+      "description": "Authentication, authorization, and user management.",
+      "item": [
+        {
+          "name": "Auth - Register",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"Str0ngPass!\",\n  \"full_name\": \"Customer Demo\",\n  \"phone_number\": \"+84901234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Register a new customer account."
+          }
+        },
+        {
+          "name": "Auth - Login",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"Str0ngPass!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Authenticate and retrieve a token pair."
+          }
+        },
+        {
+          "name": "Auth - Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Refresh the access token using a refresh token."
+          }
+        },
+        {
+          "name": "Auth - Google OAuth Login",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/google/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "google",
+                "login"
+              ]
+            },
+            "description": "Initialize Google OAuth flow and return authorization URL."
+          }
+        },
+        {
+          "name": "Auth - Google OAuth Callback",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/google/callback?code=sample_code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "google",
+                "callback"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "sample_code"
+                }
+              ]
+            },
+            "description": "Exchange Google authorization code for a token pair."
+          }
+        },
+        {
+          "name": "Users - Get Current User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Return profile of the authenticated user."
+          }
+        },
+        {
+          "name": "Users - List Users (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "List all users (admin or root only)."
+          }
+        },
+        {
+          "name": "Users - Get Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users/:user_id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                ":user_id"
+              ],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Fetch user details; author must be the user or have admin/root roles."
+          }
+        },
+        {
+          "name": "Users - Update",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{base_url}}/users/:user_id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                ":user_id"
+              ],
+              "variable": [
+                {
+                  "key": "user_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Customer Demo Updated\",\n  \"phone_number\": \"+84908887766\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update user profile. Admin/root can manage activation and roles."
+          }
+        },
+        {
+          "name": "Roles - Create (Root)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{root_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"staff\",\n  \"description\": \"Staff role can manage inventory\",\n  \"is_system\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a new role (root only)."
+          }
+        },
+        {
+          "name": "Roles - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "List existing roles (admin or root)."
+          }
+        },
+        {
+          "name": "Users - Add Address",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/users/me/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "addresses"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Home\",\n  \"recipient_name\": \"Customer Demo\",\n  \"recipient_phone\": \"+84901234567\",\n  \"address_line\": \"123 ABC Street\",\n  \"ward\": \"Ward 1\",\n  \"district\": \"District 1\",\n  \"city\": \"Ho Chi Minh City\",\n  \"country\": \"Vietnam\",\n  \"is_default\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a shipping address for the current user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products & Catalog",
+      "description": "Product catalog, categories, and tags.",
+      "item": [
+        {
+          "name": "Products - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products?q=sofa&page=1&size=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "sofa",
+                  "description": "Search keyword"
+                },
+                {
+                  "key": "category_id",
+                  "value": "1",
+                  "description": "Filter by category id",
+                  "disabled": true
+                },
+                {
+                  "key": "min_price",
+                  "value": "1000000",
+                  "description": "Minimum price",
+                  "disabled": true
+                },
+                {
+                  "key": "max_price",
+                  "value": "10000000",
+                  "description": "Maximum price",
+                  "disabled": true
+                },
+                {
+                  "key": "tag_ids",
+                  "value": "1",
+                  "description": "Repeat tag_ids for multiple tags",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List products with optional filters and pagination."
+          }
+        },
+        {
+          "name": "Products - Suggestions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/suggestions?q=so",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "suggestions"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "so"
+                }
+              ]
+            },
+            "description": "Return product name suggestions."
+          }
+        },
+        {
+          "name": "Products - Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/:product_id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                ":product_id"
+              ],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get product detail by id."
+          }
+        },
+        {
+          "name": "Products - Create (Admin)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"SOFA-001\",\n  \"name\": \"L shape fabric sofa\",\n  \"description\": \"Corner sofa with storage\",\n  \"price\": 15000000,\n  \"stock_quantity\": 10,\n  \"specifications\": {\n    \"material\": \"Fabric\",\n    \"size\": \"280x180x90cm\"\n  },\n  \"main_image\": \"https://example.com/images/sofa.jpg\",\n  \"category_id\": 1,\n  \"tag_ids\": [1, 2]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a product (admin or root)."
+          }
+        },
+        {
+          "name": "Products - Update (Admin)",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{base_url}}/products/:product_id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                ":product_id"
+              ],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 14000000,\n  \"stock_quantity\": 8,\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update product fields (admin or root)."
+          }
+        },
+        {
+          "name": "Products - Delete (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/products/:product_id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                ":product_id"
+              ],
+              "variable": [
+                {
+                  "key": "product_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Remove a product (admin or root)."
+          }
+        },
+        {
+          "name": "Categories - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "categories"
+              ]
+            },
+            "description": "List product categories."
+          }
+        },
+        {
+          "name": "Categories - Create (Admin)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/products/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "categories"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sofa\",\n  \"slug\": \"sofa\",\n  \"description\": \"All sofa products\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a product category (admin or root)."
+          }
+        },
+        {
+          "name": "Tags - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/tags",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "tags"
+              ]
+            },
+            "description": "List product tags."
+          }
+        },
+        {
+          "name": "Tags - Create (Admin)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/products/tags",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "products",
+                "tags"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Premium\",\n  \"slug\": \"premium\",\n  \"description\": \"Premium furniture line\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a product tag (admin or root)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "description": "Shopping cart operations.",
+      "item": [
+        {
+          "name": "Cart - List Items",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/cart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "cart"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Get cart items for the authenticated user."
+          }
+        },
+        {
+          "name": "Cart - Add Item",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/cart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "cart"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Add a product to the cart."
+          }
+        },
+        {
+          "name": "Cart - Update Item",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{base_url}}/cart/:cart_item_id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "cart",
+                ":cart_item_id"
+              ],
+              "variable": [
+                {
+                  "key": "cart_item_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update quantity of a cart item (use 0 to remove)."
+          }
+        },
+        {
+          "name": "Cart - Remove Item",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/cart/:cart_item_id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "cart",
+                ":cart_item_id"
+              ],
+              "variable": [
+                {
+                  "key": "cart_item_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Remove a cart item."
+          }
+        },
+        {
+          "name": "Cart - Clear",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/cart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "cart"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Clear all items in the cart."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "description": "Order placement and administration.",
+      "item": [
+        {
+          "name": "Orders - Create",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipping_address\": \"123 ABC Street, District 1, Ho Chi Minh City\",\n  \"shipping_contact_name\": \"Customer Demo\",\n  \"shipping_contact_phone\": \"+84901234567\",\n  \"notes\": \"Call before delivery\",\n  \"payment_gateway\": \"momo\",\n  \"voucher_code\": \"SUMMER2024\",\n  \"use_reward_points\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a new order from the current cart."
+          }
+        },
+        {
+          "name": "Orders - List Mine",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/orders?page=1&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "List orders of the current user."
+          }
+        },
+        {
+          "name": "Orders - Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/orders/:order_id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                ":order_id"
+              ],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Get order details (owner or admin/root)."
+          }
+        },
+        {
+          "name": "Orders - Cancel",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/orders/:order_id/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                ":order_id",
+                "cancel"
+              ],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Cancel an order (owner or admin/root)."
+          }
+        },
+        {
+          "name": "Admin - List Orders",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/orders?page=1&size=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "List orders for admin or root users."
+          }
+        },
+        {
+          "name": "Admin - Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{base_url}}/admin/orders/:order_id/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "orders",
+                ":order_id",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"processing\",\n  \"notes\": \"Order confirmed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update order status (admin or root)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "description": "Supplier and stock entry management.",
+      "item": [
+        {
+          "name": "Inventory - List Suppliers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/inventory/suppliers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "suppliers"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "List suppliers (staff/admin/root)."
+          }
+        },
+        {
+          "name": "Inventory - Create Supplier",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/inventory/suppliers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "suppliers"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Supplier A\",\n  \"contact_name\": \"Nguyen Van A\",\n  \"contact_phone\": \"+84888888888\",\n  \"contact_email\": \"supplier-a@example.com\",\n  \"address\": \"Song Than Industrial Park\",\n  \"tax_code\": \"0101234567\",\n  \"notes\": \"Preferred sofa supplier\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a supplier (admin or root)."
+          }
+        },
+        {
+          "name": "Inventory - List Stock Entries",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/inventory/stock-entries",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "stock-entries"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "List stock entry purchase orders (staff/admin/root)."
+          }
+        },
+        {
+          "name": "Inventory - Create Stock Entry",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/inventory/stock-entries",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "stock-entries"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplier_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 50,\n      \"unit_cost\": 5000000\n    }\n  ],\n  \"notes\": \"October inbound shipment\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a stock entry (staff/admin/root)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "description": "Payment initiation and callbacks.",
+      "item": [
+        {
+          "name": "Payments - Initiate",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/payments/initiate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "initiate"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"gateway\": \"momo\",\n  \"amount\": 15000000,\n  \"currency\": \"VND\",\n  \"metadata\": {\n    \"note\": \"Manual payment trigger\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Initiate a payment for an order (admin or root)."
+          }
+        },
+        {
+          "name": "Payments - Gateway Callback",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/payments/:gateway/callback",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                ":gateway",
+                "callback"
+              ],
+              "variable": [
+                {
+                  "key": "gateway",
+                  "value": "momo"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"payment_id\": 1,\n  \"status\": \"success\",\n  \"transaction_id\": \"TXN123456\",\n  \"amount\": 15000000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Simulate a payment gateway callback payload."
+          }
+        },
+        {
+          "name": "Payments - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "List payment records (admin or root)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rewards",
+      "description": "Reward points and voucher redemption.",
+      "item": [
+        {
+          "name": "Rewards - Dashboard",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rewards/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rewards",
+                "me"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "View reward points, vouchers, and latest transactions."
+          }
+        },
+        {
+          "name": "Rewards - Redeem Voucher",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/rewards/redeem",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rewards",
+                "redeem"
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "description": "Redeem reward points for a voucher."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "root_token",
+      "value": ""
+    },
+    {
+      "key": "staff_token",
+      "value": ""
+    }
+  ]
+}
