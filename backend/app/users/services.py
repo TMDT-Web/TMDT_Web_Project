@@ -28,6 +28,13 @@ def create_user(db: Session, payload: schemas.UserCreate, default_roles: Iterabl
     if get_user_by_email(db, payload.email):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
+    # guard against edge cases where encoded length slips past schema validation
+    if len(payload.password.encode("utf-8")) > 72:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at most 72 bytes when encoded as UTF-8.",
+        )
+
     user = User(
         email=payload.email,
         password_hash=security.get_password_hash(payload.password),

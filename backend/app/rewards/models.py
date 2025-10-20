@@ -49,7 +49,9 @@ class PointTransaction(Base):
     __tablename__ = "point_transactions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("reward_points.user_id", ondelete="CASCADE"), index=True
+    )
     change: Mapped[int] = mapped_column(Integer, nullable=False)
     balance_after: Mapped[int] = mapped_column(Integer, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text)
@@ -58,7 +60,6 @@ class PointTransaction(Base):
 
     reward_point: Mapped["RewardPoint"] = relationship(
         "RewardPoint",
-        primaryjoin="PointTransaction.user_id==RewardPoint.user_id",
         back_populates="transactions",
     )
 

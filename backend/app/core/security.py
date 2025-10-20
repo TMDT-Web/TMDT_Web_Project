@@ -11,7 +11,8 @@ from fastapi.security import OAuth2PasswordBearer
 from app.core.config import settings
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# use argon2 to avoid bcrypt 72-byte limit issues
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_prefix}/auth/login")
 
