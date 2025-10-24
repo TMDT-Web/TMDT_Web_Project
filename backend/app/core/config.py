@@ -1,17 +1,19 @@
+# app/core/config.py
 from functools import lru_cache
-from typing import List, Optional
+from typing import List, Optional, Literal
 
-from pydantic import AnyHttpUrl, PostgresDsn, field_validator
+from pydantic import AnyHttpUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 class Settings(BaseSettings):
     project_name: str = "Furniture Store API"
-    environment: str = "local"
+    environment: Literal["local", "dev", "test", "prod"] = "local"
     debug: bool = True
     api_prefix: str = "/api"
 
-    database_url: PostgresDsn
+    # Nếu DSN có driver (postgresql+psycopg), dùng str an toàn hơn PostgresDsn
+    database_url: str = Field(..., alias="DATABASE_URL")
+    test_database_url: Optional[str] = Field(default=None, alias="TEST_DATABASE_URL")
 
     jwt_secret_key: str
     jwt_refresh_secret_key: str
@@ -31,8 +33,21 @@ class Settings(BaseSettings):
 
     cors_allow_origins: List[AnyHttpUrl] = []
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        env_prefix="",     # dùng alias trên từng field
+        extra="ignore",    # tránh vấp khi có biến env dư
+    )
 
+    @property
+    def effective_database_url(self) -> str:
+        if self.environment == "test" and self.test_database_url:
+            return self.test_database_url
+        return self.database_url
+
+    # Giữ nguyên validator cũ
+    from pydantic import field_validator
     @field_validator("cors_allow_origins", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v):
@@ -42,10 +57,8 @@ class Settings(BaseSettings):
             return list(v)
         return v
 
-
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()  # type: ignore[arg-type]
-
+    return Settings()
 
 settings = get_settings()

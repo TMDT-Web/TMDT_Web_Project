@@ -10,13 +10,13 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     Numeric,
     String,
     Text,
     UniqueConstraint,
     Index,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -54,10 +54,10 @@ class Product(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
     price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     stock_quantity: Mapped[int] = mapped_column(Integer, default=0)
-    specifications: Mapped[Optional[dict]] = mapped_column(JSON, default=dict)
+    specifications: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default=dict)
     main_image: Mapped[Optional[str]] = mapped_column(String(255))
-    is_active: Mapped[bool] = mapped_column(default=True)
-    category_id: Mapped[int] = mapped_column(
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    category_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -119,7 +119,7 @@ class ProductImage(Base):
     )
     file_path: Mapped[str] = mapped_column(String(255), nullable=False)
     alt_text: Mapped[Optional[str]] = mapped_column(String(255))
-    is_primary: Mapped[bool] = mapped_column(default=False)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    product: Mapped[Product] = relationship("Product", back_populates="images")
+    product: Mapped["Product"] = relationship("Product", back_populates="images")
