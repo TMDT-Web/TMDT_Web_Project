@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core import config
-from app.core.database import create_database
+from app.core.database import SessionLocal, create_database
 from app.users.routes import router as users_router
 from app.products.routes import router as products_router
 from app.cart.routes import router as cart_router
@@ -11,6 +11,7 @@ from app.orders.routes import router as orders_router
 from app.inventory.routes import router as inventory_router
 from app.payments.routes import router as payments_router
 from app.rewards.routes import router as rewards_router
+from app.users.services import ensure_system_roles
 
 
 def get_application() -> FastAPI:
@@ -32,7 +33,11 @@ def get_application() -> FastAPI:
             allow_headers=["*"],
         )
 
-    app.add_event_handler("startup", create_database)
+    @app.on_event("startup")
+    def on_startup():
+        create_database()
+        with SessionLocal() as db:
+            ensure_system_roles(db)
 
     app.include_router(users_router, prefix=config.settings.api_prefix)
     app.include_router(products_router, prefix=config.settings.api_prefix)
