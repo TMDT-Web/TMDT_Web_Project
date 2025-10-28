@@ -5,6 +5,9 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/app
+      - TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql+psycopg://furniture_user:secretpassword@db:5432/furniture_test_db}
     ports:
       - "8000:8000"
     volumes:
@@ -26,20 +29,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - furniture-net
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: furniture_pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "8080:80"
-    depends_on:
-      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U furniture_user -d furniture_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
       - furniture-net
 
