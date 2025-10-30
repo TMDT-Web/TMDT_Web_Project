@@ -5,7 +5,8 @@ const userRoutes = [
         index('./routes/home.tsx')
     ]),
     route('/auth/login', './pages/login.tsx'),
-    route('/auth/register', './pages/register.tsx')
+    route('/auth/register', './pages/register.tsx'),
+    route('*', './pages/NotFound.tsx')
 ];
 
 // const adminRoutes = [
