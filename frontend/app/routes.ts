@@ -2,8 +2,9 @@ import { type RouteConfig, index, layout, prefix, route } from '@react-router/de
 
 const userRoutes = [
     layout('./components/layout.tsx', [
-        index('./routes/home.tsx'),
+        index('./routes/home.tsx')
     ]),
+    route('/auth/login', './pages/login.tsx')
 ];
 
 // const adminRoutes = [
