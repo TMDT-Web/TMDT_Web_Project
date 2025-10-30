@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function Register() {
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
@@ -11,6 +12,51 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const fullNameRef = useRef<HTMLInputElement | null>(null);
+  const usernameRef = useRef<HTMLInputElement | null>(null);
+  const phoneRef = useRef<HTMLInputElement | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+  const confirmRef = useRef<HTMLInputElement | null>(null);
+  const submitRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleForwardTab = (e: any, nextRef?: { current: HTMLElement | null }) => {
+    if (e.key !== "Tab" || e.shiftKey) return;
+    e.preventDefault();
+    nextRef?.current?.focus();
+  };
+
+  const isPageReload = () => {
+    try {
+      const navEntries = (window.performance && (window.performance as any).getEntriesByType)
+        ? (window.performance as any).getEntriesByType('navigation') as PerformanceNavigationTiming[]
+        : null;
+      if (navEntries && navEntries.length > 0) {
+        return navEntries[0].type === 'reload';
+      }
+      // fallback for older browsers
+      // @ts-ignore
+      if ((window.performance as any).navigation) {
+        // @ts-ignore
+        return (window.performance as any).navigation.type === 1;
+      }
+    } catch (err) {
+      // ignore
+    }
+    return false;
+  };
+
+  // Clear form fields only when the page was fully reloaded
+  useEffect(() => {
+    if (isPageReload()) {
+      setFullName("");
+      setUsername("");
+      setPhone("");
+      setPassword("");
+      setConfirmPassword("");
+    }
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const prev = document.title;
@@ -25,27 +71,46 @@ export default function Register() {
 
     if (!fullName.trim() || !username.trim() || !phone.trim() || !password) {
       toast.error("Vui lòng điền đầy đủ thông tin.");
+      // focus first empty field
+      if (!fullName.trim()) {
+        fullNameRef.current?.focus();
+      } else if (!username.trim()) {
+        usernameRef.current?.focus();
+      } else if (!phone.trim()) {
+        phoneRef.current?.focus();
+      } else {
+        passwordRef.current?.focus();
+      }
       return;
     }
 
     const phoneDigits = phone.trim();
     if (!/^0\d{9}$/.test(phoneDigits)) {
       toast.error("Số điện thoại không hợp lệ.");
+      phoneRef.current?.focus();
       return;
     }
 
     if (password.length < 8) {
       toast.error("Mật khẩu phải có ít nhất 8 ký tự.");
+      passwordRef.current?.focus();
       return;
     }
 
     if (password !== confirmPassword) {
       toast.error("Mật khẩu và xác nhận mật khẩu không khớp.");
+      confirmRef.current?.focus();
       return;
     }
 
   // TODO: send registration data to backend
   toast.success(`Đăng ký thành công (giả lập)\nTài khoản: ${username}\nSố điện thoại: ${phoneDigits}`);
+
+  // redirect to login and prefill username + password
+  // small delay so toast is visible briefly
+  setTimeout(() => {
+    navigate("/auth/login", { state: { username, password } });
+  }, 700);
   };
 
   return (
@@ -61,10 +126,12 @@ export default function Register() {
                 Tên người dùng
               </label>
               <input
+                ref={fullNameRef}
                 type="text"
                 placeholder="Tên người dùng"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              onKeyDown={(e) => handleForwardTab(e, usernameRef)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               required
             />
@@ -75,10 +142,12 @@ export default function Register() {
               Tên tài khoản
             </label>
             <input
+              ref={usernameRef}
               type="text"
               placeholder="Tên tài khoản"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => handleForwardTab(e, phoneRef)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               required
             />
@@ -89,12 +158,14 @@ export default function Register() {
               Số điện thoại
             </label>
             <input
+              ref={phoneRef}
               type="tel"
               inputMode="tel"
               
               placeholder="Số điện thoại"
               value={phone}
               onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
+              onKeyDown={(e) => handleForwardTab(e, passwordRef)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               required
             />
@@ -106,10 +177,12 @@ export default function Register() {
             </label>
             <div className="relative">
               <input
+                ref={passwordRef}
                 type={showPassword ? "text" : "password"}
                 placeholder="Mật khẩu"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => handleForwardTab(e, confirmRef)}
                 className="w-full pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 required
                 minLength={8}
@@ -143,10 +216,12 @@ export default function Register() {
             </label>
             <div className="relative">
               <input
+                ref={confirmRef}
                 type={showConfirm ? "text" : "password"}
                 placeholder="Xác nhận mật khẩu"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                onKeyDown={(e) => handleForwardTab(e, submitRef)}
                 className="w-full pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 required
                 minLength={8}
@@ -174,7 +249,17 @@ export default function Register() {
             </div>
           </div>
 
-          <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold text-lg shadow-md hover:shadow-lg">
+          <button
+            type="submit"
+            ref={submitRef}
+            onKeyDown={(e) => {
+              if (e.key === "Tab" && !e.shiftKey) {
+                e.preventDefault();
+                fullNameRef.current?.focus();
+              }
+            }}
+            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold text-lg shadow-md hover:shadow-lg"
+          >
             Đăng ký
           </button>
         </form>

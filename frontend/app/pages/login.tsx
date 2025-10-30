@@ -1,14 +1,69 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "react-router";
+import { toast } from "react-toastify";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const location = useLocation();
+  const usernameRef = useRef<HTMLInputElement | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+  const submitRef = useRef<HTMLButtonElement | null>(null);
+
+  const isPageReload = () => {
+    try {
+      const navEntries = (window.performance && (window.performance as any).getEntriesByType)
+        ? (window.performance as any).getEntriesByType('navigation') as PerformanceNavigationTiming[]
+        : null;
+      if (navEntries && navEntries.length > 0) {
+        return navEntries[0].type === 'reload';
+      }
+      // fallback for older browsers
+      // @ts-ignore
+      if ((window.performance as any).navigation) {
+        // @ts-ignore
+        return (window.performance as any).navigation.type === 1;
+      }
+    } catch (err) {
+      // ignore
+    }
+    return false;
+  };
+
+  // Clear fields only when the user performed a full page reload.
+  useEffect(() => {
+    if (isPageReload()) {
+      setUsername("");
+      setPassword("");
+    }
+    // run only once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleForwardTab = (e: any, nextRef?: { current: HTMLElement | null }) => {
+    if (e.key !== "Tab" || e.shiftKey) return;
+    e.preventDefault();
+    nextRef?.current?.focus();
+  };
 
   const handleSubmit = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
-    alert(`Username: ${username}\nPassword: ${password}`);
+
+    // validate empty fields and show toast errors
+    if (!username.trim()) {
+      toast.error("Tên tài khoản không được trống.");
+      usernameRef.current?.focus();
+      return;
+    }
+    if (!password.trim()) {
+      toast.error("Mật khẩu không được trống.");
+      passwordRef.current?.focus();
+      return;
+    }
+
+    // placeholder for real login action
+    toast.success(`Đang thử đăng nhập...`);
   };
 
   // Set page title while on login page
@@ -20,6 +75,15 @@ export default function Login() {
     };
   }, []);
 
+  // Prefill from navigation state (e.g., after successful registration)
+  useEffect(() => {
+    if (location && (location as any).state) {
+      const state = (location as any).state as { username?: string; password?: string };
+      if (state.username) setUsername(state.username);
+      if (state.password) setPassword(state.password);
+    }
+  }, [location]);
+
   return (
     <div className="flex md:justify-end justify-center items-center min-h-screen bg-[url('./asset/img/bg-login-register.jpg')] bg-cover bg-center">
       <div className="bg-white/10 md:bg-transparent md:bg-gradient-to-l md:from-white/70 md:via-white/20 md:to-transparent p-10 md:px-16 md:py-12 md:rounded-none rounded-xl md:shadow-none shadow-lg w-full md:w-1/2 lg:w-1/3 h-auto md:h-screen flex flex-col justify-center max-w-md md:max-w-none">
@@ -27,7 +91,7 @@ export default function Login() {
           Đăng nhập
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form noValidate onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-gray-100 text-sm font-semibold mb-2">
               Tên tài khoản
@@ -37,6 +101,8 @@ export default function Login() {
               placeholder="Tên tài khoản"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              ref={usernameRef}
+              onKeyDown={(e) => handleForwardTab(e, passwordRef)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               required
             />
@@ -52,6 +118,8 @@ export default function Login() {
                   placeholder="Mật khẩu"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  ref={passwordRef}
+                  onKeyDown={(e) => handleForwardTab(e, submitRef)}
                   className="w-full pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   required
                 />
@@ -85,6 +153,13 @@ export default function Login() {
 
           <button
             type="submit"
+            ref={submitRef}
+            onKeyDown={(e) => {
+              if (e.key === "Tab" && !e.shiftKey) {
+                e.preventDefault();
+                usernameRef.current?.focus();
+              }
+            }}
             className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold text-lg shadow-md hover:shadow-lg"
           >
             Đăng nhập
