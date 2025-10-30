@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,18 +23,29 @@ export default function Register() {
   const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
-    if (!fullName.trim() || !username.trim() || !password) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc.");
+    if (!fullName.trim() || !username.trim() || !phone.trim() || !password) {
+      toast.error("Vui lòng điền đầy đủ thông tin.");
+      return;
+    }
+
+    const phoneDigits = phone.trim();
+    if (!/^0\d{9}$/.test(phoneDigits)) {
+      toast.error("Số điện thoại không hợp lệ.");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("Mật khẩu phải có ít nhất 8 ký tự.");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Mật khẩu và xác nhận mật khẩu không khớp.");
+      toast.error("Mật khẩu và xác nhận mật khẩu không khớp.");
       return;
     }
 
-    // TODO: send registration data to backend
-    alert(`Đăng ký thành công (giả lập)\nTài khoản: ${username}\nEmail: ${email}`);
+  // TODO: send registration data to backend
+  toast.success(`Đăng ký thành công (giả lập)\nTài khoản: ${username}\nSố điện thoại: ${phoneDigits}`);
   };
 
   return (
@@ -42,7 +55,7 @@ export default function Register() {
           Đăng ký
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form noValidate onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-gray-100 text-sm font-semibold mb-2">
                 Tên người dùng
@@ -73,14 +86,17 @@ export default function Register() {
 
           <div>
             <label className="block text-gray-100 text-sm font-semibold mb-2">
-              Email (không bắt buộc)
+              Số điện thoại
             </label>
             <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="tel"
+              inputMode="tel"
+              
+              placeholder="Số điện thoại"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              required
             />
           </div>
 
@@ -96,6 +112,7 @@ export default function Register() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 required
+                minLength={8}
               />
 
               <button
@@ -132,6 +149,7 @@ export default function Register() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 required
+                minLength={8}
               />
 
               <button
