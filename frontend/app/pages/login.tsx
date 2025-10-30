@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 
 export default function Login() {
@@ -11,6 +11,15 @@ export default function Login() {
     alert(`Username: ${username}\nPassword: ${password}`);
   };
 
+  // Set page title while on login page
+  useEffect(() => {
+    const prevTitle = document.title;
+    document.title = "Đăng nhập tài khoản";
+    return () => {
+      document.title = prevTitle;
+    };
+  }, []);
+
   return (
     <div className="flex md:justify-end justify-center items-center min-h-screen bg-[url('./asset/img/bg-login-register.jpg')] bg-cover bg-center">
       <div className="bg-white/10 md:bg-transparent md:bg-gradient-to-l md:from-white/70 md:via-white/20 md:to-transparent p-10 md:px-16 md:py-12 md:rounded-none rounded-xl md:shadow-none shadow-lg w-full md:w-1/2 lg:w-1/3 h-auto md:h-screen flex flex-col justify-center max-w-md md:max-w-none">
@@ -21,7 +30,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-gray-100 text-sm font-semibold mb-2">
-              Username
+              Tên tài khoản
             </label>
             <input
               type="text"
@@ -40,7 +49,7 @@ export default function Login() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Nhập mật khẩu"
+                  placeholder="Mật khẩu"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -68,7 +77,7 @@ export default function Login() {
                 </button>
               </div>
             <div className="text-right mt-2">
-              <a href="#" className="text-sm text-indigo-200 hover:underline font-medium">
+              <a href="#" className="text-sm text-indigo-600 hover:underline font-medium">
                 Quên mật khẩu?
               </a>
             </div>
@@ -116,10 +125,10 @@ export default function Login() {
         </Link>
 
         <p className="text-center text-sm text-gray-200 mt-6">
-          Chưa có tài khoản?{" "}
-          <a href="#" className="text-indigo-600 hover:underline font-semibold">
+          Chưa có tài khoản? 
+          <Link to="/auth/register" className="text-indigo-600 hover:underline font-semibold">
             Đăng ký
-          </a>
+          </Link>
         </p>
 
         <Link
