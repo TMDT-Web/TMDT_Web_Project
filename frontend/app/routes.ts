@@ -1,8 +1,14 @@
-import { type RouteConfig, index, layout, prefix, route } from '@react-router/dev/routes';
+import {
+  type RouteConfig,
+  index,
+  layout,
+  route,
+} from "@react-router/dev/routes";
 
 const userRoutes = [
     layout('./components/layout.tsx', [
-        index('./routes/home.tsx')
+        index('./routes/home.tsx'),
+        route("/products/:id", "./routes/products.$id.tsx")
     ]),
     route('/auth/login', './pages/login.tsx'),
     route('/auth/register', './pages/register.tsx'),
