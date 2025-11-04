@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router";
 
+interface ProductVariant {
+  id: number;
+  name: string; // Ví dụ: "Đen - 120cm - Gỗ sồi"
+  attributes: {
+    [key: string]: string; // { "Màu sắc": "Đen", "Kích thước": "120cm", "Chất liệu": "Gỗ sồi" }
+  };
+  available: boolean;
+  stock: number;
+  priceAdjustment?: number; // Thêm giá so với giá gốc
+}
+
 interface ProductDetailProps {
   product: {
     id: number;
@@ -11,6 +22,7 @@ interface ProductDetailProps {
     category: string;
     stock: number;
     images: string[];
+    variants?: ProductVariant[];
     specifications?: {
       material?: string;
       dimensions?: string;
@@ -27,6 +39,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
+    null
+  );
 
   // Nếu không có ảnh, tạo mảng placeholder
   const displayImages =
@@ -49,9 +64,27 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     );
   };
 
+  const handleVariantChange = (variantId: number) => {
+    setSelectedVariantId(variantId);
+  };
+
+  // Tính giá cuối cùng dựa trên variant đã chọn
+  const calculateFinalPrice = () => {
+    let finalPrice = product.price;
+    if (selectedVariantId && product.variants) {
+      const variant = product.variants.find((v) => v.id === selectedVariantId);
+      if (variant && variant.priceAdjustment) {
+        finalPrice += variant.priceAdjustment;
+      }
+    }
+    return finalPrice;
+  };
+
+  const finalPrice = calculateFinalPrice();
+
   const discount = product.originalPrice
     ? Math.round(
-        ((product.originalPrice - product.price) / product.originalPrice) * 100
+        ((product.originalPrice - finalPrice) / product.originalPrice) * 100
       )
     : 0;
 
@@ -299,7 +332,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             <div className="bg-gray-50 rounded-xl p-6 mb-6">
               <div className="flex items-baseline gap-4 mb-2">
                 <span className="text-4xl font-bold text-blue-600">
-                  {product.price.toLocaleString("vi-VN")}đ
+                  {finalPrice.toLocaleString("vi-VN")}đ
                 </span>
                 {product.originalPrice && (
                   <span className="text-xl text-gray-400 line-through">
@@ -310,13 +343,120 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               {discount > 0 && (
                 <span className="text-red-600 font-semibold">
                   Tiết kiệm{" "}
-                  {(product.originalPrice! - product.price).toLocaleString(
+                  {(product.originalPrice! - finalPrice).toLocaleString(
                     "vi-VN"
                   )}
                   đ
                 </span>
               )}
             </div>
+
+            {/* Product Variants */}
+            {product.variants && product.variants.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-gray-700 font-semibold mb-3 text-lg">
+                  Phân loại sản phẩm
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {product.variants.map((variant) => (
+                    <button
+                      key={variant.id}
+                      onClick={() => handleVariantChange(variant.id)}
+                      disabled={!variant.available}
+                      className={`p-4 rounded-xl border-2 transition-all text-left ${
+                        selectedVariantId === variant.id
+                          ? "border-blue-600 bg-blue-50 shadow-lg scale-[1.02]"
+                          : variant.available
+                            ? "border-gray-200 hover:border-blue-300 hover:shadow-md bg-white"
+                            : "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div
+                            className={`font-bold text-base mb-2 ${
+                              selectedVariantId === variant.id
+                                ? "text-blue-600"
+                                : variant.available
+                                  ? "text-gray-900"
+                                  : "text-gray-400"
+                            }`}
+                          >
+                            {variant.name}
+                            {!variant.available && (
+                              <span className="ml-2 text-xs font-normal text-red-500">
+                                (Hết hàng)
+                              </span>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            {Object.entries(variant.attributes).map(
+                              ([key, value]) => (
+                                <div
+                                  key={key}
+                                  className="flex items-center gap-2 text-sm"
+                                >
+                                  <span className="text-gray-500">{key}:</span>
+                                  <span
+                                    className={`font-medium ${
+                                      selectedVariantId === variant.id
+                                        ? "text-blue-600"
+                                        : "text-gray-700"
+                                    }`}
+                                  >
+                                    {value}
+                                  </span>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                        <div className="ml-3">
+                          {selectedVariantId === variant.id ? (
+                            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
+                              <svg
+                                className="w-4 h-4 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={3}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                          ) : (
+                            <div
+                              className={`w-6 h-6 rounded-full border-2 ${
+                                variant.available
+                                  ? "border-gray-300"
+                                  : "border-gray-200"
+                              }`}
+                            />
+                          )}
+                        </div>
+                      </div>
+                      {variant.available && variant.stock > 0 && (
+                        <div
+                          className={`text-xs mt-2 pt-2 border-t ${
+                            selectedVariantId === variant.id
+                              ? "border-blue-200 text-green-600"
+                              : "border-gray-200 text-green-600"
+                          }`}
+                        >
+                          <span className="font-medium">
+                            ✓ Còn {variant.stock} sản phẩm
+                          </span>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Stock Status */}
             <div className="mb-6">
