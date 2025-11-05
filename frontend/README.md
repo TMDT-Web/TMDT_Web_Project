@@ -85,3 +85,5 @@ This template comes with [Tailwind CSS](https://tailwindcss.com/) already config
 ---
 
 Built with ❤️ using React Router.
+netstat -aon | findstr ":5432"
+tasklist /fi "PID eq 10168"
