@@ -6,7 +6,7 @@ import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Nội Thất 24h - Trang chủ" },
+    { title: "FurniHub - Trang chủ" },
     { name: "description", content: "Mua sắm nội thất chất lượng, giá tốt" },
   ];
 }
@@ -17,6 +17,11 @@ export default function Home() {
 
   // TODO: Thay thế bằng AuthContext thực tế khi có
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Set page title
+  useEffect(() => {
+    document.title = "Nội Thất 24h - Trang chủ";
+  }, []);
 
   // State cho dữ liệu từ API
   const [products, setProducts] = useState<ProductListItem[]>([]);
@@ -144,24 +149,28 @@ export default function Home() {
   // Hiển thị loading state
   if (loading && products.length === 0) {
     return (
-      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⏳</div>
-          <p className="text-gray-600">Đang tải sản phẩm...</p>
+      <div className="bg-white min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center">
+          <div className="loader">
+            <div className="inner"></div>
+          </div>
+          <p className="text-gray-700 mt-6 text-lg font-medium">
+            Đang tải sản phẩm...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <section className="bg-white py-12">
+    <div className="bg-white min-h-screen">
+      <section className="bg-gray-50 py-12 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            <h2 className="text-3xl font-bold text-black mb-3">
               Danh mục nội thất
             </h2>
-            <p className="text-gray-600">
+            <p className="text-black">
               Khám phá các sản phẩm nội thất chất lượng cho ngôi nhà của bạn
             </p>
           </div>
@@ -170,7 +179,7 @@ export default function Home() {
               <Link
                 key={category.id}
                 to={`/danh-muc/${category.slug}`}
-                className="group bg-white hover:bg-gray-50 rounded-xl overflow-hidden text-center transition-all duration-300 hover:shadow-lg border border-gray-200 hover:border-blue-300"
+                className="group bg-white hover:bg-gray-50 rounded-xl overflow-hidden text-center transition-all duration-300 hover:shadow-lg border border-gray-200 hover:border-gray-400"
               >
                 <div className="aspect-square overflow-hidden">
                   <img
@@ -180,10 +189,10 @@ export default function Home() {
                   />
                 </div>
                 <div className="p-3">
-                  <h3 className="font-semibold text-gray-900 mb-1 text-sm">
+                  <h3 className="font-semibold text-black mb-1 text-sm">
                     {category.name}
                   </h3>
-                  <p className="text-xs text-gray-500 group-hover:text-blue-600">
+                  <p className="text-xs text-black group-hover:text-gray-700">
                     {category.description}
                   </p>
                 </div>
@@ -193,18 +202,18 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="products-section" className="py-12">
+      <section id="products-section" className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <h2 className="text-3xl font-bold text-black mb-2">
               Sản phẩm nổi bật
             </h2>
-            <p className="text-gray-600">Những sản phẩm được yêu thích nhất</p>
+            <p className="text-black">Những sản phẩm được yêu thích nhất</p>
           </div>
 
           {/* Hiển thị error nếu có */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg mb-6">
               {error}
             </div>
           )}
@@ -213,10 +222,10 @@ export default function Home() {
             {products.map((product) => (
               <div
                 key={product.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group"
+                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group border border-gray-200"
               >
                 <Link to={`/products/${product.id}`} className="block">
-                  <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                  <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
                     {product.main_image ? (
                       <img
                         src={product.main_image}
@@ -227,7 +236,9 @@ export default function Home() {
                       <div className="w-full h-full flex items-center justify-center text-gray-400">
                         <div className="text-center">
                           <div className="text-6xl mb-2">🪑</div>
-                          <div className="text-sm font-medium">Nội thất</div>
+                          <div className="text-sm font-medium text-gray-500">
+                            Nội thất
+                          </div>
                         </div>
                       </div>
                     )}
@@ -235,12 +246,12 @@ export default function Home() {
                 </Link>
                 <div className="p-4">
                   <Link to={`/products/${product.id}`}>
-                    <h3 className="font-semibold text-gray-800 mb-2 hover:text-blue-600 line-clamp-2 min-h-[48px]">
+                    <h3 className="font-semibold text-black mb-2 hover:text-gray-700 line-clamp-2 min-h-[48px]">
                       {product.name}
                     </h3>
                   </Link>
                   <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-xl font-bold text-blue-600">
+                    <span className="text-xl font-bold text-black">
                       {Number(product.price).toLocaleString("vi-VN")}đ
                     </span>
                   </div>
@@ -250,15 +261,15 @@ export default function Home() {
                     >
                       {product.stock_quantity > 0 ? "✓ Còn hàng" : "✗ Hết hàng"}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-black">
                       Còn {product.stock_quantity} sản phẩm
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <button className="flex-1 bg-orange-500 text-white py-2.5 rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm">
+                    <button className="flex-1 bg-white text-black border-2 border-gray-300 py-2.5 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm">
                       Mua ngay
                     </button>
-                    <button className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+                    <button className="flex-1 bg-black text-white py-2.5 rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm">
                       🛒 Thêm vào giỏ
                     </button>
                   </div>
@@ -267,60 +278,62 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Pagination */}
-          <div className="flex justify-center items-center gap-2 mt-10">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentPage === 1
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-600 hover:text-white"
-              }`}
-            >
-              ← Trước
-            </button>
+          {/* Pagination - Chỉ hiển thị khi có sản phẩm và có nhiều hơn 1 trang */}
+          {totalProducts > 0 && totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-10">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  currentPage === 1
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                    : "bg-white text-black border-2 border-gray-300 hover:bg-gray-100 hover:text-black"
+                }`}
+              >
+                ← Trước
+              </button>
 
-            {[...Array(totalPages)].map((_, index) => {
-              const page = index + 1;
-              return (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    currentPage === page
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-600 hover:text-white"
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
+              {[...Array(totalPages)].map((_, index) => {
+                const page = index + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      currentPage === page
+                        ? "bg-black text-white"
+                        : "bg-white text-black border-2 border-gray-300 hover:bg-gray-100 hover:text-black"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
 
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentPage === totalPages
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-600 hover:text-white"
-              }`}
-            >
-              Tiếp →
-            </button>
-          </div>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  currentPage === totalPages
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                    : "bg-white text-black border-2 border-gray-300 hover:bg-gray-100 hover:text-black"
+                }`}
+              >
+                Tiếp →
+              </button>
+            </div>
+          )}
 
           {/* Nút đăng nhập để mua ngay - Chỉ hiện khi chưa đăng nhập */}
           {!isLoggedIn && (
             <div className="text-center mt-6">
-              <div className="inline-block bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-200 rounded-xl p-6 shadow-md">
-                <p className="text-gray-700 mb-3 text-lg font-medium">
+              <div className="inline-block bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 rounded-xl p-6 shadow-md">
+                <p className="text-black mb-3 text-lg font-semibold">
                   🔒 Đăng nhập để mua sản phẩm
                 </p>
                 <Link
                   to="/login"
-                  className="inline-block bg-orange-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl"
+                  className="inline-block bg-black text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors shadow-lg hover:shadow-xl"
                 >
                   Đăng nhập ngay →
                 </Link>
@@ -330,50 +343,58 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white py-16 mt-8">
+      <section className="bg-gray-50 py-16 mt-8 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            <h2 className="text-3xl font-bold text-black mb-3">
               Tại sao chọn chúng tôi?
             </h2>
-            <p className="text-gray-600">
+            <p className="text-black">
               Cam kết mang đến trải nghiệm mua sắm tốt nhất
             </p>
           </div>
           <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">🚚</span>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Giao hàng nhanh</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-black">
+                Giao hàng nhanh
+              </h3>
+              <p className="text-black text-sm">
                 Miễn phí vận chuyển cho đơn hàng trên 500k
               </p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">✅</span>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Chất lượng đảm bảo</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-black">
+                Chất lượng đảm bảo
+              </h3>
+              <p className="text-black text-sm">
                 Sản phẩm chính hãng, kiểm định chất lượng
               </p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">↩️</span>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Đổi trả dễ dàng</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-black">
+                Đổi trả dễ dàng
+              </h3>
+              <p className="text-black text-sm">
                 Đổi trả trong 7 ngày nếu có lỗi
               </p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">💬</span>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Hỗ trợ 24/7</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-lg mb-2 text-black">
+                Hỗ trợ 24/7
+              </h3>
+              <p className="text-black text-sm">
                 Luôn sẵn sàng tư vấn và hỗ trợ khách hàng
               </p>
             </div>
