@@ -1,0 +1,81 @@
+# Docker Compose cho Full Stack Application
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: furniture_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=furniture_user
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=furniture_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U furniture_user -d furniture_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - furniture-net
+
+  # Backend API (FastAPI)
+  api:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: furniture_api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql+psycopg://furniture_user:123456@db:5432/furniture_db
+      - TEST_DATABASE_URL=postgresql+psycopg://furniture_user:123456@db:5432/furniture_test_db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - furniture-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend (React Router v7)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: furniture_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - API_URL=http://api:8000
+      - PORT=3000
+    depends_on:
+      - api
+    networks:
+      - furniture-net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  furniture-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

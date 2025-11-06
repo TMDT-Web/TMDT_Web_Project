@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "react-toastify";
+import { register as registerUser } from "../lib/auth";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function Register() {
@@ -12,6 +13,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const fullNameRef = useRef<HTMLInputElement | null>(null);
   const usernameRef = useRef<HTMLInputElement | null>(null);
   const phoneRef = useRef<HTMLInputElement | null>(null);
@@ -66,7 +68,7 @@ export default function Register() {
     };
   }, []);
 
-  const handleSubmit = (e: { preventDefault: () => void }) => {
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
     if (!fullName.trim() || !username.trim() || !phone.trim() || !password) {
@@ -84,9 +86,17 @@ export default function Register() {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(username.trim())) {
+      toast.error("Email không hợp lệ. Vui lòng nhập đúng định dạng email.");
+      usernameRef.current?.focus();
+      return;
+    }
+
     const phoneDigits = phone.trim();
     if (!/^0\d{9}$/.test(phoneDigits)) {
-      toast.error("Số điện thoại không hợp lệ.");
+      toast.error("Số điện thoại không hợp lệ. Phải có 10 số và bắt đầu bằng 0.");
       phoneRef.current?.focus();
       return;
     }
@@ -103,14 +113,28 @@ export default function Register() {
       return;
     }
 
-  // TODO: send registration data to backend
-  toast.success(`Đăng ký thành công (giả lập)\nTài khoản: ${username}\nSố điện thoại: ${phoneDigits}`);
+    setIsLoading(true);
+    try {
+      // Gọi API đăng ký
+      await registerUser({
+        email: username, // Backend dùng email field
+        password: password,
+        full_name: fullName,
+        phone_number: phone, // Backend schema requires this
+      });
 
-  // redirect to login and prefill username + password
-  // small delay so toast is visible briefly
-  setTimeout(() => {
-    navigate("/auth/login", { state: { username, password } });
-  }, 700);
+      toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
+      
+      // Redirect to login with prefilled email
+      setTimeout(() => {
+        navigate("/auth/login", { state: { username, password } });
+      }, 700);
+    } catch (error: any) {
+      console.error("Register error:", error);
+      toast.error(error.message || "Đăng ký thất bại. Email có thể đã được sử dụng.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -139,12 +163,12 @@ export default function Register() {
 
           <div>
             <label className="block text-gray-100 text-sm font-semibold mb-2">
-              Tên tài khoản
+              Email
             </label>
             <input
               ref={usernameRef}
-              type="text"
-              placeholder="Tên tài khoản"
+              type="email"
+              placeholder="example@email.com"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               onKeyDown={(e) => handleForwardTab(e, phoneRef)}

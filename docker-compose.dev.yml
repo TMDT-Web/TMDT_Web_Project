@@ -1,0 +1,80 @@
+# Docker Compose cho Development
+# Sử dụng file này để chạy với hot-reload cho cả frontend và backend
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: furniture_db_dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=furniture_user
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=furniture_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U furniture_user -d furniture_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - furniture-net
+
+  # Backend API (FastAPI) - Development Mode
+  api:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: furniture_api_dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql+psycopg://furniture_user:123456@db:5432/furniture_db
+      - TEST_DATABASE_URL=postgresql+psycopg://furniture_user:123456@db:5432/furniture_test_db
+      - CORS_ALLOW_ORIGINS=http://localhost:5173,http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - furniture-net
+
+  # Frontend (React Router v7) - Development Mode
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: furniture_frontend_dev
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - ./frontend/.env:/app/.env:ro
+    depends_on:
+      - api
+    networks:
+      - furniture-net
+
+networks:
+  furniture-net:
+    driver: bridge
+
+volumes:
+  postgres_data_dev:

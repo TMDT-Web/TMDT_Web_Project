@@ -34,5 +34,9 @@ export async function getProduct(id: number): Promise<Product> {
 }
 
 export async function getCategories(): Promise<Category[]> {
-  return api.get<Category[]>("/categories");
+  return api.get<Category[]>("/products/categories");
+}
+
+export async function getTags() {
+  return api.get("/products/tags");
 }

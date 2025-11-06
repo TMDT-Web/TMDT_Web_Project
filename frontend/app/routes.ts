@@ -6,33 +6,19 @@ import {
 } from "@react-router/dev/routes";
 
 const userRoutes = [
-    layout('./components/layout.tsx', [
-        index('./routes/home.tsx'),
-        route("/products/:id", "./routes/products.$id.tsx")
-    ]),
-    route('/auth/login', './pages/login.tsx'),
-    route('/auth/register', './pages/register.tsx'),
-    route('*', './pages/NotFound.tsx')
-];
-
-// const adminRoutes = [
-//     layout('admin/components/AdminLayout.tsx', [
-//         // route('/admin', ''),
-//         route('/admin/dashboard', './admin/components/DashBoard.tsx'),
-//         route('/admin/user', './admin/pages/User.tsx'),
-//         route('/admin/product', './admin/pages/Product.tsx'),
-//         route('/admin/category', './admin/pages/Category.tsx'),
-//         route('/admin/role', './admin/pages/Role.tsx'),
-//         route('/admin/supplier', './admin/pages/Supplier.tsx'),
-//         route('/admin/warranty', './admin/pages/Warranty.tsx'),
-//         route('/admin/order', './admin/pages/Order.tsx'),
-//         route('/admin/import', './admin/pages/Import.tsx'),
-//         route(
-//             '/admin/statistical/revenueandcoststatistics',
-//             './admin/pages/RevenueAndCostStatistics.tsx'
-//         ),
-//         route('/admin/statistical/inventorystatistics', './admin/pages/InventoryStatistics.tsx'),
-//     ]),
-// ];
-
-export default [...userRoutes] satisfies RouteConfig;
+  layout('./components/MainLayout.tsx', [
+    index('./routes/index.tsx'),
+    route("/products", "./routes/products.tsx"),
+    route("/products/:id", "./routes/products.$id.tsx"),
+    route("/collections", "./routes/collections.tsx"),
+    route("/about", "./routes/about.tsx"),
+    route("/contact", "./routes/contact.tsx"),
+    route("/cart", "./pages/cart.tsx"),
+    route("/checkout", "./pages/checkout.tsx"),
+    route("/account", "./pages/account.tsx"),
+  ]),
+  route('/auth/login', './pages/login.tsx'),
+  route('/auth/register', './pages/register.tsx'),
+  route('/auth/callback', './pages/GoogleCallback.tsx'),
+  route('*', './pages/NotFound.tsx')
+];export default [...userRoutes] satisfies RouteConfig;

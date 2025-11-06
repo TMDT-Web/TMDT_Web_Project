@@ -1,8 +1,8 @@
 # app/core/config.py
 from functools import lru_cache
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Union
 
-from pydantic import AnyHttpUrl, Field
+from pydantic import AnyHttpUrl, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     points_per_voucher: int = 100
     voucher_value: int = 50000
 
-    cors_allow_origins: List[AnyHttpUrl] = []
+    # Use Union to accept both string and list
+    cors_allow_origins: Union[str, List[str]] = Field(default="")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -40,22 +41,31 @@ class Settings(BaseSettings):
         extra="ignore",    # tránh vấp khi có biến env dư
     )
 
+    # Validator for CORS origins - parse comma-separated string
+    @field_validator("cors_allow_origins", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v):
+        if isinstance(v, str):
+            if not v or v.strip() == "":
+                return []
+            # Handle JSON array format
+            if v.strip().startswith("["):
+                import json
+                try:
+                    return json.loads(v)
+                except:
+                    pass
+            # Split by comma for simple format
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        if isinstance(v, (list, tuple)):
+            return list(v)
+        return []
+
     @property
     def effective_database_url(self) -> str:
         if self.environment == "test" and self.test_database_url:
             return self.test_database_url
         return self.database_url
-
-    # Giữ nguyên validator cũ
-    from pydantic import field_validator
-    @field_validator("cors_allow_origins", mode="before")
-    @classmethod
-    def assemble_cors_origins(cls, v):
-        if isinstance(v, str) and not v.startswith("["):
-            return [origin.strip() for origin in v.split(",")]
-        if isinstance(v, (list, tuple)):
-            return list(v)
-        return v
 
 @lru_cache
 def get_settings() -> Settings:
