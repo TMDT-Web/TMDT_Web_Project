@@ -2,18 +2,15 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { getCategories, getProducts } from "../lib/products";
 import type { Category, ProductListItem } from "../lib/types";
-import type { Route } from "./+types/home";
-
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Nội Thất 24h - Trang chủ" },
-    { name: "description", content: "Mua sắm nội thất chất lượng, giá tốt" },
-  ];
-}
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 8;
+
+  // Set page title
+  useEffect(() => {
+    document.title = "FurniHub - Trang chủ";
+  }, []);
 
   // TODO: Thay thế bằng AuthContext thực tế khi có
   const [isLoggedIn, setIsLoggedIn] = useState(false);

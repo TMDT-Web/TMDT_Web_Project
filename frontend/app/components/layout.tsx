@@ -229,27 +229,15 @@ export default function Layout() {
       )}
 
       {/* Nội dung trang */}
-      <main className="flex-1">
-        import { Outlet } from 'react-router';
-import Navbar from './Navbar';
-import Footer from './Footer';
-
-export default function Layout() {
-    return (
-        <div className="min-h-screen bg-[rgb(var(--color-bg-light))]">
-            <Navbar />
-            <main className="pt-20">
-                <Outlet />
-            </main>
-            <Footer />
-        </div>
-    );
-}
-
+      <main className="flex-1 bg-white">
+        <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100 py-4 text-center text-sm text-gray-500">
+      <footer
+        className="text-white border-t border-white/20"
+        style={{ backgroundColor: "rgb(20, 10, 5)" }}
+      >
         © {new Date().getFullYear()} Nội Thất 24h - Mua sắm thông minh, bán
         hàng dễ dàng.
       </footer>
