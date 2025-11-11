@@ -1,145 +1,108 @@
-import ProductDetail from "../components/detail-product";
-import type { Route } from "./+types/products.$id";
+import * as React from "react";
+import { useParams } from "react-router";
+import { api } from "~/lib/api";
 
-export function meta({ params }: Route.MetaArgs) {
-  return [
-    { title: `Chi tiết sản phẩm - Nội Thất 24h` },
-    { name: "description", content: "Xem chi tiết sản phẩm nội thất" },
-  ];
-}
+type ProductRead = {
+  id: number | string;
+  name?: string;
+  title?: string;              // phòng khi backend dùng "title"
+  price?: number;
+  description?: string | null;
+  images?: string[];           // nếu có mảng ảnh
+  image_url?: string;          // nếu chỉ có 1 ảnh
+  category?: { id: number | string; name?: string };
+  [k: string]: any;            // nới lỏng để không vỡ type
+};
 
-export default function ProductDetailPage({ params }: Route.ComponentProps) {
-  // TODO: Fetch từ API dựa trên params.id
-  const mockProduct = {
-    id: parseInt(params.id),
-    name: "Bàn làm việc gỗ sồi hiện đại",
-    price: 2500000,
-    originalPrice: 3500000,
-    description: `
-      Bàn làm việc gỗ sồi hiện đại là sự lựa chọn hoàn hảo cho không gian làm việc của bạn. 
-      Thiết kế tối giản nhưng vô cùng tinh tế, bàn được làm từ gỗ sồi tự nhiên cao cấp, 
-      mang lại độ bền vượt trội và vẻ đẹp sang trọng cho căn phòng.
+export default function ProductDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const [data, setData] = React.useState<ProductRead | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-      ✨ Đặc điểm nổi bật:
-      • Chất liệu gỗ sồi tự nhiên 100% nhập khẩu
-      • Thiết kế hiện đại, phù hợp mọi không gian
-      • Bề mặt chống trầy xước, chống nước
-      • Ngăn kéo lớn tiện lợi để đồ
-      • Lắp ráp dễ dàng với hướng dẫn chi tiết
+  React.useEffect(() => {
+    let alive = true;
+    async function load() {
+      try {
+        if (!id) throw new Error("Thiếu id sản phẩm");
+        // Backend FastAPI của bạn đang mount ở /api, api.get đã tự thêm prefix "/api"
+        const res = await api.get<ProductRead>(`/products/${id}`);
+        if (alive) setData(res);
+      } catch (err: any) {
+        if (alive) setError(err?.message || "Lỗi tải sản phẩm");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+    load();
+    return () => { alive = false; };
+  }, [id]);
 
-      🎯 Phù hợp với:
-      • Văn phòng làm việc tại nhà
-      • Phòng làm việc công ty
-      • Phòng học sinh viên
-      • Không gian đọc sách, học tập
+  if (loading) return <div className="p-6">Đang tải sản phẩm...</div>;
+  if (error)   return <div className="p-6 text-red-600">Lỗi: {error}</div>;
+  if (!data)   return <div className="p-6">Không tìm thấy sản phẩm.</div>;
 
-      📦 Giao hàng và lắp đặt:
-      • Giao hàng toàn quốc, miễn phí nội thành
-      • Hỗ trợ lắp đặt tận nơi
-      • Bảo hành 24 tháng
-    `,
-    category: "Bàn làm việc",
-    stock: 15,
-    images: [
-      // Khi tích hợp API, đây sẽ là URL thực
-      // Hiện tại để trống để dùng placeholder
-    ],
-    variants: [
-      {
-        id: 1,
-        name: "Nhỏ - Nâu - Gỗ sồi",
-        attributes: {
-          "Kích thước": "100cm x 50cm",
-          "Màu sắc": "Nâu gỗ tự nhiên",
-          "Chất liệu": "Gỗ sồi tự nhiên",
-        },
-        available: true,
-        stock: 10,
-        priceAdjustment: -300000,
-      },
-      {
-        id: 2,
-        name: "Trung - Nâu - Gỗ sồi",
-        attributes: {
-          "Kích thước": "120cm x 60cm",
-          "Màu sắc": "Nâu gỗ tự nhiên",
-          "Chất liệu": "Gỗ sồi tự nhiên",
-        },
-        available: true,
-        stock: 15,
-        priceAdjustment: 0,
-      },
-      {
-        id: 3,
-        name: "Lớn - Nâu - Gỗ sồi",
-        attributes: {
-          "Kích thước": "140cm x 70cm",
-          "Màu sắc": "Nâu gỗ tự nhiên",
-          "Chất liệu": "Gỗ sồi tự nhiên",
-        },
-        available: true,
-        stock: 8,
-        priceAdjustment: 500000,
-      },
-      {
-        id: 4,
-        name: "Trung - Trắng - Gỗ sồi",
-        attributes: {
-          "Kích thước": "120cm x 60cm",
-          "Màu sắc": "Trắng",
-          "Chất liệu": "Gỗ sồi tự nhiên",
-        },
-        available: true,
-        stock: 12,
-        priceAdjustment: 200000,
-      },
-      {
-        id: 5,
-        name: "Trung - Đen - Gỗ sồi",
-        attributes: {
-          "Kích thước": "120cm x 60cm",
-          "Màu sắc": "Đen",
-          "Chất liệu": "Gỗ sồi tự nhiên",
-        },
-        available: true,
-        stock: 7,
-        priceAdjustment: 200000,
-      },
-      {
-        id: 6,
-        name: "Trung - Nâu - Gỗ công nghiệp",
-        attributes: {
-          "Kích thước": "120cm x 60cm",
-          "Màu sắc": "Nâu gỗ tự nhiên",
-          "Chất liệu": "Gỗ công nghiệp",
-        },
-        available: true,
-        stock: 20,
-        priceAdjustment: -500000,
-      },
-      {
-        id: 7,
-        name: "Lớn - Trắng - Gỗ sồi",
-        attributes: {
-          "Kích thước": "140cm x 70cm",
-          "Màu sắc": "Trắng",
-          "Chất liệu": "Gỗ sồi tự nhiên",
-        },
-        available: false,
-        stock: 0,
-        priceAdjustment: 700000,
-      },
-    ],
-    specifications: {
-      material: "Gỗ sồi tự nhiên",
-      dimensions: "120cm x 60cm x 75cm (DxRxC)",
-      weight: "25kg",
-      color: "Nâu gỗ tự nhiên",
-      warranty: "24 tháng",
-    },
-    rating: 4.5,
-    reviewCount: 127,
-  };
+  const displayName = data.name ?? data.title ?? `Sản phẩm #${data.id}`;
+  const firstImage =
+    (Array.isArray(data.images) && data.images.length > 0 && data.images[0]) ||
+    data.image_url ||
+    "";
 
-  return <ProductDetail product={mockProduct} />;
+  return (
+    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="w-full">
+        {firstImage ? (
+          <img
+            src={firstImage}
+            alt={displayName}
+            className="w-full h-auto rounded-lg border"
+          />
+        ) : (
+          <div className="w-full aspect-video rounded-lg border grid place-items-center text-gray-500">
+            Chưa có ảnh
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h1 className="text-2xl font-semibold mb-3">{displayName}</h1>
+        <div className="text-gray-600 mb-4">
+          Mã: <span className="font-mono">{String(data.id)}</span>
+        </div>
+
+        {typeof data.price !== "undefined" && (
+          <div className="text-xl font-bold mb-4">
+            {new Intl.NumberFormat("vi-VN").format(Number(data.price))} ₫
+          </div>
+        )}
+
+        {data.description && (
+          <p className="text-gray-700 leading-relaxed mb-6">
+            {data.description}
+          </p>
+        )}
+
+        {data.category?.name && (
+          <div className="text-sm text-gray-500 mb-6">
+            Danh mục: {data.category.name}
+          </div>
+        )}
+
+        {/* Tạm thời đặt nút, sẽ nối cart sau */}
+        <div className="flex gap-3">
+          <button className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+            Thêm vào giỏ
+          </button>
+          <button className="px-4 py-2 rounded border hover:bg-gray-50">
+            Mua ngay
+          </button>
+        </div>
+
+        {/* Debug nhanh: hiện toàn bộ JSON để đối chiếu schema backend */}
+        <pre className="mt-8 text-xs bg-gray-50 p-3 rounded border overflow-x-auto">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      </div>
+    </div>
+  );
 }

@@ -1,89 +1,110 @@
-from datetime import datetime, timedelta
-from typing import Any, Dict
+# app/core/security.py
+from __future__ import annotations
 
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from pydantic import BaseModel, ValidationError
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Literal, TypedDict, Dict
+
 from fastapi import HTTPException, status
-
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from passlib.hash import argon2
 
-from app.core.config import settings
+from app.core import config
+
+# ----- OAuth2 password flow (Swagger "Authorize") -----
+# trùng đúng đường dẫn login của bạn: /api/auth/login
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{config.settings.api_prefix}/auth/login",
+    auto_error=False,   # để mình tự raise lỗi có thông điệp rõ ràng
+)
+
+# ----- JWT config -----
+ALGORITHM: str = "HS256"
+SECRET_KEY: str = config.settings.jwt_secret_key  # ENV: JWT_SECRET_KEY
+
+# TTL (đọc từ .env nếu có, fallback mặc định)
+ACCESS_EXPIRES_MIN: int = getattr(config.settings, "access_token_expire_minutes", 60)
+REFRESH_EXPIRES_DAYS: int = getattr(config.settings, "refresh_token_expire_days", 7)
 
 
-# use argon2 to avoid bcrypt 72-byte limit issues
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_prefix}/auth/login")
-
-
-class TokenPayload(BaseModel):
+class TokenPayload(TypedDict, total=False):
     sub: str
-    exp: datetime
-    type: str = "access"
-    roles: list[str] = []
+    type: Literal["access", "refresh"]
+    exp: int
 
 
-def create_token(
-    subject: str,
-    expires_delta: timedelta,
-    secret_key: str,
-    token_type: str,
-    extra_claims: Dict[str, Any] | None = None,
-) -> str:
-    to_encode: Dict[str, Any] = {
-        "exp": datetime.utcnow() + expires_delta,
-        "sub": str(subject),
-        "type": token_type,
-    }
-    if extra_claims:
-        to_encode.update(extra_claims)
-    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=settings.jwt_algorithm)
-    return encoded_jwt
+# =========================
+# Password hashing
+# =========================
+def get_password_hash(raw: str) -> str:
+    return argon2.hash(raw)
 
 
-def create_access_token(subject: str, roles: list[str] | None = None) -> str:
-    expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
-    return create_token(
-        subject=subject,
-        expires_delta=expires_delta,
-        secret_key=settings.jwt_secret_key,
-        token_type="access",
-        extra_claims={"roles": roles or []},
-    )
-
-
-def create_refresh_token(subject: str) -> str:
-    expires_delta = timedelta(minutes=settings.refresh_token_expire_minutes)
-    return create_token(
-        subject=subject,
-        expires_delta=expires_delta,
-        secret_key=settings.jwt_refresh_secret_key,
-        token_type="refresh",
-    )
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
-
-
-def decode_token(token: str, is_refresh: bool = False) -> TokenPayload:
-    secret = settings.jwt_refresh_secret_key if is_refresh else settings.jwt_secret_key
+def verify_password(raw: str, hashed: str) -> bool:
     try:
-        payload = jwt.decode(token, secret, algorithms=[settings.jwt_algorithm])
-        token_data = TokenPayload(**payload)
-    except (JWTError, ValidationError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-        ) from exc
-    token_type = payload.get("type")
-    if is_refresh and token_type != "refresh":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
-    if not is_refresh and token_type != "access":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
-    return token_data
+        return argon2.verify(raw, hashed)
+    except Exception:
+        return False
+
+
+# =========================
+# JWT helpers
+# =========================
+def _encode(payload: Dict, expires_delta: timedelta) -> str:
+    to_encode = payload.copy()
+    expire = datetime.now(timezone.utc) + expires_delta
+    # jose hỗ trợ datetime UTC trực tiếp cho "exp"
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_access_token(user_id: int) -> str:
+    return _encode({"sub": str(user_id), "type": "access"},
+                   timedelta(minutes=ACCESS_EXPIRES_MIN))
+
+
+def create_refresh_token(user_id: int) -> str:
+    return _encode({"sub": str(user_id), "type": "refresh"},
+                   timedelta(days=REFRESH_EXPIRES_DAYS))
+
+
+def create_access_token_pair(user_id: int) -> Dict[str, str]:
+    """
+    Trả về cặp JWT chuẩn cho client (access + refresh).
+    """
+    return {
+        "access_token": create_access_token(user_id),
+        "refresh_token": create_refresh_token(user_id),
+        "token_type": "bearer",
+    }
+
+
+def decode_token(
+    token: str,
+    *,
+    expected_type: Optional[Literal["access", "refresh"]] = "access",
+) -> TokenPayload:
+    # Mặc định 401 theo chuẩn OAuth2
+    cred_exc = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        # chữ ký sai / token hỏng / hết hạn
+        raise cred_exc
+
+    sub = payload.get("sub")
+    if not isinstance(sub, str) or not sub.isdigit():
+        # sub phải là user_id dạng chuỗi số
+        raise cred_exc
+
+    tok_type = payload.get("type")
+    if expected_type and tok_type != expected_type:
+        # ví dụ cố dùng refresh token để gọi API protected
+        raise cred_exc
+
+    return {"sub": sub, "type": tok_type}
