@@ -1,32 +1,44 @@
 from __future__ import annotations
 
-from fastapi import Depends
-from fastapi.responses import RedirectResponse
+from fastapi import Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-
-from app.core.database import get_db
-from app.users import schemas, services
+from starlette import status
 
 from . import router
+from app.core.database import get_db
+from app.users import services
+from app.core.security import create_access_token_pair
 
 
-@router.get("/auth/google/callback")
-async def google_oauth_callback(code: str, db: Session = Depends(get_db)):
+@router.get("/auth/google/callback")  # không đặt response_model để khỏi vướng validate
+def google_oauth_callback(
+    code: str = Query(..., description="Google auth code"),
+    db: Session = Depends(get_db),
+):
     """
-    Google OAuth callback endpoint.
-    Redirects to frontend with tokens in URL hash.
+    Nhận code từ Google, tạo/đăng nhập user và trả về:
+    {
+      "user": <UserRead>,
+      "access_token": "...",
+      "refresh_token": "...",
+      "token_type": "bearer"
+    }
     """
-    user, created = await services.exchange_google_code(db, code)
-    token_pair = services.issue_token_pair(user)
-    
-    # Redirect to frontend with tokens in URL hash
-    frontend_url = "http://localhost:5173"
-    redirect_url = (
-        f"{frontend_url}/auth/callback"
-        f"#access_token={token_pair.access_token}"
-        f"&refresh_token={token_pair.refresh_token}"
-        f"&token_type=bearer"
-        f"&is_new_user={str(created).lower()}"
-    )
-    
-    return RedirectResponse(url=redirect_url)
+    try:
+        user = services.exchange_google_code(db, code)  # hàm của bạn: lấy info Google & upsert user
+    except Exception as e:  # lỗi khi đổi code lấy token/userinfo
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Google OAuth exchange failed: {e}",
+        ) from e
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not resolve Google account",
+        )
+
+    tokens = create_access_token_pair(user.id)
+    user_read = services.to_user_read(user).model_dump()
+
+    return {"user": user_read, **tokens}

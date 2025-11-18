@@ -15,6 +15,8 @@ from . import (
     create_role,
     list_roles,
     create_address,
+    permissions,
+    permissions_dynamic,
 )  # noqa: E402,F401
 
 __all__ = ["router"]

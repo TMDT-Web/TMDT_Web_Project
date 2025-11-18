@@ -1,55 +1,23 @@
-// API client configuration
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from "axios";
 
-class ApiClient {
-  private baseUrl: string;
+// BASE_URL: giống backend /api
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
 
-  constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
+export const api: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
+});
+
+// Lấy token từ localStorage nếu có (đồng bộ với AuthContext)
+try {
+  const raw = localStorage.getItem("auth_tokens");
+  if (raw) {
+    const { access_token } = JSON.parse(raw) as { access_token: string };
+    if (access_token) api.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
   }
-
-  private async request<T>(
-    endpoint: string,
-    options?: RequestInit
-  ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
-    }
-
-    return response.json();
-  }
-
-  async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: "GET" });
-  }
-
-  async post<T>(endpoint: string, data: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  }
-
-  async patch<T>(endpoint: string, data: unknown): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  }
-
-  async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: "DELETE" });
-  }
+} catch {
+  // ignore
 }
 
-export const api = new ApiClient(API_BASE_URL);
+// Bạn vẫn có thể export thêm helpers nếu cần
+export type { AxiosRequestConfig, AxiosResponse };

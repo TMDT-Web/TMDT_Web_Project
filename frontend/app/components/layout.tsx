@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
+import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const location = useLocation();
-
+  const { user, logout, hasRole } = useAuth();
   // Ẩn carousel khi vào trang chi tiết sản phẩm
   const hideCarousel = location.pathname.startsWith("/products/");
 
@@ -76,24 +77,52 @@ export default function Layout() {
             />
           </div>
 
-          {/* Giỏ hàng + nút */}
-          <div className="flex items-center gap-4">
-            <button className="relative">
-              🛒
-              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full px-1.5">
-                0
-              </span>
-            </button>
-            <Link to="/auth/login" className="text-sm font-medium">
-              Đăng nhập
-            </Link>
-            <Link
-              to="/auth/register"
-              className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold"
-            >
-              Đăng ký
-            </Link>
-          </div>
+          {/* Giỏ hàng + Auth */}
+            <div className="flex items-center gap-4">
+              <button className="relative">
+                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full px-1.5">
+                  0
+                </span>
+              </button>
+
+              {user ? (
+                <>
+                  {/* Hiển thị tên/email + link admin nếu có quyền */}
+                  <span className="text-sm text-gray-700">
+                    Hi, {user.full_name || user.email}
+                  </span>
+
+                  {hasRole("admin", "root") && (
+                    <Link
+                      to="/admin/dashboard"
+                      className="text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      Admin
+                    </Link>
+                  )}
+
+                  <button
+                    onClick={logout}
+                    className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+                  >
+                    Đăng xuất
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth/login" className="text-sm font-medium">
+                    Đăng nhập
+                  </Link>
+                  <Link
+                    to="/auth/register"
+                    className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold"
+                  >
+                    Đăng ký
+                  </Link>
+                </>
+              )}
+            </div>
+
         </div>
 
         {/* Menu danh mục */}

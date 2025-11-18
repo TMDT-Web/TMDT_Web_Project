@@ -1,16 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { getCategories, getProducts } from "../lib/products";
-import type { Category, ProductListItem } from "../lib/types";
-import type { Route } from "./+types/home";
+import { getProducts, getCategories } from "~/lib/products";
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Nội Thất 24h - Trang chủ" },
-    { name: "description", content: "Mua sắm nội thất chất lượng, giá tốt" },
-  ];
-}
-
+// app/routes/home.tsx
 export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 8;

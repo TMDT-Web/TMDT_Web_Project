@@ -6,13 +6,15 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { StrictMode } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import type { Route } from "./+types/root";
+import { AuthProvider } from "./context/AuthContext";
 import "./app.css";
 
-export const links: Route.LinksFunction = () => [
+// Không phụ thuộc +types/*
+export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -27,7 +29,7 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="vi" className="h-full">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -45,31 +47,43 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <StrictMode>
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    </StrictMode>
+  );
 }
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+// Error boundary gọn gàng, không phụ thuộc +types/*
+export function ErrorBoundary({ error }: { error: unknown }) {
+  let title = "Đã có lỗi xảy ra";
+  let details = "Một lỗi không mong muốn đã xảy ra.";
   let stack: string | undefined;
 
-  if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+  if (isRouteErrorResponse(error as any)) {
+    const err = error as any;
+    title = err.status === 404 ? "Không tìm thấy trang (404)" : `Lỗi ${err.status}`;
     details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+      err.status === 404
+        ? "Trang bạn yêu cầu không tồn tại."
+        : err.statusText || details;
+  } else if (error instanceof Error) {
+    // Chỉ hiện chi tiết trong DEV
+    if (import.meta.env?.DEV) {
+      title = "Lỗi ứng dụng";
+      details = error.message || details;
+      stack = error.stack;
+    }
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main className="container mx-auto max-w-3xl px-4 py-12">
+      <h1 className="text-2xl font-semibold mb-2">{title}</h1>
+      <p className="text-gray-700">{details}</p>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <pre className="mt-4 w-full overflow-x-auto rounded bg-gray-900 p-4 text-sm text-gray-100">
           <code>{stack}</code>
         </pre>
       )}

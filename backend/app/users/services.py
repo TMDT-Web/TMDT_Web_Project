@@ -1,43 +1,169 @@
+# app/users/services.py
 from __future__ import annotations
+from typing import Iterable, Optional, List, Sequence, Dict
+from secrets import token_urlsafe
 
-import secrets
-from datetime import datetime
-from typing import Iterable, Optional
-
-import httpx
-from fastapi import HTTPException, status
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select, inspect, text, Table, MetaData
 from sqlalchemy.orm import Session
 
-from app.core import config, security
-from app.users import schemas
-from app.users.models import Role, User, UserAddress
-from app.rewards.models import RewardPoint
+from app.users.models import User, Role, Permission
+from app.users.schemas import UserCreate, UserRead, RoleRead
 
+# ---- Compat with app.core.security (JWT) or fallback (dev tokens) ----
+try:
+    # Nếu bạn đã có module này, dùng luôn cho đúng logic cũ
+    from app.core.security import (
+        get_password_hash,
+        verify_password,
+        create_access_token,
+        create_refresh_token,
+    )
+    _SEC_MODE = "core"
+except Exception:
+    # Fallback an toàn để server không sập nếu thiếu core.security
+    from passlib.hash import argon2
 
-def get_user_by_email(db: Session, email: str) -> Optional[User]:
-    return db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    def get_password_hash(raw: str) -> str:
+        return argon2.hash(raw)
 
+    def verify_password(raw: str, hashed: str) -> bool:
+        try:
+            return argon2.verify(raw, hashed)
+        except Exception:
+            return False
 
-def get_user_by_google_id(db: Session, google_id: str) -> Optional[User]:
-    return db.execute(select(User).where(User.google_id == google_id)).scalar_one_or_none()
+    def create_access_token(user_id: int) -> str:
+        return token_urlsafe(32)
 
+    def create_refresh_token(user_id: int) -> str:
+        return token_urlsafe(32)
 
-def create_user(db: Session, payload: schemas.UserCreate, default_roles: Iterable[str] | None = None) -> User:
-    if get_user_by_email(db, payload.email):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+    _SEC_MODE = "fallback"
 
-    # guard against edge cases where encoded length slips past schema validation
-    if len(payload.password.encode("utf-8")) > 72:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at most 72 bytes when encoded as UTF-8.",
-        )
+# =========================
+# Permission catalog (idempotent)
+# =========================
+_PERMISSION_CATALOG = [
+    ("admin.dashboard.view",        "Xem Dashboard quản trị"),
+    ("admin.users.read",            "Xem danh sách người dùng"),
+    ("admin.users.update",          "Cập nhật người dùng"),
+    ("admin.roles.read",            "Xem vai trò"),
+    ("admin.roles.update",          "Cập nhật vai trò người dùng"),
+    ("admin.permissions.override",  "Ghi đè quyền người dùng"),
+]
+
+# =========================
+# Role helpers
+# =========================
+def _get_role_by_name(db: Session, name: str) -> Optional[Role]:
+    name = (name or "").strip().lower()
+    return db.execute(select(Role).where(Role.name == name)).scalar_one_or_none()
+
+def _ensure_role(db: Session, name: str, description: str) -> Role:
+    r = _get_role_by_name(db, name)
+    if r:
+        return r
+    r = Role(name=name, description=description, is_system=True)
+    db.add(r)
+    db.flush()
+    return r
+
+def ensure_system_roles(db: Session) -> None:
+    _ensure_role(db, "admin", "System administrator")
+    _ensure_role(db, "manager", "Business manager")
+    _ensure_role(db, "customer", "Customer")
+    db.commit()
+
+# =========================
+# Permissions seeding / repair (idempotent, no-op if tables missing)
+# =========================
+def ensure_permissions_catalog(db: Session) -> None:
+    engine = db.get_bind()
+    insp = inspect(engine)
+    if not insp.has_table("permissions"):
+        return
+
+    existing_codes = {code for (code,) in db.query(Permission.code).all()}
+    created = False
+    for code, name in _PERMISSION_CATALOG:
+        if code not in existing_codes:
+            db.add(Permission(code=code, name=name, is_system=True))
+            created = True
+    if created:
+        db.commit()
+
+def ensure_permissions_have_names(db: Session) -> None:
+    engine = db.get_bind()
+    insp = inspect(engine)
+    if not insp.has_table("permissions"):
+        return
+
+    name_map = {code: name for code, name in _PERMISSION_CATALOG}
+    updated = False
+    perms = db.query(Permission).filter(
+        (Permission.name.is_(None)) | (Permission.name == "")
+    ).all()
+    for p in perms:
+        if p.code in name_map:
+            p.name = name_map[p.code]
+            updated = True
+    if updated:
+        db.commit()
+
+def attach_permissions_to_system_roles(db: Session) -> None:
+    engine = db.get_bind()
+    insp = inspect(engine)
+    for tbl in ("roles", "permissions", "role_permissions"):
+        if not insp.has_table(tbl):
+            return
+
+    role_admin = db.query(Role).filter(Role.name == "admin").first()
+    role_manager = db.query(Role).filter(Role.name == "manager").first()
+    if not role_admin and not role_manager:
+        return
+
+    admin_codes = [code for code, _ in _PERMISSION_CATALOG]
+    manager_codes = ["admin.dashboard.view", "admin.users.read", "admin.roles.read"]
+
+    perm_rows = db.query(Permission.id, Permission.code).all()
+    code_to_id = {code: pid for (pid, code) in perm_rows}
+
+    def _attach(role_id: int, codes: list[str]) -> None:
+        for c in codes:
+            pid = code_to_id.get(c)
+            if not pid:
+                continue
+            db.execute(
+                text("""
+                    INSERT INTO role_permissions(role_id, permission_id)
+                    VALUES (:rid, :pid)
+                    ON CONFLICT ON CONSTRAINT uq_role_permissions_role_perm DO NOTHING
+                """),
+                {"rid": role_id, "pid": pid},
+            )
+
+    if role_admin:
+        _attach(role_admin.id, admin_codes)
+    if role_manager:
+        _attach(role_manager.id, manager_codes)
+    db.commit()
+
+# =========================
+# Users
+# =========================
+def create_user(
+    db: Session,
+    payload: UserCreate,
+    default_roles: Optional[Iterable[str]] = None,
+) -> User:
+    email = payload.email.strip().lower()
+    existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    if existing:
+        raise ValueError("Email đã tồn tại")
 
     user = User(
-        email=payload.email,
-        password_hash=security.get_password_hash(payload.password),
+        email=email,
+        password_hash=get_password_hash(payload.password) if payload.password else None,
         full_name=payload.full_name,
         phone_number=payload.phone_number,
         is_active=True,
@@ -45,192 +171,139 @@ def create_user(db: Session, payload: schemas.UserCreate, default_roles: Iterabl
     db.add(user)
     db.flush()
 
-    if default_roles:
-        assign_roles_by_name(db, user, default_roles)
-
-    ensure_reward_point_account(db, user)
+    for rn in list(default_roles or ["customer"]):
+        r = _get_role_by_name(db, rn)
+        if r:
+            user.roles.append(r)  # type: ignore[attr-defined]
 
     db.commit()
     db.refresh(user)
     return user
-
-
-def ensure_reward_point_account(db: Session, user: User) -> RewardPoint:
-    reward_point = db.execute(
-        select(RewardPoint).where(RewardPoint.user_id == user.id)
-    ).scalar_one_or_none()
-    if not reward_point:
-        reward_point = RewardPoint(user_id=user.id, points=0, tier="standard")
-        db.add(reward_point)
-        db.flush()
-    return reward_point
-
 
 def authenticate_user(db: Session, email: str, password: str) -> User:
-    user = get_user_by_email(db, email)
+    user = db.execute(
+        select(User).where(User.email == (email or "").strip().lower())
+    ).scalar_one_or_none()
     if not user or not user.password_hash:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    if not security.verify_password(password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise ValueError("Sai email hoặc mật khẩu")
+    if not verify_password(password, user.password_hash):
+        raise ValueError("Sai email hoặc mật khẩu")
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is disabled")
+        raise ValueError("Tài khoản đang bị khóa")
     return user
 
-
-def issue_token_pair(user: User) -> schemas.TokenPair:
-    role_names = [role.name for role in user.roles]
-    access_token = security.create_access_token(str(user.id), roles=role_names)
-    refresh_token = security.create_refresh_token(str(user.id))
-    return schemas.TokenPair(access_token=access_token, refresh_token=refresh_token)
-
-
-def assign_roles_by_name(db: Session, user: User, role_names: Iterable[str]) -> None:
-    existing_roles = db.execute(select(Role).where(Role.name.in_(list(role_names)))).scalars().all()
-    missing = set(role_names) - {role.name for role in existing_roles}
-    if missing:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Roles not found: {', '.join(missing)}",
-        )
-    for role in existing_roles:
-        if role not in user.roles:
-            user.roles.append(role)
-    db.flush()
-
-
-def assign_roles_by_ids(db: Session, user: User, role_ids: Iterable[int]) -> None:
-    roles = db.execute(select(Role).where(Role.id.in_(list(role_ids)))).scalars().all()
-    if len(roles) != len(set(role_ids)):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="One or more roles not found")
-    user.roles = roles
-    db.flush()
-
-
-def create_role(db: Session, payload: schemas.RoleCreate) -> Role:
-    role = Role(name=payload.name, description=payload.description, is_system=payload.is_system)
-    db.add(role)
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role already exists") from exc
-    db.refresh(role)
-    return role
-
-
-def ensure_system_roles(db: Session) -> None:
-    default_roles = [
-        ("root", "Super administrator with full access", True),
-        ("admin", "Administrator with management privileges", True),
-        ("staff", "Staff user with restricted permissions", False),
-        ("customer", "Default role for customers", False),
-    ]
-    for name, description, is_system in default_roles:
-        if not db.execute(select(Role).where(Role.name == name)).scalar_one_or_none():
-            db.add(Role(name=name, description=description, is_system=is_system))
-    db.commit()
-
-
-async def init_google_oauth(state: Optional[str] = None) -> schemas.GoogleAuthInitResponse:
-    if not config.settings.google_client_id or not config.settings.google_redirect_uri:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google OAuth not configured")
-    generated_state = state or secrets.token_urlsafe(16)
-    params = {
-        "client_id": config.settings.google_client_id,
-        "redirect_uri": str(config.settings.google_redirect_uri),
-        "response_type": "code",
-        "scope": "openid email profile",
-        "state": generated_state,
-        "access_type": "offline",
-        "prompt": "select_account",
+# =========================
+# Token
+# =========================
+def issue_token_pair(user: User) -> dict:
+    """
+    Nếu có app.core.security -> phát hành JWT (access + refresh).
+    Nếu không, fallback token ngẫu nhiên để không chặn luồng dev.
+    """
+    access = create_access_token(user.id)
+    refresh = create_refresh_token(user.id)
+    return {
+        "access_token": access,
+        "refresh_token": refresh,
+        "token_type": "bearer",
     }
-    query = str(httpx.QueryParams(params))
-    authorization_url = f"https://accounts.google.com/o/oauth2/v2/auth?{query}"
-    return schemas.GoogleAuthInitResponse(authorization_url=authorization_url, state=generated_state)
 
+# =========================
+# Permissions compute (works even if some tables are missing)
+# =========================
+def compute_user_permission_map(db: Session, user: User) -> Dict[str, dict]:
+    engine = db.get_bind()
+    insp = inspect(engine)
+    existing = set(insp.get_table_names())
+    if "permissions" not in existing:
+        return {}
 
-async def exchange_google_code(db: Session, code: str) -> tuple[User, bool]:
-    if not (
-        config.settings.google_client_id
-        and config.settings.google_client_secret
-        and config.settings.google_redirect_uri
-    ):
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google OAuth not configured")
+    # reflect only what exists
+    meta = MetaData()
+    meta.reflect(bind=engine, only=[t for t in ["permissions", "role_permissions", "user_permissions"] if t in existing])
+    perm_tbl: Table = meta.tables["permissions"]
 
-    token_endpoint = "https://oauth2.googleapis.com/token"
-    userinfo_endpoint = "https://openidconnect.googleapis.com/v1/userinfo"
+    result: Dict[str, dict] = {c: {"allowed": False, "source": "role"} for (c,) in db.execute(select(perm_tbl.c.code)).fetchall()}
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        token_response = await client.post(
-            token_endpoint,
-            data={
-                "code": code,
-                "client_id": config.settings.google_client_id,
-                "client_secret": config.settings.google_client_secret,
-                "redirect_uri": str(config.settings.google_redirect_uri),
-                "grant_type": "authorization_code",
-            },
-        )
-        token_response.raise_for_status()
-        token_data = token_response.json()
+    if "role_permissions" in meta.tables:
+        rp = meta.tables["role_permissions"]
+        rows = db.execute(
+            text("""
+                SELECT p.code
+                FROM role_permissions rp
+                JOIN permissions p ON p.id = rp.permission_id
+                WHERE rp.role_id = ANY(:rids)
+            """),
+            {"rids": [r.id for r in (user.roles or [])]},  # type: ignore[attr-defined]
+        ).fetchall()
+        for (code,) in rows:
+            if code in result:
+                result[code] = {"allowed": True, "source": "role"}
 
-        access_token = token_data.get("access_token")
-        if not access_token:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google token exchange failed")
+    if "user_permissions" in meta.tables:
+        rows = db.execute(
+            text("""
+                SELECT p.code
+                FROM user_permissions up
+                JOIN permissions p ON p.id = up.permission_id
+                WHERE up.user_id = :uid
+            """),
+            {"uid": user.id},
+        ).fetchall()
+        for (code,) in rows:
+            result[code] = {"allowed": True, "source": "override-allow"}
 
-        userinfo_response = await client.get(
-            userinfo_endpoint,
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
-        userinfo_response.raise_for_status()
-        userinfo = userinfo_response.json()
+    return result
 
-    google_id = userinfo.get("sub")
-    email = userinfo.get("email")
-    full_name = userinfo.get("name")
-
-    if not google_id or not email:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google profile incomplete")
-
-    user = get_user_by_google_id(db, google_id)
-    created = False
+# =========================
+# User ↔ Permissions (helpers cho phân quyền động theo user)
+# =========================
+def get_user_permissions(db: Session, user_id: int) -> List[Permission]:
+    """
+    Trả về list Permission của user (ghép theo quan hệ many-to-many user.permissions).
+    Nếu không tồn tại user => trả list rỗng.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        user = get_user_by_email(db, email)
-        if user:
-            user.google_id = google_id
-        else:
-            user = User(
-                email=email,
-                full_name=full_name,
-                google_id=google_id,
-                is_active=True,
-            )
-            db.add(user)
-            db.flush()
-            assign_roles_by_name(db, user, ["customer"])
-            ensure_reward_point_account(db, user)
-            created = True
-    db.commit()
-    db.refresh(user)
-    return user, created
+        return []
+    return list(user.permissions or [])  # type: ignore[attr-defined]
 
+def get_user_permission_ids(db: Session, user_id: int) -> List[int]:
+    """
+    Trả về danh sách permission_id đang gán trực tiếp cho user.
+    (Không tính quyền từ role; nếu bạn muốn tính cả role thì gọi compute_user_permission_map)
+    """
+    return [p.id for p in get_user_permissions(db, user_id)]
 
-def create_address(db: Session, user: User, payload: schemas.UserAddressCreate) -> UserAddress:
-    if payload.is_default:
-        db.query(UserAddress).filter(UserAddress.user_id == user.id).update({"is_default": False})
-    address = UserAddress(
-        user_id=user.id,
-        label=payload.label,
-        recipient_name=payload.recipient_name,
-        recipient_phone=payload.recipient_phone,
-        address_line=payload.address_line,
-        ward=payload.ward,
-        district=payload.district,
-        city=payload.city,
-        country=payload.country,
-        is_default=payload.is_default,
+def set_user_permission_ids(db: Session, user_id: int, permission_ids: List[int]) -> None:
+    """
+    Ghi đè (replace) danh sách permission trực tiếp của user = permission_ids.
+    Yêu cầu: model User có quan hệ many-to-many `permissions`.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return
+    target_perms = (
+        db.query(Permission)
+        .filter(Permission.id.in_(permission_ids or []))
+        .all()
     )
-    db.add(address)
+    user.permissions = target_perms  # type: ignore[attr-defined]
+    db.add(user)
     db.commit()
-    db.refresh(address)
-    return address
+
+# =========================
+# Mappers
+# =========================
+def to_user_read(user: User) -> UserRead:
+    roles = [RoleRead.model_validate(r) for r in (user.roles or [])]  # type: ignore[attr-defined]
+    return UserRead.model_validate(
+        {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "phone_number": user.phone_number,
+            "is_active": user.is_active,
+            "roles": roles,
+        }
+    )

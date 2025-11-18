@@ -10,7 +10,7 @@ from app.users.models import User
 from . import router
 
 
-@router.get("/users/{user_id}", response_model=schemas.UserRead)
+@router.get("/users/{user_id:int}", response_model=schemas.UserRead)
 def get_user_detail(
     user_id: int,
     db: Session = Depends(get_db),
