@@ -1,6 +1,5 @@
 // app/routes.ts
-import { type RouteConfig, layout, route, index } from "@react-router/dev/routes";
-import AdminLayout from "./admin/components/AdminLayout";
+import { type RouteConfig, layout, route, index, prefix } from "@react-router/dev/routes";
 
 const userRoutes = [
     layout('./components/MainLayout.tsx', [
@@ -14,29 +13,31 @@ const userRoutes = [
       route("/checkout", "./pages/checkout.tsx"),
       route("/account", "./pages/account.tsx"),
     ]),
-    route('/auth/login', './pages/login.tsx'),
-    route('/auth/register', './pages/register.tsx'),
-    route('/auth/callback', './pages/GoogleCallback.tsx'),
+    ...prefix('auth',[
+      route('/login', './pages/login.tsx'),
+      route('/register', './pages/register.tsx'),
+      route('/callback', './pages/GoogleCallback.tsx'),
+    ]),
     route('*', './pages/NotFound.tsx')
 ];
 
 const adminRoutes = [
-    // ===== ADMIN =====
-  route("/admin/login", "./admin/pages/AdminLogin.tsx"),
-  layout("./admin/components/AdminLayout.tsx", [
-    // KHÔNG dùng Dashboard.tsx 2 lần. /admin dùng alias AdminIndex.tsx
-    route("/admin", "./admin/pages/AdminIndex.tsx"),
-    route("/admin/dashboard", "./admin/pages/Dashboard.tsx"),
-    route("/admin/users", "./admin/pages/User.tsx"),
-    route("/admin/products", "./admin/pages/Product.tsx"),
-    route("/admin/categories", "./admin/pages/Category.tsx"),
-    route("/admin/orders", "./admin/pages/Order.tsx"),
-    route("/admin/roles", "./admin/pages/Role.tsx"),
-    route("/admin/suppliers", "./admin/pages/Supplier.tsx"),
-    route("/admin/warranty", "./admin/pages/Warranty.tsx"),
-    route("/admin/import", "./admin/pages/Import.tsx"),
-    route("/admin/statistical", "./admin/pages/Statistical.tsx"),
-  ]),
+    ...prefix('admin',[
+      route("/login", "./admin/pages/AdminLogin.tsx"),
+      layout("./admin/components/AdminLayout.tsx", [
+        index("./admin/pages/AdminIndex.tsx"),
+        route("/dashboard", "./admin/pages/Dashboard.tsx"),
+        route("/users", "./admin/pages/User.tsx"),
+        route("/products", "./admin/pages/Product.tsx"),
+        route("/categories", "./admin/pages/Category.tsx"),
+        route("/orders", "./admin/pages/Order.tsx"),
+        route("/roles", "./admin/pages/Role.tsx"),
+        route("/suppliers", "./admin/pages/Supplier.tsx"),
+        route("/warranty", "./admin/pages/Warranty.tsx"),
+        route("/import", "./admin/pages/Import.tsx"),
+        route("/statistical", "./admin/pages/Statistical.tsx"),
+      ])
+    ])
 ];
 
 export default [...userRoutes, ...adminRoutes] satisfies RouteConfig;
