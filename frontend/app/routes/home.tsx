@@ -7,6 +7,11 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 8;
 
+  // Set page title
+  useEffect(() => {
+    document.title = "FurniHub - Trang chủ";
+  }, []);
+
   // TODO: Thay thế bằng AuthContext thực tế khi có
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 

@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "react-toastify";
-import { getCurrentUser, getAccessToken, updateCurrentUser, clearTokens, isAuthenticated } from "../lib/auth";
+import {
+  getCurrentUser,
+  getAccessToken,
+  updateCurrentUser,
+  clearTokens,
+  isAuthenticated,
+} from "../lib/auth";
 import { getOrders } from "../lib/orders";
 
 export default function Account() {
@@ -13,8 +19,12 @@ export default function Account() {
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      toast.error("Vui lòng đăng nhập");
-      navigate("/auth/login");
+      toast.error("Vui lòng đăng nhập", {
+        toastId: "login-required",
+      });
+      // Dùng replace để THAY THẾ history thay vì thêm mới
+      // Ngăn user quay lại trang account khi chưa login
+      navigate("/auth/login", { replace: true });
       return;
     }
 
@@ -82,7 +92,9 @@ export default function Account() {
                     {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
                   </span>
                 </div>
-                <h3 className="font-semibold text-gray-900">{user?.full_name}</h3>
+                <h3 className="font-semibold text-gray-900">
+                  {user?.full_name}
+                </h3>
                 <p className="text-sm text-gray-600">{user?.email}</p>
               </div>
 
@@ -162,7 +174,13 @@ export default function Account() {
                     </label>
                     <input
                       type="text"
-                      value={user?.created_at ? new Date(user.created_at).toLocaleDateString("vi-VN") : ""}
+                      value={
+                        user?.created_at
+                          ? new Date(user.created_at).toLocaleDateString(
+                              "vi-VN"
+                            )
+                          : ""
+                      }
                       readOnly
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
                     />
@@ -192,7 +210,9 @@ export default function Account() {
                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    <p className="text-gray-600 mb-4">Bạn chưa có đơn hàng nào</p>
+                    <p className="text-gray-600 mb-4">
+                      Bạn chưa có đơn hàng nào
+                    </p>
                     <Link to="/products" className="btn-primary inline-block">
                       Mua sắm ngay
                     </Link>
@@ -211,15 +231,22 @@ export default function Account() {
                               Đơn hàng #{order.id}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {new Date(order.created_at).toLocaleDateString("vi-VN")}
+                              {new Date(order.created_at).toLocaleDateString(
+                                "vi-VN"
+                              )}
                             </p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            order.status === "completed" ? "bg-green-100 text-green-800" :
-                            order.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                            order.status === "cancelled" ? "bg-red-100 text-red-800" :
-                            "bg-gray-100 text-gray-800"
-                          }`}>
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              order.status === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : order.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : order.status === "cancelled"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
                             {order.status}
                           </span>
                         </div>
