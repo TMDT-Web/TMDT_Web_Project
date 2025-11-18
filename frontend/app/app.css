@@ -71,4 +71,4 @@
   .divider-luxury {
     @apply h-px bg-gradient-to-r from-transparent via-[rgb(var(--color-secondary))] to-transparent my-8;
   }
-}
+} 

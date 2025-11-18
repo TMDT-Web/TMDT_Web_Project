@@ -11,7 +11,7 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [priceRange, setPriceRange] = useState<string>('all');
   
-  const productsPerPage = 12;
+  const productsPerPage = 15;
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -32,6 +32,31 @@ export default function ProductsPage() {
     fetchProducts();
   }, [currentPage]);
 
+  const mockProducts: ProductListItem[] = [
+    { id: 1, name: 'Nordic Oak Desk', price: 2490000, main_image: null, stock_quantity: 12, is_active: true },
+    { id: 2, name: 'Minimalist Sofa', price: 7590000, main_image: null, stock_quantity: 5, is_active: true },
+    { id: 3, name: 'Ergonomic Chair', price: 1990000, main_image: null, stock_quantity: 20, is_active: true },
+    { id: 4, name: 'Wooden Dining Table', price: 4590000, main_image: null, stock_quantity: 3, is_active: true },
+    { id: 5, name: 'Lux Pendant Light', price: 1290000, main_image: null, stock_quantity: 8, is_active: true },
+    { id: 6, name: 'Vintage Sideboard', price: 8990000, main_image: null, stock_quantity: 2, is_active: true },
+    { id: 7, name: 'Cozy Armchair', price: 3190000, main_image: null, stock_quantity: 0, is_active: true },
+    { id: 8, name: 'Extendable Coffee Table', price: 1890000, main_image: null, stock_quantity: 6, is_active: true },
+    { id: 9, name: 'Decorative Rug', price: 590000, main_image: null, stock_quantity: 15, is_active: true },
+    { id: 10, name: 'Bookshelf Classic', price: 1290000, main_image: null, stock_quantity: 4, is_active: true },
+    { id: 11, name: 'Bar Stool Set', price: 890000, main_image: null, stock_quantity: 9, is_active: true },
+    { id: 12, name: 'Outdoor Bench', price: 1690000, main_image: null, stock_quantity: 7, is_active: true },
+    { id: 13, name: 'TV Console', price: 2390000, main_image: null, stock_quantity: 1, is_active: true },
+    { id: 14, name: 'Accent Lamp', price: 450000, main_image: null, stock_quantity: 14, is_active: true },
+    { id: 15, name: 'Outdoor Lantern', price: 350000, main_image: null, stock_quantity: 11, is_active: true },
+    { id: 16, name: 'Folding Desk', price: 990000, main_image: null, stock_quantity: 6, is_active: true },
+    { id: 17, name: 'Storage Ottoman', price: 670000, main_image: null, stock_quantity: 0, is_active: true },
+    { id: 18, name: 'Accent Mirror', price: 420000, main_image: null, stock_quantity: 8, is_active: true },
+    { id: 19, name: 'Planter Pot Set', price: 220000, main_image: null, stock_quantity: 20, is_active: true },
+    { id: 20, name: 'Side Table Marble', price: 1490000, main_image: null, stock_quantity: 5, is_active: true },
+  ];
+
+  const displayedProducts = products.length > 0 ? products : mockProducts;
+
   const categories = [
     "All Products",
     "Living Room",
@@ -50,7 +75,15 @@ export default function ProductsPage() {
     { value: 'over-10m', label: 'Over ₫10,000,000' }
   ];
 
-  const totalPages = Math.ceil(totalProducts / productsPerPage);
+  // Determine how many products we are showing (backend total when available, otherwise mock/displayed count)
+  const displayedCount = products.length > 0 ? totalProducts : (displayedProducts ? displayedProducts.length : 0);
+  const totalPages = Math.ceil(displayedCount / productsPerPage);
+  const showPagination = displayedCount > productsPerPage;
+
+  // slice data for page (works for both backend-paginated items and local mock fallback)
+  const startIndex = (currentPage - 1) * productsPerPage;
+  const endIndex = startIndex + productsPerPage;
+  const pagedProducts = displayedProducts.slice(startIndex, endIndex);
 
   return (
     <div className="min-h-screen">
@@ -64,7 +97,7 @@ export default function ProductsPage() {
             <p className="text-sm tracking-[0.3em] uppercase mb-4 text-[rgb(var(--color-accent))]">
               Discover Excellence
             </p>
-            <h1 className="text-5xl md:text-7xl font-light">Our Collection</h1>
+            <h1 className="text-5xl md:text-7xl font-light">Our Products</h1>
           </div>
         </div>
       </section>
@@ -125,7 +158,7 @@ export default function ProductsPage() {
 
           {/* Products Grid */}
           <div className="lg:col-span-3">
-            {loading ? (
+              {loading ? (
               <div className="text-center py-20">
                 <div className="inline-block w-12 h-12 border-4 border-[rgb(var(--color-secondary))] border-t-transparent rounded-full animate-spin"></div>
                 <p className="mt-4 text-[rgb(var(--color-text-muted))]">Loading products...</p>
@@ -133,7 +166,7 @@ export default function ProductsPage() {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {products.map((product) => (
+                  {pagedProducts.map((product) => (
                     <Link
                       key={product.id}
                       to={`/products/${product.id}`}
@@ -153,7 +186,7 @@ export default function ProductsPage() {
                         )}
                       </div>
                       <p className="text-xs tracking-wider text-[rgb(var(--color-text-muted))] uppercase mb-2">
-                        {product.category?.name || 'Furniture'}
+                        {(product as any).category?.name || 'Furniture'}
                       </p>
                       <h4 className="text-lg mb-2 group-hover:text-[rgb(var(--color-secondary))] transition-colors line-clamp-2">
                         {product.name}
@@ -167,7 +200,7 @@ export default function ProductsPage() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {showPagination && totalPages > 1 && (
                   <div className="flex justify-center items-center gap-2 mt-12">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}

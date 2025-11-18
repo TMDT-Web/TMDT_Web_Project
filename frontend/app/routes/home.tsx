@@ -170,7 +170,7 @@ export default function Home() {
               <Link
                 key={category.id}
                 to={`/danh-muc/${category.slug}`}
-                className="group bg-white hover:bg-gray-50 rounded-xl overflow-hidden text-center transition-all duration-300 hover:shadow-lg border border-gray-200 hover:border-blue-300"
+                className="group bg-white hover:bg-gray-50 rounded-xl overflow-hidden text-center transition-all duration-300 hover:shadow-lg border border-gray-200 hover:border-black hover:rounded-none"
               >
                 <div className="aspect-square overflow-hidden">
                   <img
