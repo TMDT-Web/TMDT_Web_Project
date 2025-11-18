@@ -258,12 +258,15 @@ export default function Layout() {
       )}
 
       {/* Nội dung trang */}
-      <main className="flex-1">
+      <main className="flex-1 bg-white">
         <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100 py-4 text-center text-sm text-gray-500">
+      <footer
+        className="text-white border-t border-white/20"
+        style={{ backgroundColor: "rgb(20, 10, 5)" }}
+      >
         © {new Date().getFullYear()} Nội Thất 24h - Mua sắm thông minh, bán
         hàng dễ dàng.
       </footer>

@@ -23,7 +23,7 @@ export const links = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700&display=swap",
   },
 ];
 
@@ -36,28 +36,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="h-full min-h-screen antialiased bg-gray-50 text-gray-900">
-        <noscript>
-          <div style={{ padding: 16, background: "#fff3cd", color: "#664d03" }}>
-            Ứng dụng cần JavaScript để chạy. Vui lòng bật JavaScript trong trình duyệt.
-          </div>
-        </noscript>
-
-        {children}
-
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
-
+      <body>
+          {children}
+          <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
         <ScrollRestoration />
         <Scripts />
       </body>

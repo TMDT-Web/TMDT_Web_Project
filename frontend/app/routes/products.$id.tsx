@@ -27,7 +27,8 @@ export default function ProductDetailPage() {
         if (!id) throw new Error("Thiếu id sản phẩm");
         // Backend FastAPI của bạn đang mount ở /api, api.get đã tự thêm prefix "/api"
         const res = await api.get<ProductRead>(`/products/${id}`);
-        if (alive) setData(res);
+        const product = (res as any).data ?? (res as any);
+        if (alive) setData(product);
       } catch (err: any) {
         if (alive) setError(err?.message || "Lỗi tải sản phẩm");
       } finally {
