@@ -1,6 +1,7 @@
 // frontend/app/context/AuthContext.tsx
 import * as React from "react";
 import { api } from "~/lib/api";
+import { lsGet, lsSet, lsRemove } from "~/lib/safeLocalStorage";
 
 // ===== Types phản ánh tối thiểu từ backend =====
 type RoleRead = { id: number; name: string };
@@ -77,8 +78,8 @@ function normalizeRoles(u?: UserRead | null) {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<AuthState>(() => {
-    const accessToken = localStorage.getItem(LS.access);
-    const refreshToken = localStorage.getItem(LS.refresh);
+    const accessToken = lsGet(LS.access);
+    const refreshToken = lsGet(LS.refresh);
     return {
       user: null,
       roles: [],
@@ -111,8 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }));
       } catch {
         // token hỏng -> xoá session
-        localStorage.removeItem(LS.access);
-        localStorage.removeItem(LS.refresh);
+        lsRemove(LS.access);
+        lsRemove(LS.refresh);
         setAuthHeader(null);
         setState({
           user: null,
@@ -144,8 +145,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = (res as any).data ?? (res as any);
       const { user, access_token, refresh_token } = data;
 
-      localStorage.setItem(LS.access, access_token);
-      localStorage.setItem(LS.refresh, refresh_token);
+      lsSet(LS.access, access_token);
+      lsSet(LS.refresh, refresh_token);
       setAuthHeader(access_token);
 
       setState({
@@ -160,8 +161,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = React.useCallback(() => {
-    localStorage.removeItem(LS.access);
-    localStorage.removeItem(LS.refresh);
+    lsRemove(LS.access);
+    lsRemove(LS.refresh);
     setAuthHeader(null);
     setState({
       user: null,

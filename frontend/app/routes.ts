@@ -1,5 +1,6 @@
 // app/routes.ts
 import { type RouteConfig, layout, route, index } from "@react-router/dev/routes";
+import AdminLayout from "./admin/components/AdminLayout";
 
 const userRoutes = [
     layout('./components/MainLayout.tsx', [
@@ -38,4 +39,4 @@ const adminRoutes = [
   ]),
 ];
 
-export default [...userRoutes] satisfies RouteConfig;
+export default [...userRoutes, ...adminRoutes] satisfies RouteConfig;

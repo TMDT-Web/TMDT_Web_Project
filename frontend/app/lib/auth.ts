@@ -1,5 +1,6 @@
 // Authentication API functions
 import { api } from "./api";
+import { lsSet, lsGet, lsRemove } from "./safeLocalStorage";
 
 export interface LoginRequest {
   email: string;
@@ -30,17 +31,20 @@ export interface User {
 }
 
 export async function login(credentials: LoginRequest): Promise<TokenPair> {
-  return api.post<TokenPair>("/auth/login", credentials);
+  const res = await api.post<TokenPair>("/auth/login", credentials);
+  return (res as any).data ?? res;
 }
 
 export async function register(data: RegisterRequest): Promise<User> {
-  return api.post<User>("/auth/register", data);
+  const res = await api.post<User>("/auth/register", data);
+  return (res as any).data ?? res;
 }
 
 export async function refreshToken(refreshToken: string): Promise<TokenPair> {
-  return api.post<TokenPair>("/auth/refresh", {
+  const res = await api.post<TokenPair>("/auth/refresh", {
     refresh_token: refreshToken,
   });
+  return (res as any).data ?? res;
 }
 
 export async function getCurrentUser(token: string): Promise<User> {
@@ -86,21 +90,21 @@ export async function updateCurrentUser(
 
 // Token management utilities
 export function saveTokens(tokens: TokenPair) {
-  localStorage.setItem("access_token", tokens.access_token);
-  localStorage.setItem("refresh_token", tokens.refresh_token);
+  lsSet("access_token", tokens.access_token);
+  lsSet("refresh_token", tokens.refresh_token);
 }
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem("access_token");
+  return lsGet("access_token");
 }
 
 export function getRefreshToken(): string | null {
-  return localStorage.getItem("refresh_token");
+  return lsGet("refresh_token");
 }
 
 export function clearTokens() {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
+  lsRemove("access_token");
+  lsRemove("refresh_token");
 }
 
 export function isAuthenticated(): boolean {
