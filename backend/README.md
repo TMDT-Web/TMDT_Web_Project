@@ -134,3 +134,18 @@ Mỗi module có `models.py`, `schemas.py`, `services.py`, `routes.py` riêng đ
 3. Bổ sung cơ chế refresh token (endpoint riêng), logout, chính sách đặt lại mật khẩu.
 4. Bổ sung rate limiting, logging tập trung, tracing (OpenTelemetry) cho môi trường production.
 5. Tách file static sang CDN hoặc S3, sử dụng reverse proxy (Nginx) phục vụ file tĩnh.
+
+## Tài khoản Admin mặc định
+
+Email: admin2@gmail.com
+Password: Admin123
+
+netstat -aon | findstr ":5432"
+tasklist /fi "PID eq 10168"
+
+IID Email Họ tên Vai trò Mật khẩu
+18 root@gmail.com Root Administrator root Password123
+19 admin@gmail.com Admin User admin Password123
+20 manager@gmail.com Business Manager manager Password123
+21 staff@gmail.com Staff Member staff Password123
+22 customer@example.com John Customer customer Password123

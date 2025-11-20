@@ -1,15 +1,20 @@
 # app/users/models.py
 from __future__ import annotations
 from datetime import datetime
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import (
     Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 )
-from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func  # dùng NOW() phía DB
 
-Base = declarative_base()
+from app.core.database import Base
+
+if TYPE_CHECKING:
+    from app.cart.models import CartItem
+    from app.orders.models import Order
+    from app.rewards.models import RewardPoint
 
 
 class Role(Base):
@@ -58,6 +63,15 @@ class User(Base):
     permissions: Mapped[List["Permission"]] = relationship(
         "Permission", secondary="user_permissions", back_populates="users", lazy="selectin"
     )
+    cart_items: Mapped[List["CartItem"]] = relationship(
+        "CartItem", back_populates="user", cascade="all, delete-orphan"
+    )
+    orders: Mapped[List["Order"]] = relationship(
+        "Order", back_populates="user"
+    )
+    reward_point: Mapped[Optional["RewardPoint"]] = relationship(
+        "RewardPoint", back_populates="user", uselist=False
+    )
 
 
 class UserRole(Base):
@@ -100,3 +114,20 @@ class UserPermission(Base):
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     permission_id: Mapped[int] = mapped_column(ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True)
+
+
+class UserAddress(Base):
+    __tablename__ = "user_addresses"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone: Mapped[str] = mapped_column(String(20), nullable=False)
+    address_line: Mapped[str] = mapped_column(Text, nullable=False)
+    city: Mapped[str] = mapped_column(String(100), nullable=False)
+    district: Mapped[Optional[str]] = mapped_column(String(100))
+    ward: Mapped[Optional[str]] = mapped_column(String(100))
+    postal_code: Mapped[Optional[str]] = mapped_column(String(20))
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
