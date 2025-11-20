@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
 from app.users import schemas, dependencies as deps, services
@@ -33,6 +33,8 @@ def _apply_updates(user: User, payload: schemas.UserUpdate, db: Session) -> User
     db.add(user)
     db.commit()
     db.refresh(user)
+    # Đảm bảo roles được load sau khi refresh
+    _ = user.roles  # trigger lazy load
     return user
 
 
@@ -43,7 +45,7 @@ def patch_user(
     db: Session = Depends(get_db),
     _: User = Depends(deps.require_roles("admin")),   # giữ nguyên ý: chỉ admin
 ) -> schemas.UserRead:
-    user = db.get(User, user_id)
+    user = db.query(User).options(joinedload(User.roles)).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -58,7 +60,7 @@ def put_user(
     db: Session = Depends(get_db),
     _: User = Depends(deps.require_roles("admin")),   # giữ nguyên ý: chỉ admin
 ) -> schemas.UserRead:
-    user = db.get(User, user_id)
+    user = db.query(User).options(joinedload(User.roles)).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     updated = _apply_updates(user, payload, db)
@@ -79,13 +81,14 @@ def admin_update_user_role(
     """
     Alias cho UI cũ: PUT /api/admin/users/{id}/role
     """
-    user = db.get(User, user_id)
+    user = db.query(User).options(joinedload(User.roles)).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     services.assign_roles_by_ids(db, user, payload.role_ids)
     db.commit()
     db.refresh(user)
+    _ = user.roles  # trigger lazy load
     return schemas.UserRead.model_validate(user)
 
 
@@ -98,10 +101,11 @@ def assign_roles_bulk(
     """
     Alias cho UI cũ: POST /api/roles/assign
     """
-    user = db.get(User, payload.user_id)
+    user = db.query(User).options(joinedload(User.roles)).filter(User.id == payload.user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     services.assign_roles_by_ids(db, user, payload.role_ids)
     db.commit()
     db.refresh(user)
+    _ = user.roles  # trigger lazy load
     return schemas.UserRead.model_validate(user)

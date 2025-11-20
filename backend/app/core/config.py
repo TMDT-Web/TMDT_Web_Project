@@ -1,6 +1,6 @@
 # app/core/config.py
 from functools import lru_cache
-from typing import Optional, Literal
+from typing import Optional, Literal, Union
 import json
 
 from pydantic import Field, field_validator
@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     points_per_voucher: int = 100
     voucher_value: int = 50000
 
-    # 👇 Đổi AnyHttpUrl -> list[str] để ít rơi lỗi ép kiểu
-    cors_allow_origins: list[str] = []
+    # Dùng Union để Pydantic không tự parse JSON
+    cors_allow_origins: Union[str, list[str]] = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -48,24 +48,27 @@ class Settings(BaseSettings):
             return self.test_database_url
         return self.database_url
 
-    @field_validator("cors_allow_origins", mode="before")
+    @field_validator("cors_allow_origins", mode="after")
     @classmethod
     def assemble_cors_origins(cls, v):
+        """Convert cors_allow_origins from string/list to list"""
         if not v:
             return []
-        if isinstance(v, (list, tuple)):
-            return list(v)
+        if isinstance(v, list):
+            return v
         if isinstance(v, str):
             s = v.strip()
-            if s.startswith("[") and s.endswith("]"):
+            # Try JSON array format
+            if s.startswith("["):
                 try:
                     parsed = json.loads(s)
                     if isinstance(parsed, list):
                         return [str(x) for x in parsed]
                 except Exception:
                     pass
+            # Comma-separated values
             return [item.strip() for item in s.split(",") if item.strip()]
-        return v
+        return []
 
 
 @lru_cache

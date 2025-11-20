@@ -293,6 +293,21 @@ def set_user_permission_ids(db: Session, user_id: int, permission_ids: List[int]
     db.commit()
 
 # =========================
+# User ↔ Roles
+# =========================
+def assign_roles_by_ids(db: Session, user: User, role_ids: List[int]) -> None:
+    """
+    Ghi đè (replace) danh sách roles của user với các role_ids được cung cấp.
+    """
+    if not role_ids:
+        user.roles = []  # type: ignore[attr-defined]
+    else:
+        target_roles = db.query(Role).filter(Role.id.in_(role_ids)).all()
+        user.roles = target_roles  # type: ignore[attr-defined]
+    db.add(user)
+    # Không commit ở đây, để caller tự commit
+
+# =========================
 # Mappers
 # =========================
 def to_user_read(user: User) -> UserRead:
