@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useAuth } from "~/context/AuthContext";
 import { api } from "~/lib/api";
 
 type Supplier = {
@@ -12,6 +13,9 @@ type Supplier = {
 };
 
 export default function SupplierPage() {
+  const auth = useAuth();
+  const canEdit = auth.hasRole?.("root", "admin", "manager");
+
   const [suppliers, setSuppliers] = React.useState<Supplier[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -77,9 +81,19 @@ export default function SupplierPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold hover:from-cyan-600 hover:to-blue-600 transition-all shadow-md hover:shadow-xl transform hover:-translate-y-0.5">
-            ➕ Thêm NCC
-          </button>
+          {canEdit && (
+            <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold hover:from-cyan-600 hover:to-blue-600 transition-all shadow-md hover:shadow-xl transform hover:-translate-y-0.5">
+              ➕ Thêm NCC
+            </button>
+          )}
+          {!canEdit && (
+            <div
+              className="px-6 py-3 rounded-xl bg-slate-300 text-slate-600 font-bold cursor-not-allowed"
+              title="Chỉ root/admin/manager mới có quyền thêm"
+            >
+              🔒 Chỉ xem
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,6 +1,11 @@
 import * as React from "react";
+import { useAuth } from "~/context/AuthContext";
 
 export default function WarrantyPage() {
+  const auth = useAuth();
+  // Root, Manager, Admin, Staff đều có thể quản lý bảo hành
+  const canEdit = auth.hasRole?.("root", "admin", "manager", "staff");
+
   const warranties = [
     {
       id: 1,

@@ -69,8 +69,10 @@ def _ensure_role(db: Session, name: str, description: str) -> Role:
     return r
 
 def ensure_system_roles(db: Session) -> None:
+    _ensure_role(db, "root", "Super administrator - Full access")
     _ensure_role(db, "admin", "System administrator")
     _ensure_role(db, "manager", "Business manager")
+    _ensure_role(db, "staff", "Staff - Limited access")
     _ensure_role(db, "customer", "Customer")
     db.commit()
 
@@ -117,13 +119,21 @@ def attach_permissions_to_system_roles(db: Session) -> None:
         if not insp.has_table(tbl):
             return
 
+    role_root = db.query(Role).filter(Role.name == "root").first()
     role_admin = db.query(Role).filter(Role.name == "admin").first()
     role_manager = db.query(Role).filter(Role.name == "manager").first()
-    if not role_admin and not role_manager:
+    role_staff = db.query(Role).filter(Role.name == "staff").first()
+    if not role_root and not role_admin and not role_manager and not role_staff:
         return
 
+    # ROOT: Full permissions
+    root_codes = [code for code, _ in _PERMISSION_CATALOG]
+    # ADMIN: System management permissions
     admin_codes = [code for code, _ in _PERMISSION_CATALOG]
+    # MANAGER: Business management permissions (view only for sensitive areas)
     manager_codes = ["admin.dashboard.view", "admin.users.read", "admin.roles.read"]
+    # STAFF: Limited view permissions
+    staff_codes = ["admin.dashboard.view"]
 
     perm_rows = db.query(Permission.id, Permission.code).all()
     code_to_id = {code: pid for (pid, code) in perm_rows}
@@ -142,10 +152,14 @@ def attach_permissions_to_system_roles(db: Session) -> None:
                 {"rid": role_id, "pid": pid},
             )
 
+    if role_root:
+        _attach(role_root.id, root_codes)
     if role_admin:
         _attach(role_admin.id, admin_codes)
     if role_manager:
         _attach(role_manager.id, manager_codes)
+    if role_staff:
+        _attach(role_staff.id, staff_codes)
     db.commit()
 
 # =========================

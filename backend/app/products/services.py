@@ -13,14 +13,18 @@ from app.products.models import Category, Product, ProductImage, Tag
 def list_products(db: Session, query: schemas.ProductSearchQuery) -> Tuple[List[Product], int]:
     queryset = (
         db.query(Product)
-        .options(joinedload(Product.category), joinedload(Product.tags))
+        .options(joinedload(Product.category), joinedload(Product.tags), joinedload(Product.images))
     )
 
     filters = []
     if query.q:
         pattern = f"%{query.q.lower()}%"
         filters.append(
-            or_(func.lower(Product.name).like(pattern), func.lower(Product.description).like(pattern))
+            or_(
+                func.lower(Product.name).like(pattern), 
+                func.lower(Product.description).like(pattern),
+                func.lower(Product.sku).like(pattern)
+            )
         )
     if query.category_id:
         filters.append(Product.category_id == query.category_id)
@@ -82,6 +86,17 @@ def create_product(db: Session, payload: schemas.ProductCreate) -> Product:
     db.flush()
     if payload.tag_ids:
         _assign_tags(db, product, payload.tag_ids)
+    
+    # Lưu images nếu có
+    if payload.images:
+        for idx, image_path in enumerate(payload.images):
+            product_image = ProductImage(
+                product_id=product.id,
+                file_path=image_path,
+                is_primary=(idx == 0),  # Ảnh đầu tiên là primary
+            )
+            db.add(product_image)
+    
     db.commit()
     db.refresh(product)
     return product
@@ -89,7 +104,15 @@ def create_product(db: Session, payload: schemas.ProductCreate) -> Product:
 
 def update_product(db: Session, product_id: int, payload: schemas.ProductUpdate) -> Product:
     product = get_product(db, product_id)
+    
+    # Check SKU uniqueness if updating
+    if payload.sku is not None and payload.sku != product.sku:
+        existing = db.query(Product).filter(Product.sku == payload.sku).first()
+        if existing:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="SKU already exists")
+    
     for field in [
+        "sku",
         "name",
         "description",
         "price",
@@ -104,6 +127,20 @@ def update_product(db: Session, product_id: int, payload: schemas.ProductUpdate)
             setattr(product, field, value)
     if payload.tag_ids is not None:
         _assign_tags(db, product, payload.tag_ids)
+    
+    # Cập nhật images nếu có
+    if payload.images is not None:
+        # Xóa tất cả ảnh cũ
+        db.query(ProductImage).filter(ProductImage.product_id == product_id).delete()
+        # Thêm ảnh mới
+        for idx, image_path in enumerate(payload.images):
+            product_image = ProductImage(
+                product_id=product.id,
+                file_path=image_path,
+                is_primary=(idx == 0),
+            )
+            db.add(product_image)
+    
     db.commit()
     db.refresh(product)
     return product

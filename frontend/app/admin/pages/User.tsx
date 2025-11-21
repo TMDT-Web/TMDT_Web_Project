@@ -26,7 +26,8 @@ function roleBadgeClass(name?: string) {
 
 export default function UserPage() {
   const auth = useAuth();
-  const isAdmin = auth.hasRole?.("admin");
+  const isAdmin = auth.hasRole?.("admin", "root"); // root + admin có quyền
+  const isRootUser = auth.isRoot; // kiểm tra user GỐC có phải root không
 
   const theme = isAdmin
     ? {
@@ -52,7 +53,14 @@ export default function UserPage() {
         checkbox: "accent-indigo-600",
       };
 
-  const canEdit = !!isAdmin; // chỉ admin được sửa
+  const canEdit = !!isAdmin; // root + admin được sửa
+
+  // Helper: kiểm tra user có role root không
+  const isUserRoot = React.useCallback((user: UserRead) => {
+    return (user.roles ?? []).some(
+      (r) => (r.name || "").toLowerCase() === "root"
+    );
+  }, []);
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -309,15 +317,32 @@ export default function UserPage() {
                 <tbody>
                   {rows.map((u, i) => {
                     const rowBg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
+                    const userIsRoot = isUserRoot(u);
+                    const canEditThisUser =
+                      canEdit && (!userIsRoot || isRootUser);
+
                     return (
                       <tr
                         key={u.id}
                         className={cn(
-                          "border-t border-slate-100 hover:bg-blue-50/50 transition-all duration-200",
+                          "border-t border-slate-100 transition-all duration-200",
+                          userIsRoot
+                            ? "bg-purple-50/30 hover:bg-purple-100/50"
+                            : "hover:bg-blue-50/50",
                           rowBg
                         )}
                       >
-                        <Td className="font-semibold text-slate-900">{u.id}</Td>
+                        <Td className="font-semibold text-slate-900">
+                          {u.id}
+                          {userIsRoot && (
+                            <span
+                              className="ml-2 text-purple-600"
+                              title="Root User"
+                            >
+                              🔱
+                            </span>
+                          )}
+                        </Td>
                         <Td className="text-slate-900">{u.email}</Td>
                         <Td className="text-slate-900">{u.full_name || "—"}</Td>
                         <Td className="text-slate-900">
@@ -363,14 +388,24 @@ export default function UserPage() {
                               rowBg
                             )}
                           >
-                            <button
-                              onClick={() => setEditing(u)}
-                              className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                              title="Sửa người dùng"
-                              aria-label={`Sửa người dùng ${u.email}`}
-                            >
-                              ✏️ Sửa
-                            </button>
+                            {canEditThisUser ? (
+                              <button
+                                onClick={() => setEditing(u)}
+                                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                title="Sửa người dùng"
+                                aria-label={`Sửa người dùng ${u.email}`}
+                              >
+                                ✏️ Sửa
+                              </button>
+                            ) : (
+                              <div
+                                className="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-300 text-slate-600 cursor-not-allowed flex items-center gap-2"
+                                title="🔒 Chỉ Root mới có thể sửa user Root khác"
+                              >
+                                <span>🔒</span>
+                                <span>Bảo vệ</span>
+                              </div>
+                            )}
                           </td>
                         )}
                       </tr>
@@ -389,35 +424,37 @@ export default function UserPage() {
                 </span>{" "}
                 / <span className="font-bold">{total}</span> người dùng
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
-                    currentPage === 1
-                      ? "opacity-40 cursor-not-allowed bg-slate-200 text-slate-500"
-                      : "bg-white border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400 shadow-sm hover:shadow-md"
-                  )}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  ← Trước
-                </button>
-                <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold text-sm shadow-md">
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
-                    currentPage === totalPages
-                      ? "opacity-40 cursor-not-allowed bg-slate-200 text-slate-500"
-                      : "bg-white border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400 shadow-sm hover:shadow-md"
-                  )}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Sau →
-                </button>
-              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-3">
+                  <button
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+                      currentPage === 1
+                        ? "opacity-40 cursor-not-allowed bg-slate-200 text-slate-500"
+                        : "bg-white border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400 shadow-sm hover:shadow-md"
+                    )}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    ← Trước
+                  </button>
+                  <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold text-sm shadow-md">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+                      currentPage === totalPages
+                        ? "opacity-40 cursor-not-allowed bg-slate-200 text-slate-500"
+                        : "bg-white border-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400 shadow-sm hover:shadow-md"
+                    )}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Sau →
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -503,6 +540,16 @@ function EditUserModal({
   onClose: () => void;
   onSaved: (u: UserRead) => void;
 }) {
+  const auth = useAuth();
+  const isRootUser = auth.isRoot;
+
+  // Kiểm tra user đang edit có role root không
+  const userIsRoot = React.useMemo(
+    () =>
+      (user.roles ?? []).some((r) => (r.name || "").toLowerCase() === "root"),
+    [user.roles]
+  );
+
   const [email, setEmail] = React.useState(user.email);
   const [fullName, setFullName] = React.useState(user.full_name ?? "");
   const [phone, setPhone] = React.useState(user.phone_number ?? "");
@@ -535,6 +582,12 @@ function EditUserModal({
   };
 
   const save = async () => {
+    // BẢO VỆ ROOT: Chỉ root user mới có thể sửa user root
+    if (userIsRoot && !isRootUser) {
+      setError("❌ Chỉ Root mới có thể sửa thông tin user Root khác!");
+      return;
+    }
+
     if (!validate()) return;
     setSaving(true);
     setOkMsg(null);
@@ -581,11 +634,16 @@ function EditUserModal({
         <div className="px-6 py-5 border-b border-blue-100 bg-gradient-to-r from-blue-500 to-indigo-500">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl shadow-lg">
-              ✏️
+              {userIsRoot ? "🔱" : "✏️"}
             </div>
             <div>
-              <div className="text-2xl font-extrabold text-white tracking-tight">
-                Chỉnh sửa người dùng
+              <div className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                <span>Chỉnh sửa người dùng</span>
+                {userIsRoot && (
+                  <span className="text-sm px-3 py-1 bg-purple-500/40 rounded-lg border border-purple-300">
+                    ROOT USER
+                  </span>
+                )}
               </div>
               <div className="text-sm text-blue-100 font-medium mt-1">
                 ID: <span className="font-mono">{user.id}</span> • {user.email}
@@ -593,6 +651,22 @@ function EditUserModal({
             </div>
           </div>
         </div>
+
+        {/* Cảnh báo nếu admin cố sửa root */}
+        {userIsRoot && !isRootUser && (
+          <div className="mx-6 mt-6 mb-0 bg-red-50 border-2 border-red-300 rounded-xl p-4 flex items-start gap-3">
+            <span className="text-2xl">🔒</span>
+            <div className="flex-1">
+              <div className="font-bold text-red-700 text-sm">
+                Không thể chỉnh sửa Root User
+              </div>
+              <div className="text-red-600 text-xs mt-1">
+                Chỉ người dùng có role Root mới có thể sửa đổi thông tin của
+                Root User khác.
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="p-6 space-y-6">
           {/* Thông tin cơ bản */}
@@ -705,15 +779,24 @@ function EditUserModal({
           </button>
           <button
             onClick={save}
-            disabled={saving}
+            disabled={saving || (userIsRoot && !isRootUser)}
             className={cn(
               "px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-xl",
-              saving
+              saving || (userIsRoot && !isRootUser)
                 ? "opacity-60 cursor-not-allowed bg-blue-400 text-white"
                 : "bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 transform hover:-translate-y-0.5"
             )}
+            title={
+              userIsRoot && !isRootUser
+                ? "🔒 Chỉ Root mới có thể sửa Root User"
+                : ""
+            }
           >
-            {saving ? "⏳ Đang lưu…" : "💾 Lưu thay đổi"}
+            {saving
+              ? "⏳ Đang lưu…"
+              : userIsRoot && !isRootUser
+                ? "🔒 Bảo vệ"
+                : "💾 Lưu thay đổi"}
           </button>
         </div>
       </div>

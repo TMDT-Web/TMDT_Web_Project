@@ -74,11 +74,17 @@ def require_roles(*role_names: str) -> Callable[[User], User]:
     """
     Yêu cầu user có ÍT NHẤT MỘT vai trò trong danh sách.
     BÁM DB: admin / manager / customer.
+    ROOT user luôn bypass (có mọi quyền).
     """
     required = {r.strip().lower() for r in role_names if r and r.strip()}
 
     def _checker(current_user: User = Depends(get_current_active_user)) -> User:
         user_roles = {r.name.strip().lower() for r in (current_user.roles or [])}
+        
+        # ROOT bypass - root có mọi quyền
+        if "root" in user_roles:
+            return current_user
+        
         if required and not (required & user_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role"
@@ -96,6 +102,7 @@ AdminOrManager = require_roles("admin", "manager")
 def require_permission(code: str):
     """
     Kiểm tra permission theo compute_user_permission_map(db, user).
+    ROOT user luôn bypass (có mọi quyền).
     Nếu chưa có bảng permissions → guard này không chặn,
     kiểm soát truy cập dựa theo role dùng AdminOnly/AdminOrManager.
     """
@@ -105,6 +112,11 @@ def require_permission(code: str):
         current_user: User = Depends(get_current_active_user),
         db: Session = Depends(get_db),
     ) -> User:
+        # ROOT bypass - root có mọi quyền
+        user_roles = {r.name.strip().lower() for r in (current_user.roles or [])}
+        if "root" in user_roles:
+            return current_user
+        
         if not code_norm:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

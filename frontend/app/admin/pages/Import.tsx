@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useAuth } from "~/context/AuthContext";
 
 type ImportRecord = {
   id: number;
@@ -10,6 +11,10 @@ type ImportRecord = {
 };
 
 export default function ImportPage() {
+  const auth = useAuth();
+  // Root, Manager, Admin có quyền nhập hàng
+  const canEdit = auth.hasRole?.("root", "admin", "manager");
+
   const [imports, setImports] = React.useState<ImportRecord[]>([
     {
       id: 1,

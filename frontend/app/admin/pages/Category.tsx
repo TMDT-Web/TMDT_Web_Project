@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useAuth } from "~/context/AuthContext";
 import { api } from "~/lib/api";
 
 type Category = {
@@ -10,6 +11,9 @@ type Category = {
 };
 
 export default function CategoryPage() {
+  const auth = useAuth();
+  const canEdit = auth.hasRole?.("root", "admin", "manager");
+
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -74,9 +78,19 @@ export default function CategoryPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-xl transform hover:-translate-y-0.5">
-            ➕ Thêm danh mục
-          </button>
+          {canEdit && (
+            <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-xl transform hover:-translate-y-0.5">
+              ➕ Thêm danh mục
+            </button>
+          )}
+          {!canEdit && (
+            <div
+              className="px-6 py-3 rounded-xl bg-slate-300 text-slate-600 font-bold cursor-not-allowed"
+              title="Chỉ root/admin/manager mới có quyền thêm"
+            >
+              🔒 Chỉ xem
+            </div>
+          )}
         </div>
       </div>
 

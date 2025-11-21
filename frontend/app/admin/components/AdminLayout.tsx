@@ -3,6 +3,7 @@ import * as React from "react";
 import { Link, Outlet, useNavigate } from "react-router";
 import { useAuth } from "~/context/AuthContext";
 import { RequireRole } from "../pages/Guards";
+import { ImpersonationBanner } from "./ImpersonationBanner";
 
 export default function AdminLayout() {
   const auth = useAuth();
@@ -17,6 +18,14 @@ export default function AdminLayout() {
   const isAdminOrRoot = auth.hasRole("admin", "root");
   const isManager = auth.hasRole("manager");
   const isStaff = auth.hasRole("staff");
+
+  // Impersonation UI state
+  const [showImpersonateMenu, setShowImpersonateMenu] = React.useState(false);
+
+  const handleImpersonate = (role: string) => {
+    auth.impersonateRole(role);
+    setShowImpersonateMenu(false);
+  };
 
   return (
     <RequireRole
@@ -160,6 +169,75 @@ export default function AdminLayout() {
 
           {/* User Info & Logout ở cuối sidebar */}
           <div className="p-4 border-t border-blue-700/30 bg-indigo-950/50 backdrop-blur-sm">
+            {/* Impersonation Banner - chỉ hiện khi đang mạo danh */}
+            {auth.isImpersonating && (
+              <div className="mb-3 bg-yellow-500/20 border border-yellow-500/40 rounded-lg p-3 backdrop-blur-sm">
+                <div className="flex items-center gap-2 text-yellow-200 text-xs font-semibold mb-2">
+                  <span>👁️</span>
+                  <span>Đang mạo danh</span>
+                </div>
+                <button
+                  onClick={auth.stopImpersonation}
+                  className="w-full text-xs bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-2 rounded-lg transition-all"
+                >
+                  🔙 Quay lại Root
+                </button>
+              </div>
+            )}
+
+            {/* Root Impersonation Menu */}
+            {auth.isRoot && !auth.isImpersonating && (
+              <div className="mb-3 relative">
+                <button
+                  onClick={() => setShowImpersonateMenu(!showImpersonateMenu)}
+                  className="w-full bg-purple-500/20 border border-purple-400/40 hover:bg-purple-500/30 rounded-lg py-2.5 px-3 text-left transition-all"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">👁️</span>
+                      <span className="text-xs font-semibold text-purple-200">
+                        Mạo danh vai trò
+                      </span>
+                    </div>
+                    <span className="text-purple-300 text-xs">
+                      {showImpersonateMenu ? "▼" : "▶"}
+                    </span>
+                  </div>
+                </button>
+
+                {showImpersonateMenu && (
+                  <div className="absolute bottom-full mb-2 w-full bg-slate-800 border border-slate-600 rounded-lg shadow-2xl overflow-hidden z-50">
+                    <div className="p-2 space-y-1">
+                      <button
+                        onClick={() => handleImpersonate("admin")}
+                        className="w-full text-left px-3 py-2 text-sm text-violet-300 hover:bg-violet-500/20 rounded transition"
+                      >
+                        👑 Admin
+                      </button>
+                      <button
+                        onClick={() => handleImpersonate("manager")}
+                        className="w-full text-left px-3 py-2 text-sm text-amber-300 hover:bg-amber-500/20 rounded transition"
+                      >
+                        🏢 Manager
+                      </button>
+                      <button
+                        onClick={() => handleImpersonate("staff")}
+                        className="w-full text-left px-3 py-2 text-sm text-blue-300 hover:bg-blue-500/20 rounded transition"
+                      >
+                        👔 Staff
+                      </button>
+                      <button
+                        onClick={() => handleImpersonate("customer")}
+                        className="w-full text-left px-3 py-2 text-sm text-emerald-300 hover:bg-emerald-500/20 rounded transition"
+                      >
+                        👤 Customer
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="text-xs text-blue-200 mb-3">
               <div className="truncate font-medium" title={auth.user?.email}>
                 {auth.user?.email}
@@ -168,6 +246,12 @@ export default function AdminLayout() {
                 {typeof auth.displayRole === "function"
                   ? auth.displayRole(auth.user?.roles)
                   : auth.displayRole}
+                {auth.isImpersonating && (
+                  <span className="text-yellow-300 ml-1">(Mạo danh)</span>
+                )}
+                {auth.isRoot && !auth.isImpersonating && (
+                  <span className="text-purple-300 ml-1">🔱</span>
+                )}
               </div>
             </div>
             <button
@@ -181,6 +265,9 @@ export default function AdminLayout() {
 
         {/* MAIN CONTENT - Nền sáng với card trắng */}
         <main className="flex-1 ml-64">
+          {/* Impersonation Warning Banner */}
+          <ImpersonationBanner />
+
           <div className="p-8">
             <Outlet />
           </div>

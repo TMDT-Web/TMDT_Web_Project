@@ -40,7 +40,8 @@ function roleChip(name?: string) {
 
 export default function RolePage() {
   const auth = useAuth();
-  const isAdmin = auth.hasRole?.("admin"); // chỉ admin được phân quyền động
+  const isAdmin = auth.hasRole?.("admin", "root"); // root + admin được phân quyền động
+  const isRootUser = auth.isRoot; // kiểm tra user GỐC có phải root không
 
   const [loadingUsers, setLoadingUsers] = React.useState(false);
   const [loadingRoles, setLoadingRoles] = React.useState(false);
@@ -160,15 +161,28 @@ export default function RolePage() {
     return arr;
   }, [users, qUser]);
 
-  /** role hệ thống: admin / manager / customer → chỉ được chọn đúng 1 */
+  /** role hệ thống: admin / manager / customer / staff → chỉ được chọn đúng 1 */
   const isSystemRoleId = React.useCallback(
     (id: number) => {
       const r = roles.find((x) => x.id === id);
       if (!r) return false;
       const k = (r.name || "").toLowerCase();
       return (
-        r.is_system || k === "admin" || k === "manager" || k === "customer"
+        r.is_system ||
+        k === "admin" ||
+        k === "manager" ||
+        k === "customer" ||
+        k === "staff"
       );
+    },
+    [roles]
+  );
+
+  /** Kiểm tra xem role có phải ROOT không */
+  const isRootRole = React.useCallback(
+    (id: number) => {
+      const r = roles.find((x) => x.id === id);
+      return r && (r.name || "").toLowerCase() === "root";
     },
     [roles]
   );
@@ -176,13 +190,20 @@ export default function RolePage() {
   const toggleRole = (roleId: number) => {
     if (!isAdmin) return;
 
+    // BẢO VỆ ROOT: Chỉ root user mới có thể toggle role root
+    if (isRootRole(roleId) && !isRootUser) {
+      setError("❌ Chỉ Root mới có thể gán/bỏ role Root cho người khác!");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
     setAssigned((prev) => {
       const target = roles.find((r) => r.id === roleId);
       if (!target) return new Set<number>(prev);
 
       const next = new Set<number>(prev);
 
-      // nếu là role hệ thống: bật thì tắt hết 2 role hệ thống còn lại
+      // nếu là role hệ thống: bật thì tắt hết các role hệ thống khác
       if (isSystemRoleId(roleId)) {
         if (next.has(roleId)) {
           // tắt chính nó
@@ -293,7 +314,11 @@ export default function RolePage() {
               Quyền hiện tại
             </div>
             <div className="text-sm font-bold text-white mt-1">
-              {isAdmin ? "👑 Admin (Full Access)" : "👤 Chỉ xem"}
+              {isRootUser
+                ? "🔱 Root (Full Access)"
+                : isAdmin
+                  ? "👑 Admin (Full Access)"
+                  : "👤 Chỉ xem"}
             </div>
           </div>
         </div>
@@ -408,24 +433,37 @@ export default function RolePage() {
             {roles.map((r) => {
               const checked = assigned.has(r.id);
               const isSystem = isSystemRoleId(r.id);
+              const isRoot = isRootRole(r.id);
+              const cannotToggle = isRoot && !isRootUser; // không phải root user thì không toggle được role root
+
               return (
                 <label
                   key={r.id}
                   className={cn(
-                    "group cursor-pointer rounded-2xl border-2 p-5 transition-all shadow-md hover:shadow-xl transform hover:-translate-y-1",
-                    checked
+                    "group rounded-2xl border-2 p-5 transition-all shadow-md",
+                    cannotToggle
+                      ? "cursor-not-allowed opacity-60 border-slate-300 bg-slate-100"
+                      : "cursor-pointer hover:shadow-xl transform hover:-translate-y-1",
+                    checked && !cannotToggle
                       ? "border-indigo-400 bg-gradient-to-br from-indigo-50 to-purple-50 ring-2 ring-indigo-300"
-                      : "border-slate-200 bg-white hover:border-indigo-200"
+                      : !cannotToggle &&
+                          "border-slate-200 bg-white hover:border-indigo-200",
+                    isRoot &&
+                      "border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50"
                   )}
-                  title={r.description || r.name}
+                  title={
+                    cannotToggle
+                      ? "🔒 Chỉ Root mới có thể gán role Root"
+                      : r.description || r.name
+                  }
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 mt-0.5">
                       <input
                         type="checkbox"
-                        className="w-5 h-5 rounded border-2 border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-400 transition-all cursor-pointer"
+                        className="w-5 h-5 rounded border-2 border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-400 transition-all cursor-pointer disabled:cursor-not-allowed"
                         checked={checked}
-                        disabled={!isAdmin}
+                        disabled={!isAdmin || cannotToggle}
                         onChange={() => toggleRole(r.id)}
                       />
                     </div>
@@ -434,15 +472,23 @@ export default function RolePage() {
                         <span className="font-bold text-slate-900 text-base">
                           {r.name}
                         </span>
-                        {isSystem && (
+                        {isRoot && (
+                          <span className="text-[10px] uppercase px-2 py-1 rounded-md bg-purple-100 text-purple-700 border border-purple-200 font-bold tracking-wide">
+                            🔱 ROOT
+                          </span>
+                        )}
+                        {isSystem && !isRoot && (
                           <span className="text-[10px] uppercase px-2 py-1 rounded-md bg-amber-100 text-amber-700 border border-amber-200 font-bold tracking-wide">
                             System
                           </span>
                         )}
                         {checked && <span className="text-lg">✅</span>}
+                        {cannotToggle && <span className="text-lg">🔒</span>}
                       </div>
                       <p className="text-sm text-slate-600 line-clamp-2">
-                        {r.description || "Không có mô tả"}
+                        {cannotToggle
+                          ? "Chỉ Root mới có quyền gán role này"
+                          : r.description || "Không có mô tả"}
                       </p>
                     </div>
                   </div>

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useAuth } from "~/context/AuthContext";
 import { api } from "~/lib/api";
 
 type Order = {
@@ -11,6 +12,10 @@ type Order = {
 };
 
 export default function OrderPage() {
+  const auth = useAuth();
+  // Root, Manager, Admin có quyền chỉnh sửa đơn hàng, Staff chỉ xem
+  const canEdit = auth.hasRole?.("root", "admin", "manager");
+
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [statusFilter, setStatusFilter] = React.useState("all");
