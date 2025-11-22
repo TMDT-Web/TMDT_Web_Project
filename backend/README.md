@@ -142,6 +142,7 @@ Password: Admin123
 
 netstat -aon | findstr ":5432"
 tasklist /fi "PID eq 10168"
+docker-compose up -d
 
 IID Email Họ tên Vai trò Mật khẩu
 18 root@gmail.com Root Administrator root Password123

@@ -160,6 +160,36 @@ def create_category(db: Session, payload: schemas.CategoryCreate) -> Category:
     return category
 
 
+def update_category(db: Session, category_id: int, payload: schemas.CategoryCreate) -> Category:
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+    
+    for field, value in payload.model_dump().items():
+        setattr(category, field, value)
+    
+    db.commit()
+    db.refresh(category)
+    return category
+
+
+def delete_category(db: Session, category_id: int) -> None:
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+    
+    # Check if category has products
+    products_count = db.query(Product).filter(Product.category_id == category_id).count()
+    if products_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete category with {products_count} products. Please reassign or delete the products first."
+        )
+    
+    db.delete(category)
+    db.commit()
+
+
 def list_categories(db: Session) -> List[Category]:
     return db.query(Category).order_by(Category.name).all()
 

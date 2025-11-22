@@ -7,6 +7,7 @@ from app.core import config
 from app.core.database import SessionLocal
 from app.users.routes import router as users_router
 from app.products.routes import router as products_router
+from app.products.routes import category_router, tag_router
 from app.cart.routes import router as cart_router
 from app.orders.routes import router as orders_router
 from app.inventory.routes import router as inventory_router
@@ -56,6 +57,8 @@ def get_application() -> FastAPI:
 
     # Routers
     app.include_router(users_router, prefix=config.settings.api_prefix)
+    app.include_router(category_router, prefix=config.settings.api_prefix)
+    app.include_router(tag_router, prefix=config.settings.api_prefix)
     app.include_router(products_router, prefix=config.settings.api_prefix)
     app.include_router(cart_router, prefix=config.settings.api_prefix)
     app.include_router(orders_router, prefix=config.settings.api_prefix)
