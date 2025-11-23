@@ -1,0 +1,18 @@
+{
+  "name": "Sofa Da Bò Ý",
+  "slug": "sofa-da-bo-y",
+  "price": 15000000,
+  "category_id": 7,
+  "dimensions": {
+    "length": 200,
+    "width": 80,
+    "height": 90,
+    "unit": "cm"
+  },
+  "specs": {
+    "material": "Da bò thật",
+    "origin": "Italy",
+    "warranty": "2 years"
+  },
+  "images": ["img1.jpg", "img2.jpg"]
+}

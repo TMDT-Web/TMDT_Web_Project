@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Scandinavian/Minimal Luxury Palette */
+    --color-primary: 26 26 26; /* Rich Black - for buttons & titles */
+    --color-wood: 139 115 85; /* Warm Wood Brown */
+    --color-moss: 88 107 86; /* Moss Green */
+    --color-deep-green: 44 62 58; /* Deep Green */
+    --color-accent: 212 175 55; /* Elegant Gold accent */
+    --color-bg-light: 250 248 246; /* Warm White */
+    --color-bg-offwhite: 245 243 240; /* Off-white */
+    --color-text-dark: 26 26 26;
+    --color-text-muted: 115 115 115;
+    --color-border: 229 229 229;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    @apply border-[rgb(var(--color-border))];
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  body {
+    @apply bg-[rgb(var(--color-bg-light))] text-[rgb(var(--color-text-dark))] antialiased;
+    font-family: 'Inter', 'Roboto', 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+    line-height: 1.2;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  h4 {
+    @apply text-xl md:text-2xl;
+  }
+}
+
+@layer components {
+  /* Minimal Buttons - Scandinavian style */
+  .btn-primary {
+    @apply bg-[rgb(var(--color-primary))] text-white px-8 py-3
+           hover:bg-[rgb(var(--color-wood))] transition-all duration-300 
+           font-medium tracking-wide uppercase text-sm;
+  }
+
+  .btn-secondary {
+    @apply border-2 border-[rgb(var(--color-primary))] text-[rgb(var(--color-primary))] 
+           px-8 py-3 hover:bg-[rgb(var(--color-primary))] hover:text-white 
+           transition-all duration-300 font-medium tracking-wide uppercase text-sm;
+  }
+
+  .btn-ghost {
+    @apply text-[rgb(var(--color-text-dark))] px-6 py-2 
+           hover:bg-[rgb(var(--color-bg-offwhite))] transition-all duration-200
+           font-normal text-sm;
+  }
+
+  /* Minimal section - lots of white space */
+  .section-padding {
+    @apply py-16 md:py-24 lg:py-32;
+  }
+
+  .section-padding-sm {
+    @apply py-12 md:py-16 lg:py-20;
+  }
+
+  .container-custom {
+    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12;
+  }
+
+  .container-narrow {
+    @apply max-w-5xl mx-auto px-6 sm:px-8;
+  }
+
+  /* Minimal card - subtle shadow, clean */
+  .minimal-card {
+    @apply bg-white hover:shadow-lg transition-shadow duration-300;
+  }
+
+  .product-card {
+    @apply bg-white group cursor-pointer;
+  }
+
+  .product-card-image {
+    @apply aspect-square overflow-hidden bg-[rgb(var(--color-bg-offwhite))];
+  }
+
+  .product-card-image img {
+    @apply w-full h-full object-cover transition-transform duration-500 group-hover:scale-105;
+  }
+
+  /* Subtle divider */
+  .divider-minimal {
+    @apply h-px bg-[rgb(var(--color-border))] my-8;
+  }
+
+  /* Typography helpers */
+  .text-minimal {
+    @apply text-[rgb(var(--color-text-muted))] text-sm md:text-base leading-relaxed;
+  }
+
+  .heading-minimal {
+    @apply text-[rgb(var(--color-text-dark))] font-semibold tracking-tight;
+  }
+
+  /* Spacing utilities for minimal design */
+  .space-y-minimal > * + * {
+    @apply mt-16 md:mt-24;
+  }
+
+  /* Image aspect ratios for lookbook style */
+  .aspect-lookbook {
+    aspect-ratio: 3/4;
+  }
+
+  .aspect-wide {
+    aspect-ratio: 16/9;
+  }
+
+  .aspect-ultra-wide {
+    aspect-ratio: 21/9;
+  }
+}
+
+@layer utilities {
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+

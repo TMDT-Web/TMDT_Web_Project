@@ -1,0 +1,10 @@
+{
+  "name": "Home",
+  "receiver_name": "Son Le",
+  "receiver_phone": "0912345678",
+  "address_line": "123 Nguyen Hue Street",
+  "ward": "Ben Nghe",
+  "district": "District 1",
+  "city": "Ho Chi Minh City",
+  "is_default": true
+}
