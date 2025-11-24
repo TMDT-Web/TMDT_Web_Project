@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ProductsService } from '@/client'
 import type { CategoryResponse } from '@/client'
+import { formatImageUrl } from '@/utils/format'
 
 export default function Collections() {
   const [categories, setCategories] = useState<CategoryResponse[]>([])
@@ -58,7 +59,7 @@ export default function Collections() {
                   <div className="aspect-lookbook overflow-hidden bg-[rgb(var(--color-bg-offwhite))] mb-4">
                     {category.image_url ? (
                       <img
-                        src={category.image_url}
+                        src={formatImageUrl(category.image_url)}
                         alt={category.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />

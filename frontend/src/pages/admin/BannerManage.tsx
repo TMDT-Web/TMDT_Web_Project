@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { UploadService } from '@/client'
 import { Image, Link as LinkIcon } from 'lucide-react'
+import { formatImageUrl } from '@/utils/format'
 
 // Note: API client will be regenerated after backend is running
 // For now, we'll create placeholder types
@@ -207,7 +208,7 @@ export default function BannerManage() {
               {/* Banner Preview */}
               <div className="w-64 h-40 flex-shrink-0 bg-gray-100">
                 <img
-                  src={banner.image_url}
+                  src={formatImageUrl(banner.image_url)}
                   alt={banner.title}
                   className="w-full h-full object-cover"
                 />

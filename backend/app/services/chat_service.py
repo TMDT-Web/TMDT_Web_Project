@@ -1,7 +1,7 @@
 """
 Chat Service - WebSocket Manager for real-time chat
 """
-from typing import Dict, List
+from typing import Dict, List, Optional
 from fastapi import WebSocket
 from sqlalchemy.orm import Session
 import uuid
@@ -56,8 +56,8 @@ class ChatService:
     """Chat service"""
     
     @staticmethod
-    def create_session(db: Session, user_id: int) -> ChatSession:
-        """Create new chat session"""
+    def create_session(db: Session, user_id: Optional[int] = None) -> ChatSession:
+        """Create new chat session (supports guest users)"""
         session_id = f"CHAT-{uuid.uuid4().hex[:12].upper()}"
         
         session = ChatSession(

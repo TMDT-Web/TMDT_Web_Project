@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ProductsService } from '@/client'
 import type { ProductResponse, CategoryResponse } from '@/client'
+import { formatImageUrl } from '@/utils/format'
 
 export default function ProductList() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -151,7 +152,7 @@ export default function ProductList() {
                       <div className="aspect-square overflow-hidden rounded-t-lg bg-gray-100">
                         {product.thumbnail_url ? (
                           <img
-                            src={product.thumbnail_url}
+                            src={formatImageUrl(product.thumbnail_url)}
                             alt={product.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />

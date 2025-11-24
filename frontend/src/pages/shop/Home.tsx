@@ -6,6 +6,7 @@ import { ProductsService } from '@/client'
 import type { ProductResponse } from '@/client'
 import { Link } from 'react-router-dom'
 import BannerSlider from '@/components/BannerSlider'
+import { formatImageUrl } from '@/utils/format'
 
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState<ProductResponse[]>([])
@@ -80,7 +81,7 @@ export default function Home() {
                   <div className="aspect-square overflow-hidden rounded-t-lg bg-gray-100">
                     {product.thumbnail_url ? (
                       <img
-                        src={product.thumbnail_url}
+                        src={formatImageUrl(product.thumbnail_url)}
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
@@ -135,7 +136,7 @@ export default function Home() {
                 >
                   {category.image_url && (
                     <img
-                      src={category.image_url}
+                      src={formatImageUrl(category.image_url)}
                       alt={category.name}
                       className="w-16 h-16 mb-3 object-cover rounded-full"
                     />

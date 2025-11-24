@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { ProductsService, UploadService } from '@/client'
 import type { ProductResponse, CategoryResponse } from '@/client'
+import { formatImageUrl } from '@/utils/format'
 
 interface ProductFormProps {
   isOpen: boolean
@@ -582,7 +583,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct
               )}
 
               {thumbnailPreview && (
-                <img src={thumbnailPreview} alt="Thumbnail" className="mt-2 w-32 h-32 object-cover rounded-lg border" />
+                <img src={formatImageUrl(thumbnailPreview)} alt="Thumbnail" className="mt-2 w-32 h-32 object-cover rounded-lg border" />
               )}
             </div>
 
@@ -633,7 +634,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct
               {additionalPreviews.length > 0 && (
                 <div className="mt-2 flex gap-2 flex-wrap">
                   {Array.isArray(additionalPreviews) && additionalPreviews.map((url, idx) => (
-                    <img key={idx} src={url} alt={`Additional ${idx}`} className="w-24 h-24 object-cover rounded-lg border" />
+                    <img key={idx} src={formatImageUrl(url)} alt={`Additional ${idx}`} className="w-24 h-24 object-cover rounded-lg border" />
                   ))}
                 </div>
               )}

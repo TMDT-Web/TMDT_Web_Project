@@ -49,77 +49,168 @@ export function SocketProvider({ children }: SocketProviderProps) {
   // Generate WebSocket URL
   const getWsUrl = (sessionId: string) => {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsHost = import.meta.env.VITE_WS_URL || 'localhost:8000'
+    
+    // Determine WebSocket host
+    let wsHost: string
+    if (import.meta.env.VITE_WS_URL) {
+      // Use environment variable if provided
+      wsHost = import.meta.env.VITE_WS_URL
+      // Remove protocol from WS_URL if present
+      wsHost = wsHost.replace(/^(ws:\/\/|wss:\/\/)/, '')
+    } else {
+      // Construct dynamically using current hostname
+      wsHost = `${window.location.hostname}:8000`
+    }
+    
     return `${wsProtocol}//${wsHost}/api/v1/chat/ws/${sessionId}`
   }
 
   // Connect to WebSocket
-  const connectToSession = useCallback((newSessionId: string) => {
+  const connectToSession = useCallback(async (newSessionId: string) => {
     // Disconnect existing connection
     if (socket) {
       socket.close()
     }
 
+    // Load historical messages first
+    try {
+      console.log('[Chat] Loading historical messages for session:', newSessionId)
+      const { ChatService } = await import('@/client')
+      const historicalMessages = await ChatService.getSessionMessagesApiV1ChatSessionsSessionIdMessagesGet(newSessionId)
+      
+      const formattedMessages: ChatMessage[] = historicalMessages.map(msg => ({
+        id: msg.id,
+        sender: msg.sender as 'user' | 'admin',
+        sender_id: msg.sender_id,
+        message: msg.message,
+        created_at: msg.created_at,
+        timestamp: new Date(msg.created_at)
+      }))
+      
+      setMessages(formattedMessages)
+      console.log('[Chat] Successfully loaded', formattedMessages.length, 'historical messages')
+    } catch (error) {
+      console.error('[Chat] Error loading historical messages:', error)
+      console.error('[Chat] Error details:', JSON.stringify(error, null, 2))
+      // Continue with WebSocket connection even if history load fails
+    }
+
     const wsUrl = getWsUrl(newSessionId)
     console.log('[WebSocket] Connecting to:', wsUrl)
 
-    const ws = new WebSocket(wsUrl)
+    try {
+      const ws = new WebSocket(wsUrl)
 
-    ws.onopen = () => {
-      console.log('[WebSocket] Connected to session:', newSessionId)
-      setIsConnected(true)
-      setSessionId(newSessionId)
-    }
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        console.log('[WebSocket] Message received:', data)
-
-        // Handle system messages
-        if (data.type === 'system') {
-          console.log('[WebSocket] System message:', data.message)
-          return
-        }
-
-        // Handle chat messages
-        const newMessage: ChatMessage = {
-          id: data.id,
-          sender: data.sender,
-          sender_id: data.sender_id,
-          message: data.message,
-          created_at: data.created_at,
-          timestamp: data.created_at ? new Date(data.created_at) : new Date()
-        }
-
-        setMessages(prev => [...prev, newMessage])
-      } catch (error) {
-        console.error('[WebSocket] Error parsing message:', error)
+      ws.onopen = () => {
+        console.log('[WebSocket] Successfully connected to session:', newSessionId)
+        setIsConnected(true)
+        setSessionId(newSessionId)
       }
-    }
 
-    ws.onerror = (error) => {
-      console.error('[WebSocket] Error:', error)
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          console.log('[WS DEBUG] Received:', data); // Keep this for debugging
+
+          // Handle error messages
+          if (data.type === 'error') {
+            console.error('[WS Error]', data.message);
+            alert(`Chat Error: ${data.message}`)
+            // Remove optimistic message if it exists
+            setMessages(prev => prev.filter(msg => msg.id !== undefined && msg.id > 0))
+            return
+          }
+
+          // Handle system messages
+          if (data.type === 'system') {
+            console.log('[WebSocket] System message:', data.message)
+            return
+          }
+
+          // Handle chat messages
+          const newMessage: ChatMessage = {
+            id: data.id,
+            sender: data.sender,
+            sender_id: data.sender_id,
+            message: data.message,
+            created_at: data.created_at,
+            timestamp: data.created_at ? new Date(data.created_at) : new Date()
+          }
+
+          // Deduplication: Check if message already exists
+          setMessages(prev => {
+            // Check by ID first (most reliable)
+            const existsById = prev.some(msg => msg.id && msg.id === newMessage.id)
+            
+            if (existsById) {
+              console.log('[WebSocket] Duplicate message by ID detected, replacing optimistic')
+              // Replace optimistic message (negative ID) with real one
+              return prev.map(msg => 
+                (msg.id && msg.id < 0 && msg.message === newMessage.message) ? newMessage : msg
+              ).filter((msg, index, self) => 
+                index === self.findIndex(m => m.id === msg.id)
+              )
+            }
+            
+            console.log('[WebSocket] Adding new message to state')
+            return [...prev, newMessage]
+          })
+        } catch (error) {
+          console.error('[WebSocket] Error parsing message:', error)
+          console.error('[WebSocket] Raw message data:', event.data)
+        }
+      }
+
+      ws.onerror = (error) => {
+        console.error('[WebSocket] Connection error:', error)
+        console.error('[WebSocket] Error event details:', JSON.stringify(error, null, 2))
+        setIsConnected(false)
+      }
+
+      ws.onclose = (event) => {
+        console.log('[WebSocket] Connection closed')
+        console.log('[WebSocket] Close code:', event.code, 'reason:', event.reason)
+        setIsConnected(false)
+        setSessionId(null)
+      }
+
+      setSocket(ws)
+    } catch (error) {
+      console.error('[WebSocket] Failed to create WebSocket connection:', error)
+      console.error('[WebSocket] Connection URL:', wsUrl)
       setIsConnected(false)
     }
-
-    ws.onclose = () => {
-      console.log('[WebSocket] Disconnected')
-      setIsConnected(false)
-      setSessionId(null)
-    }
-
-    setSocket(ws)
   }, [socket])
 
   // Send message through WebSocket
   const sendMessage = useCallback((content: string, sender: 'user' | 'admin', senderId?: number) => {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
       console.error('[WebSocket] Cannot send message: Not connected')
+      alert('Not connected to chat. Please refresh the page.')
+      return
+    }
+
+    if (!content.trim()) {
+      console.error('[WebSocket] Cannot send empty message')
       return
     }
 
     const actualSenderId = senderId || user?.id || 0
+    
+    // Optimistic UI: Add message immediately with temporary ID
+    const optimisticMessage: ChatMessage = {
+      id: -Date.now(), // Negative timestamp as temporary ID
+      sender,
+      sender_id: actualSenderId,
+      message: content,
+      timestamp: new Date(),
+      created_at: new Date().toISOString()
+    }
+    
+    setMessages(prev => [...prev, optimisticMessage])
+    console.log('[WebSocket] Added optimistic message:', optimisticMessage)
+
+    // Send to server
     const messageData = {
       sender,
       sender_id: actualSenderId,

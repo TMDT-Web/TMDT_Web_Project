@@ -45,6 +45,7 @@ export interface Product {
   description?: string
   short_description?: string
   price: number
+  sale_price?: number
   original_price?: number
   discount_percent: number
   stock: number
@@ -58,8 +59,10 @@ export interface Product {
   is_featured: boolean
   views_count: number
   sales_count: number
-  category: Category
-  images: ProductImage[]
+  category?: Category
+  images?: ProductImage[]
+  image_url?: string
+  thumbnail_url?: string
   created_at: string
   updated_at: string
 }
@@ -71,11 +74,18 @@ export interface CartItem {
 
 export interface OrderItem {
   id: number
+  order_id: number
   product_id: number
   product_name: string
+  price_at_purchase: number
   quantity: number
-  unit_price: number
-  total_price: number
+  variant?: string
+  // Legacy support
+  product?: Product
+  price?: number
+  subtotal?: number
+  created_at: string
+  updated_at: string
 }
 
 export enum OrderStatus {
@@ -111,20 +121,24 @@ export enum OrderPaymentStatus {
 
 export interface Order {
   id: number
-  order_number: string
-  status: OrderStatus
-  payment_status: OrderPaymentStatus
-  total_amount: number
-  reward_points_used: number
-  reward_points_earned: number
-  voucher_code?: string
+  user_id: number
+  full_name: string
+  phone_number: string
   shipping_address: string
-  shipping_contact_name: string
-  shipping_contact_phone: string
-  notes?: string
+  note?: string
+  payment_method: string
+  subtotal: number
+  shipping_fee: number
+  discount_amount: number
+  total_amount: number
+  deposit_amount: number
+  remaining_amount: number
+  is_paid: boolean
+  status: string
+  cancellation_reason?: string
+  items: OrderItem[]
   created_at: string
   updated_at: string
-  items: OrderItem[]
 }
 
 export interface ChatMessage {

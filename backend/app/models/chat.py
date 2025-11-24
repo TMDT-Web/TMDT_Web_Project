@@ -26,7 +26,7 @@ class ChatSession(Base):
     """Chat Session Model"""
     __tablename__ = "chat_sessions"
     
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     session_id = Column(String(100), unique=True, nullable=False, index=True)
     
     status = Column(SQLEnum(ChatStatus), default=ChatStatus.WAITING, nullable=False)

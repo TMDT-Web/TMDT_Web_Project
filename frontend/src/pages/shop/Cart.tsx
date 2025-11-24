@@ -3,6 +3,7 @@
  */
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '@/context/CartContext'
+import { formatImageUrl } from '@/utils/format'
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, totalItems, totalPrice, clearCart } = useCart()
@@ -34,7 +35,7 @@ export default function Cart() {
                 <Link to={`/products/${item.product.slug}`} className="flex-shrink-0">
                   <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-100 rounded-lg overflow-hidden">
                     <img
-                      src={item.product.images?.[0]?.image_url || 'https://via.placeholder.com/200'}
+                      src={formatImageUrl(item.product.thumbnail_url) || 'https://via.placeholder.com/200'}
                       alt={item.product.name}
                       className="w-full h-full object-cover"
                     />

@@ -37,9 +37,6 @@ export default function Header() {
             <Link to="/contact" className="text-sm hover:text-[rgb(var(--color-wood))] transition">
               Liên hệ
             </Link>
-            <Link to="/admin" className="text-sm text-blue-600 hover:text-blue-700 font-medium transition">
-              🏢 Admin
-            </Link>
           </nav>
 
           {/* Right Actions */}
@@ -132,9 +129,6 @@ export default function Header() {
               </Link>
               <Link to="/contact" className="block py-2 text-sm hover:text-[rgb(var(--color-wood))] transition">
                 Liên hệ
-              </Link>
-              <Link to="/admin" className="block py-2 text-sm text-blue-600 hover:text-blue-700 font-medium transition">
-                🏢 Admin
               </Link>
               {!user && (
                 <button

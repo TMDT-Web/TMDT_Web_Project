@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ProductsService, UploadService } from '@/client'
+import { formatImageUrl } from '@/utils/format'
 
 interface CategoryFormData {
   name: string
@@ -145,7 +146,7 @@ export default function CategoryManage() {
         {Array.isArray(categories) && categories.map((category: any) => (
           <div key={category.id} className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition">
             {category.image_url && (
-              <img src={category.image_url} alt={category.name} className="w-full h-32 object-cover rounded-md mb-3" />
+              <img src={formatImageUrl(category.image_url)} alt={category.name} className="w-full h-32 object-cover rounded-md mb-3" />
             )}
             <h3 className="font-semibold text-lg text-slate-800">{category.name}</h3>
             <p className="text-sm text-gray-600 mb-3">{category.description}</p>

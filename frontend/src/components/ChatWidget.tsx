@@ -37,6 +37,7 @@ export default function ChatWidget() {
       sender: msg.sender,
       timestamp: msg.timestamp || new Date(msg.created_at || Date.now())
     }))
+    
     setMessages(formattedMessages)
   }, [socketMessages])
 
@@ -55,19 +56,9 @@ export default function ChatWidget() {
         localStorage.setItem('chat_session_id', currentSessionId)
       }
 
-      // Connect to WebSocket
-      connectToSession(currentSessionId)
+      // Connect to WebSocket (will load historical messages)
+      await connectToSession(currentSessionId)
       setIsInitialized(true)
-
-      // Add welcome message if no messages
-      if (messages.length === 0) {
-        setMessages([{
-          id: 0,
-          text: 'Xin chào! Chúng tôi có thể giúp gì cho bạn?',
-          sender: 'admin',
-          timestamp: new Date()
-        }])
-      }
     } catch (error) {
       console.error('Failed to initialize chat:', error)
     }

@@ -16,6 +16,12 @@ Write-Host "[Step 1/6] Cleaning up old containers and database..." -ForegroundCo
 try {
     # Stop and remove containers, networks, and volumes for a complete clean start
     docker-compose down -v
+    
+    # Force remove volumes manually (docker-compose down -v sometimes doesn't work)
+    Write-Host "  Force removing volumes..." -ForegroundColor Gray
+    docker volume rm luxe_furniture_postgres_data -f 2>$null
+    docker volume rm luxe_furniture_backend_static -f 2>$null
+    
     Write-Host "✓ Old containers and volumes removed successfully" -ForegroundColor Green
 } catch {
     Write-Host "✗ Failed to remove old containers: $_" -ForegroundColor Red
@@ -26,9 +32,22 @@ try {
 Write-Host "`n[Step 2/6] Building and starting containers..." -ForegroundColor Yellow
 try {
     docker-compose up -d --build
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "⚠ Build failed, cleaning cache and retrying..." -ForegroundColor Yellow
+        docker system prune -f | Out-Null
+        docker-compose build --no-cache
+        docker-compose up -d
+        
+        if ($LASTEXITCODE -ne 0) {
+            throw "Build failed after cache cleanup"
+        }
+    }
+    
     Write-Host "✓ Containers built and started successfully" -ForegroundColor Green
 } catch {
     Write-Host "✗ Failed to start containers: $_" -ForegroundColor Red
+    Write-Host "  Try manually: docker system prune -f && docker-compose build --no-cache" -ForegroundColor Yellow
     exit 1
 }
 

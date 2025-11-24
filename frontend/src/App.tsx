@@ -9,12 +9,16 @@ import MainLayout from './layouts/MainLayout'
 import AdminLayout from './layouts/AdminLayout'
 import AuthLayout from './layouts/AuthLayout'
 
+// Components
+import ProtectedRoute from './components/ProtectedRoute'
+
 // Shop Pages
 import Home from './pages/shop/Home'
 import ProductList from './pages/shop/ProductList'
 import ProductDetail from './pages/shop/ProductDetail'
 import Cart from './pages/shop/Cart'
 import Checkout from './pages/shop/Checkout'
+import Orders from './pages/shop/Orders'
 import Profile from './pages/shop/Profile'
 import Collections from './pages/shop/Collections'
 import About from './pages/shop/About'
@@ -66,6 +70,7 @@ function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/orders" element={<Orders />} />
                   <Route path="/profile" element={<Profile />} />
                 </Route>
 
@@ -76,7 +81,11 @@ function App() {
                 </Route>
 
                 {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLayout />}>
+                <Route path="/admin" element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }>
                   <Route index element={<Dashboard />} />
                   <Route path="products" element={<ProductManage />} />
                   <Route path="categories" element={<CategoryManage />} />

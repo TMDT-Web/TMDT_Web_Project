@@ -8,6 +8,7 @@ import { useCart } from '@/context/CartContext'
 import { useAuth } from '@/context/AuthContext'
 import { orderService } from '@/services/order.service'
 import { PaymentGateway } from '@/types'
+import { formatImageUrl } from '@/utils/format'
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart()
@@ -31,13 +32,42 @@ export default function Checkout() {
         // Redirect to payment gateway
         window.location.href = data.payment.payment_url
       } else {
-        // COD order success
-        alert(`Đặt hàng thành công!\nMã đơn: ${data.order.order_number}`)
+        // COD order success - data is OrderResponse directly
+        alert(`Đặt hàng thành công!\nMã đơn hàng: #${data.id}\nTổng tiền: ${data.total_amount.toLocaleString('vi-VN')}₫`)
         navigate('/')
       }
     },
     onError: (error: any) => {
-      alert(error?.response?.data?.detail || 'Đặt hàng thất bại. Vui lòng thử lại!')
+      console.error('Order creation error:', error)
+      console.error('Error response:', error?.response?.data)
+      
+      // Extract detailed error message
+      let errorMessage = 'Đặt hàng thất bại. Vui lòng thử lại!'
+      
+      if (error?.response?.data?.detail) {
+        const detail = error.response.data.detail
+        // If detail is an array of validation errors
+        if (Array.isArray(detail)) {
+          errorMessage = detail.map((err: any) => 
+            `${err.loc?.join('.') || 'Field'}: ${err.msg}`
+          ).join('\n')
+        } else if (typeof detail === 'string') {
+          errorMessage = detail
+        } else {
+          errorMessage = JSON.stringify(detail)
+        }
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+      
+      // Check if authentication error
+      if (error?.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!')
+        navigate('/login')
+        return
+      }
+      
+      alert(errorMessage)
     }
   })
 
@@ -57,7 +87,33 @@ export default function Checkout() {
       return
     }
 
-    createOrderMutation.mutate(formData)
+    // Map form data and cart items to backend API structure
+    const orderPayload: any = {
+      full_name: formData.shipping_contact_name,
+      phone_number: formData.shipping_contact_phone,
+      shipping_address: formData.shipping_address,
+      payment_method: formData.payment_gateway,
+      items: items.map(item => {
+        const orderItem: any = {
+          product_id: item.product.id,
+          quantity: item.quantity
+        }
+        // Only add variant if it exists
+        if (item.variant) {
+          orderItem.variant = item.variant
+        }
+        return orderItem
+      })
+    }
+    
+    // Only add note if it exists
+    if (formData.notes && formData.notes.trim()) {
+      orderPayload.note = formData.notes.trim()
+    }
+    
+    console.log('Order payload:', orderPayload) // Debug log
+
+    createOrderMutation.mutate(orderPayload)
   }
 
   return (
@@ -196,7 +252,7 @@ export default function Checkout() {
                     <div key={item.product.id} className="flex gap-3">
                       <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                         <img
-                          src={item.product.images?.[0]?.image_url || 'https://via.placeholder.com/100'}
+                          src={formatImageUrl(item.product.thumbnail_url) || 'https://via.placeholder.com/100'}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                         />

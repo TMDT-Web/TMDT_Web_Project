@@ -15,6 +15,7 @@ import { useAuth } from './AuthContext'
 interface LocalCartItem {
   product: ProductResponse | any  // Compatible with old Product type
   quantity: number
+  variant?: string  // Optional variant (color, size, etc.)
 }
 
 interface CartContextType {

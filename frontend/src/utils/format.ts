@@ -1,3 +1,25 @@
+import { API_URL } from '@/constants/config'
+
+/**
+ * Format image URL to use backend API host for relative paths
+ */
+export const formatImageUrl = (imageUrl: string | null | undefined): string => {
+  if (!imageUrl) return ''
+  
+  // If already an absolute URL (http/https), return as is
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl
+  }
+  
+  // If relative path (starts with /), prepend API_URL
+  if (imageUrl.startsWith('/')) {
+    return `${API_URL}${imageUrl}`
+  }
+  
+  // Otherwise, treat as relative and prepend API_URL with /
+  return `${API_URL}/${imageUrl}`
+}
+
 /**
  * Format currency to VND
  */

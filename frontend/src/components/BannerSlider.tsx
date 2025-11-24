@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { formatImageUrl } from '@/utils/format'
 
 interface Banner {
     id: number
@@ -129,7 +130,7 @@ export default function BannerSlider() {
                 >
                     {/* Banner Image */}
                     <img
-                        src={banner.image_url}
+                        src={formatImageUrl(banner.image_url)}
                         alt={banner.title}
                         className={`w-full h-full object-cover ${banner.link_url ? 'cursor-pointer' : ''}`}
                         onClick={() => handleBannerClick(banner)}

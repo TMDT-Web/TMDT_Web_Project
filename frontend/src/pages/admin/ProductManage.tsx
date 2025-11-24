@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ProductsService } from '@/client'
 import ProductForm from '@/components/admin/ProductForm'
 import type { ProductResponse } from '@/client'
+import { formatImageUrl } from '@/utils/format'
 
 export default function ProductManage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -136,7 +137,7 @@ export default function ProductManage() {
                     <td className="py-3 px-4">
                       <div className="w-12 h-12 bg-gray-200 rounded-md overflow-hidden">
                         {product.image_url ? (
-                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                          <img src={formatImageUrl(product.image_url)} alt={product.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-400">📦</div>
                         )}
@@ -152,11 +153,11 @@ export default function ProductManage() {
                     <td className="py-3 px-4 text-sm font-medium text-slate-800">
                       {formatPrice(product.price)}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{product.stock_quantity || 0}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{product.stock || 0}</td>
                     <td className="py-3 px-4">
-                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${product.stock_quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                        {product.stock_quantity > 0 ? 'Còn hàng' : 'Hết hàng'}
+                        {product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right">

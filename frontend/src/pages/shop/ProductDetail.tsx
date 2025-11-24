@@ -7,6 +7,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ProductsService } from '@/client'
 import type { ProductResponse } from '@/client'
 import { useCart } from '@/context/CartContext'
+import { formatImageUrl } from '@/utils/format'
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -76,7 +77,7 @@ export default function ProductDetail() {
 
   // Use images array from generated client (already URLs, not nested objects)
   const images = product.images && product.images.length > 0 
-    ? product.images
+    ? product.images.map(img => formatImageUrl(img))
     : ['https://via.placeholder.com/800x800?text=' + encodeURIComponent(product.name)]
 
   const handleQuantityChange = (value: number) => {
