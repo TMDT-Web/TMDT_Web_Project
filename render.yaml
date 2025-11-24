@@ -1,0 +1,31 @@
+services:
+  # Backend API Service
+  - type: web
+    name: luxefurniture-api
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /docs
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: luxefurniture-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 10080
+      - key: ALLOWED_ORIGINS
+        value: https://luxefurniture.vercel.app,http://localhost:3000
+      - key: ENVIRONMENT
+        value: production
+
+  # PostgreSQL Database
+databases:
+  - name: luxefurniture-db
+    databaseName: luxefurniture
+    plan: free
+    ipAllowList: []
