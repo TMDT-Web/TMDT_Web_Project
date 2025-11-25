@@ -1,155 +1,136 @@
-"""
-Chat Service - WebSocket Manager for real-time chat
-"""
-from typing import Dict, List, Optional
-from fastapi import WebSocket
+# --- FILE: app/services/chat_service.py ---
+
 from sqlalchemy.orm import Session
-import uuid
+from sqlalchemy.exc import SQLAlchemyError
+from typing import Optional, List
+from datetime import datetime
 
 from app.models.chat import ChatSession, ChatMessage, ChatStatus, MessageSender
-from app.core.exceptions import NotFoundException
-
+from app.models.user import User
 
 class ConnectionManager:
-    """WebSocket connection manager"""
-    
     def __init__(self):
-        # Active connections: {session_id: [websocket1, websocket2, ...]}
-        self.active_connections: Dict[str, List[WebSocket]] = {}
-    
-    async def connect(self, websocket: WebSocket, session_id: str):
-        """Connect a websocket to a session"""
+        self.active_connections: dict[str, list] = {}
+
+    async def connect(self, websocket, session_id: str):
         await websocket.accept()
-        
         if session_id not in self.active_connections:
             self.active_connections[session_id] = []
-        
         self.active_connections[session_id].append(websocket)
-    
-    def disconnect(self, websocket: WebSocket, session_id: str):
-        """Disconnect a websocket"""
+
+    def disconnect(self, websocket, session_id: str):
         if session_id in self.active_connections:
-            self.active_connections[session_id].remove(websocket)
-            
-            # Clean up empty session
+            if websocket in self.active_connections[session_id]:
+                self.active_connections[session_id].remove(websocket)
             if not self.active_connections[session_id]:
                 del self.active_connections[session_id]
-    
+
     async def send_message(self, message: str, session_id: str):
-        """Send message to all connections in a session"""
         if session_id in self.active_connections:
-            for connection in self.active_connections[session_id]:
-                await connection.send_text(message)
-    
-    async def broadcast(self, message: str):
-        """Broadcast message to all connections"""
-        for connections in self.active_connections.values():
-            for connection in connections:
-                await connection.send_text(message)
+            for ws in list(self.active_connections[session_id]):
+                try:
+                    await ws.send_text(message)
+                except:
+                    self.disconnect(ws, session_id)
 
-
-# Global connection manager instance
 connection_manager = ConnectionManager()
 
 
 class ChatService:
-    """Chat service"""
-    
+
     @staticmethod
-    def create_session(db: Session, user_id: Optional[int] = None) -> ChatSession:
-        """Create new chat session (supports guest users)"""
-        session_id = f"CHAT-{uuid.uuid4().hex[:12].upper()}"
-        
-        session = ChatSession(
-            user_id=user_id,
-            session_id=session_id,
-            status=ChatStatus.WAITING
+    def get_session_or_none(db: Session, session_uuid: str) -> Optional[ChatSession]:
+        return db.query(ChatSession).filter(ChatSession.session_id == session_uuid).first()
+
+    @staticmethod
+    def get_existing_session_for_user(db: Session, user_id: int) -> Optional[ChatSession]:
+        return (
+            db.query(ChatSession)
+            .filter(ChatSession.user_id == user_id)
+            .filter(ChatSession.status == ChatStatus.ACTIVE)
+            .first()
         )
-        
-        db.add(session)
+
+    @staticmethod
+    def create_session(db: Session, user_id: int) -> ChatSession:
+        import uuid
+        new_id = str(uuid.uuid4())
+
+        new_session = ChatSession(
+            user_id=user_id,
+            session_id=new_id,
+            status=ChatStatus.ACTIVE,
+            admin_id=None
+        )
+        db.add(new_session)
         db.commit()
-        db.refresh(session)
-        
-        return session
-    
+        db.refresh(new_session)
+        return new_session
+
     @staticmethod
-    def get_session(db: Session, session_id: str) -> ChatSession:
-        """Get chat session by session_id"""
-        session = db.query(ChatSession).filter(
-            ChatSession.session_id == session_id
-        ).first()
-        
+    def get_session(db: Session, session_uuid: str) -> ChatSession:
+        session = (
+            db.query(ChatSession)
+            .filter(ChatSession.session_id == session_uuid)
+            .first()
+        )
         if not session:
-            raise NotFoundException("Chat session not found")
-        
+            raise Exception("Chat session not found.")
         return session
-    
-    @staticmethod
-    def get_user_sessions(db: Session, user_id: int) -> List[ChatSession]:
-        """Get all sessions for a user"""
-        return db.query(ChatSession).filter(
-            ChatSession.user_id == user_id
-        ).order_by(ChatSession.created_at.desc()).all()
-    
-    @staticmethod
-    def get_all_sessions(db: Session, status: ChatStatus = None) -> List[ChatSession]:
-        """Get all chat sessions (admin)"""
-        query = db.query(ChatSession)
-        
-        if status:
-            query = query.filter(ChatSession.status == status)
-        
-        return query.order_by(ChatSession.created_at.desc()).all()
-    
+
     @staticmethod
     def save_message(
         db: Session,
         session_id: str,
         sender: MessageSender,
-        sender_id: int,
+        sender_id: Optional[int],
         message: str
     ) -> ChatMessage:
-        """Save chat message"""
-        # Get session
-        session = db.query(ChatSession).filter(
-            ChatSession.session_id == session_id
-        ).first()
-        
-        if not session:
-            raise NotFoundException("Chat session not found")
-        
-        # Create message
-        chat_message = ChatMessage(
+
+        session = ChatService.get_session(db, session_id)
+
+        new_msg = ChatMessage(
             session_id=session.id,
             sender=sender,
             sender_id=sender_id,
             message=message,
             is_read=False
         )
-        
-        db.add(chat_message)
-        
-        # Update session status
-        if session.status == ChatStatus.WAITING and sender == MessageSender.ADMIN:
-            session.status = ChatStatus.ACTIVE
-        
+        db.add(new_msg)
         db.commit()
-        db.refresh(chat_message)
-        
-        return chat_message
-    
+        db.refresh(new_msg)
+        return new_msg
+
     @staticmethod
-    def close_session(db: Session, session_id: str) -> ChatSession:
-        """Close chat session"""
-        session = db.query(ChatSession).filter(
-            ChatSession.session_id == session_id
-        ).first()
-        
-        if not session:
-            raise NotFoundException("Chat session not found")
-        
+    def get_all_sessions(db: Session) -> List[ChatSession]:
+        sessions = (
+            db.query(ChatSession)
+            .order_by(ChatSession.created_at.desc())
+            .all()
+        )
+
+        # 🔥 FIX: Thêm username = full_name
+        for s in sessions:
+            s.username = s.user.full_name if s.user else None
+
+        return sessions
+
+    @staticmethod
+    def get_user_sessions(db: Session, user_id: int) -> List[ChatSession]:
+        sessions = (
+            db.query(ChatSession)
+            .filter(ChatSession.user_id == user_id)
+            .order_by(ChatSession.created_at.desc())
+            .all()
+        )
+        for s in sessions:
+            s.username = s.user.full_name if s.user else None
+        return sessions
+
+    @staticmethod
+    def close_session(db: Session, session_uuid: str) -> ChatSession:
+        session = ChatService.get_session(db, session_uuid)
         session.status = ChatStatus.CLOSED
         db.commit()
         db.refresh(session)
-        
         return session
