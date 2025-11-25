@@ -3,17 +3,9 @@
  */
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChatService } from '@/client'
+import { ChatService, type ChatSessionResponse } from '@/client'
 import { useSocket } from '@/context/SocketContext'
 import { useAuth } from '@/context/AuthContext'
-
-interface ChatSession {
-  session_id: string
-  user_id: number
-  status: string
-  created_at: string
-  updated_at: string
-}
 
 interface Message {
   id?: number
@@ -37,7 +29,7 @@ export default function ChatSupport() {
     refetchInterval: 10000 // Refresh every 10 seconds
   })
 
-  const chatSessions: ChatSession[] = sessionsData?.sessions || []
+  const chatSessions: ChatSessionResponse[] = sessionsData?.sessions || []
 
   // Sync socket messages to local state
   useEffect(() => {
@@ -58,7 +50,7 @@ export default function ChatSupport() {
   }, [messages])
 
   // Handle session selection
-  const handleSelectSession = (session: ChatSession) => {
+  const handleSelectSession = (session: ChatSessionResponse) => {
     setSelectedSession(session.session_id)
     setMessages([]) // Clear old messages
     connectToSession(session.session_id)

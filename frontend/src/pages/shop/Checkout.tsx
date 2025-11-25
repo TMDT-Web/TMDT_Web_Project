@@ -40,15 +40,15 @@ export default function Checkout() {
     onError: (error: any) => {
       console.error('Order creation error:', error)
       console.error('Error response:', error?.response?.data)
-      
+
       // Extract detailed error message
       let errorMessage = 'Đặt hàng thất bại. Vui lòng thử lại!'
-      
+
       if (error?.response?.data?.detail) {
         const detail = error.response.data.detail
         // If detail is an array of validation errors
         if (Array.isArray(detail)) {
-          errorMessage = detail.map((err: any) => 
+          errorMessage = detail.map((err: any) =>
             `${err.loc?.join('.') || 'Field'}: ${err.msg}`
           ).join('\n')
         } else if (typeof detail === 'string') {
@@ -59,14 +59,14 @@ export default function Checkout() {
       } else if (error?.message) {
         errorMessage = error.message
       }
-      
+
       // Check if authentication error
       if (error?.response?.status === 401) {
         alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!')
         navigate('/login')
         return
       }
-      
+
       alert(errorMessage)
     }
   })
@@ -81,7 +81,7 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!user) {
       alert('Vui lòng đăng nhập để đặt hàng!')
       return
@@ -96,7 +96,8 @@ export default function Checkout() {
       items: items.map(item => {
         const orderItem: any = {
           product_id: item.product.id,
-          quantity: item.quantity
+          quantity: item.quantity,
+          is_collection: !!(item.product as any).isCollection // Explicitly mark collections to prevent ID collision
         }
         // Only add variant if it exists
         if (item.variant) {
@@ -105,12 +106,12 @@ export default function Checkout() {
         return orderItem
       })
     }
-    
+
     // Only add note if it exists
     if (formData.notes && formData.notes.trim()) {
       orderPayload.note = formData.notes.trim()
     }
-    
+
     console.log('Order payload:', orderPayload) // Debug log
 
     createOrderMutation.mutate(orderPayload)
@@ -135,7 +136,7 @@ export default function Checkout() {
                       type="text"
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]" value={formData.shipping_contact_name}
-                      onChange={(e) => setFormData({...formData, shipping_contact_name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, shipping_contact_name: e.target.value })}
                     />
                   </div>
 
@@ -146,7 +147,7 @@ export default function Checkout() {
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]"
                       value={formData.shipping_contact_phone}
-                      onChange={(e) => setFormData({...formData, shipping_contact_phone: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, shipping_contact_phone: e.target.value })}
                     />
                   </div>
 
@@ -158,7 +159,7 @@ export default function Checkout() {
                       placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]"
                       value={formData.shipping_address}
-                      onChange={(e) => setFormData({...formData, shipping_address: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, shipping_address: e.target.value })}
                     />
                   </div>
 
@@ -169,7 +170,7 @@ export default function Checkout() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]"
                       placeholder="Ghi chú về đơn hàng (tùy chọn)"
                       value={formData.notes}
-                      onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     />
                   </div>
                 </div>
@@ -185,7 +186,7 @@ export default function Checkout() {
                       name="payment"
                       value="cod"
                       checked={formData.payment_gateway === 'cod'}
-                      onChange={(e) => setFormData({...formData, payment_gateway: e.target.value as PaymentGateway})}
+                      onChange={(e) => setFormData({ ...formData, payment_gateway: e.target.value as PaymentGateway })}
                       className="mr-3"
                     />
                     <div>
@@ -200,7 +201,7 @@ export default function Checkout() {
                       name="payment"
                       value="momo"
                       checked={formData.payment_gateway === 'momo'}
-                      onChange={(e) => setFormData({...formData, payment_gateway: e.target.value as PaymentGateway})}
+                      onChange={(e) => setFormData({ ...formData, payment_gateway: e.target.value as PaymentGateway })}
                       className="mr-3"
                     />
                     <div>
@@ -215,7 +216,7 @@ export default function Checkout() {
                       name="payment"
                       value="vnpay"
                       checked={formData.payment_gateway === 'vnpay'}
-                      onChange={(e) => setFormData({...formData, payment_gateway: e.target.value as PaymentGateway})}
+                      onChange={(e) => setFormData({ ...formData, payment_gateway: e.target.value as PaymentGateway })}
                       className="mr-3"
                     />
                     <div>
@@ -230,7 +231,7 @@ export default function Checkout() {
                       name="payment"
                       value="bank_transfer"
                       checked={formData.payment_gateway === 'bank_transfer'}
-                      onChange={(e) => setFormData({...formData, payment_gateway: e.target.value as PaymentGateway})}
+                      onChange={(e) => setFormData({ ...formData, payment_gateway: e.target.value as PaymentGateway })}
                       className="mr-3"
                     />
                     <div>

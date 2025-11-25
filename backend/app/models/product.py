@@ -20,18 +20,8 @@ class Category(Base):
     products = relationship("Product", back_populates="category")
     children = relationship("Category", remote_side=[id]) # Sub-categories
 
-# 2. BỘ SƯU TẬP (Collection) - VD: Autumn 2025, Minimalist
-class Collection(Base):
-    __tablename__ = "collections"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, nullable=False)
-    slug = Column(String, unique=True)
-    banner_url = Column(String, nullable=True) # Ảnh bìa bộ sưu tập to đẹp
-    description = Column(Text)
-    is_active = Column(Boolean, default=True)
-
-    products = relationship("Product", back_populates="collection")
+# NOTE: Collection model has been moved to app.models.collection
+# to support bundle/combo functionality with CollectionItem
 
 # 3. SẢN PHẨM CHÍNH (Product)
 class Product(Base):

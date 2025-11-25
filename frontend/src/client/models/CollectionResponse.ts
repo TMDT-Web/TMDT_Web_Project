@@ -2,6 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+/**
+ * Collection response schema
+ */
 export type CollectionResponse = {
     name: string;
     slug: string;
@@ -9,5 +12,6 @@ export type CollectionResponse = {
     description?: (string | null);
     is_active?: boolean;
     id: number;
+    sale_price?: (number | null);
 };
 

@@ -85,4 +85,38 @@ export class UploadService {
             },
         });
     }
+    /**
+     * Download Image From Url
+     * Download image from external URL and save locally (admin only)
+     *
+     * This automatically downloads the image and stores it in backend/static/images/
+     * Useful when pasting image URLs instead of uploading files
+     *
+     * Args:
+     * image_url: Full URL to the image (e.g., https://example.com/image.jpg)
+     * subfolder: Target subfolder (products, categories, banners)
+     *
+     * Returns:
+     * Local URL path to the downloaded image
+     * @param imageUrl
+     * @param subfolder
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static downloadImageFromUrlApiV1UploadImageFromUrlPost(
+        imageUrl: string,
+        subfolder: string = 'products',
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/upload/image-from-url',
+            query: {
+                'image_url': imageUrl,
+                'subfolder': subfolder,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
 }

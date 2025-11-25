@@ -39,6 +39,30 @@ class CategoryResponse(CategoryBase):
         from_attributes = True
 
 
+# ============================================================================
+# COLLECTION SCHEMAS (Bundle/Combo Support)
+# ============================================================================
+
+class CollectionItemBase(BaseModel):
+    """Collection item base schema"""
+    product_id: int
+    quantity: int = Field(default=1, ge=1)
+
+
+class CollectionItemCreate(CollectionItemBase):
+    """Collection item create schema"""
+    pass
+
+
+class CollectionItemResponse(CollectionItemBase):
+    """Collection item response with product details"""
+    id: int
+    product: Optional['ProductResponse'] = None
+
+    class Config:
+        from_attributes = True
+
+
 class CollectionBase(BaseModel):
     """Collection base schema"""
     name: str
@@ -49,20 +73,26 @@ class CollectionBase(BaseModel):
 
 
 class CollectionCreate(CollectionBase):
-    product_ids: Optional[List[int]] = None
+    """Collection create schema with bundle items"""
+    items: List[CollectionItemCreate] = []
+    sale_price: Optional[float] = Field(None, gt=0)
 
 
 class CollectionUpdate(BaseModel):
+    """Collection update schema"""
     name: Optional[str] = None
     slug: Optional[str] = None
     banner_url: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
-    product_ids: Optional[List[int]] = None
+    items: Optional[List[CollectionItemCreate]] = None
+    sale_price: Optional[float] = Field(None, gt=0)
 
 
 class CollectionResponse(CollectionBase):
+    """Collection response schema"""
     id: int
+    sale_price: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -133,9 +163,14 @@ class ProductListResponse(BaseModel):
 
 
 class CollectionWithProductsResponse(CollectionBase):
-    """Collection response with products included"""
+    """Collection response with bundle items and pricing details"""
     id: int
-    products: List[ProductResponse] = []
+    sale_price: Optional[float] = None
+    total_original_price: float = 0.0
+    discount_amount: float = 0.0
+    discount_percentage: float = 0.0
+    items: List[CollectionItemResponse] = []
+    products: List[ProductResponse] = []  # Backward compatibility
 
     class Config:
         from_attributes = True

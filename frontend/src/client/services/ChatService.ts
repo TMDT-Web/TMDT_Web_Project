@@ -2,9 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ChatMessageResponse } from '../models/ChatMessageResponse';
 import type { ChatSessionListResponse } from '../models/ChatSessionListResponse';
 import type { ChatSessionResponse } from '../models/ChatSessionResponse';
-import type { ChatMessageResponse } from '../models/ChatMessageResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -23,7 +23,7 @@ export class ChatService {
     }
     /**
      * Create Chat Session
-     * Create new chat session
+     * Create new chat session (supports guest users)
      * @returns ChatSessionResponse Successful Response
      * @throws ApiError
      */
@@ -34,20 +34,8 @@ export class ChatService {
         });
     }
     /**
-     * Get My Sessions
-     * Get current user's chat sessions
-     * @returns ChatSessionListResponse Successful Response
-     * @throws ApiError
-     */
-    public static getMySessionsApiV1ChatSessionsMyGet(): CancelablePromise<ChatSessionListResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/chat/sessions/my',
-        });
-    }
-    /**
      * Get Session Messages
-     * Get all messages for a chat session
+     * Get all messages for a chat session - FIXED: Direct DB Query
      * @param sessionId
      * @returns ChatMessageResponse Successful Response
      * @throws ApiError
@@ -64,6 +52,18 @@ export class ChatService {
             errors: {
                 422: `Validation Error`,
             },
+        });
+    }
+    /**
+     * Get My Sessions
+     * Get current user's chat sessions
+     * @returns ChatSessionListResponse Successful Response
+     * @throws ApiError
+     */
+    public static getMySessionsApiV1ChatSessionsMyGet(): CancelablePromise<ChatSessionListResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/chat/sessions/my',
         });
     }
     /**

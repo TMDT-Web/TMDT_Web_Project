@@ -28,26 +28,33 @@ try {
     exit 1
 }
 
-# Step 2: Build and start containers
-Write-Host "`n[Step 2/6] Building and starting containers..." -ForegroundColor Yellow
+# Step 2: Clean Docker build cache and build containers
+Write-Host "`n[Step 2/6] Cleaning build cache and building containers..." -ForegroundColor Yellow
 try {
-    docker-compose up -d --build
+    # Always clean build cache for fresh builds
+    Write-Host "  Pruning Docker build cache..." -ForegroundColor Gray
+    docker builder prune -f | Out-Null
+    
+    # Build with no cache to ensure all changes are applied
+    Write-Host "  Building containers (no cache)..." -ForegroundColor Gray
+    docker-compose build --no-cache
     
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "⚠ Build failed, cleaning cache and retrying..." -ForegroundColor Yellow
-        docker system prune -f | Out-Null
-        docker-compose build --no-cache
-        docker-compose up -d
-        
-        if ($LASTEXITCODE -ne 0) {
-            throw "Build failed after cache cleanup"
-        }
+        throw "Build failed"
+    }
+    
+    # Start containers
+    Write-Host "  Starting containers..." -ForegroundColor Gray
+    docker-compose up -d
+    
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to start containers"
     }
     
     Write-Host "✓ Containers built and started successfully" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Failed to start containers: $_" -ForegroundColor Red
-    Write-Host "  Try manually: docker system prune -f && docker-compose build --no-cache" -ForegroundColor Yellow
+    Write-Host "✗ Failed to build/start containers: $_" -ForegroundColor Red
+    Write-Host "  Check logs: docker-compose logs" -ForegroundColor Yellow
     exit 1
 }
 

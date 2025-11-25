@@ -2,12 +2,17 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { CollectionItemCreate } from './CollectionItemCreate';
+/**
+ * Collection create schema with bundle items
+ */
 export type CollectionCreate = {
     name: string;
     slug: string;
     banner_url?: (string | null);
     description?: (string | null);
     is_active?: boolean;
-    product_ids?: (Array<number> | null);
+    items?: Array<CollectionItemCreate>;
+    sale_price?: (number | null);
 };
 

@@ -30,62 +30,81 @@ export default function Cart() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {Array.isArray(items) && items.map((item) => (
-              <div key={item.product.id} className="bg-white rounded-xl p-6 shadow-sm flex gap-6">
-                <Link to={`/products/${item.product.slug}`} className="flex-shrink-0">
-                  <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-100 rounded-lg overflow-hidden">
-                    <img
-                      src={formatImageUrl(item.product.thumbnail_url) || 'https://via.placeholder.com/200'}
-                      alt={item.product.name}
-                      className="w-full h-full object-cover"
-                    />
+            {Array.isArray(items) && items.map((item) => {
+              const isCombo = item.product.isCollection
+              const itemPrice = item.product.price || 0
+              
+              return (
+                <div key={`${isCombo ? 'combo' : 'product'}-${item.product.id}`} className="bg-white rounded-xl p-6 shadow-sm flex gap-6">
+                  {/* Image */}
+                  <div className="flex-shrink-0">
+                    <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-100 rounded-lg overflow-hidden relative">
+                      <img
+                        src={formatImageUrl(item.product.thumbnail_url) || 'https://via.placeholder.com/200'}
+                        alt={item.product.name}
+                        className="w-full h-full object-cover"
+                      />
+                      {isCombo && (
+                        <div className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded font-bold">
+                          COMBO
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </Link>
 
-                <div className="flex-1 min-w-0">
-                  <Link to={`/products/${item.product.slug}`} className="font-bold text-lg hover:text-[rgb(var(--color-wood))] mb-2 block">
-                    {item.product.name}
-                  </Link>
-                  <p className="text-[rgb(var(--color-wood))] font-bold text-xl mb-4">
-                    {item.product.price.toLocaleString('vi-VN')}₫
-                  </p>
+                  {/* Details */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-lg hover:text-[rgb(var(--color-wood))] mb-2">
+                      {item.product.name}
+                    </h3>
+                    {isCombo && (
+                      <p className="text-sm text-gray-600 mb-2">🎁 Bộ sưu tập combo</p>
+                    )}
+                    <p className="text-[rgb(var(--color-wood))] font-bold text-xl mb-4">
+                      {itemPrice.toLocaleString('vi-VN')}₫
+                      {isCombo && <span className="text-sm text-gray-500 ml-2">(giá ưu đãi)</span>}
+                    </p>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center border-2 border-gray-300 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      {/* Quantity Controls */}
+                      <div className="flex items-center border-2 border-gray-300 rounded-lg">
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          className="px-3 py-1 hover:bg-gray-100 font-bold"
+                          disabled={item.quantity <= 1}
+                        >
+                          −
+                        </button>
+                        <span className="px-4 py-1 font-medium">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="px-3 py-1 hover:bg-gray-100 font-bold"
+                          disabled={!isCombo && item.quantity >= item.product.stock}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Remove Button */}
                       <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        className="px-3 py-1 hover:bg-gray-100 font-bold"
-                        disabled={item.quantity <= 1}
+                        onClick={() => removeItem(item.product.id)}
+                        className="text-red-600 hover:text-red-700 font-medium"
                       >
-                        −
-                      </button>
-                      <span className="px-4 py-1 font-medium">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        className="px-3 py-1 hover:bg-gray-100 font-bold"
-                        disabled={item.quantity >= item.product.stock}
-                      >
-                        +
+                        Xóa
                       </button>
                     </div>
+                  </div>
 
-                    <button
-                      onClick={() => removeItem(item.product.id)}
-                      className="text-red-600 hover:text-red-700 font-medium"
-                    >
-                      Xóa
-                    </button>
+                  {/* Subtotal */}
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600 mb-2">Tạm tính</p>
+                    <p className="font-bold text-xl">
+                      {(itemPrice * item.quantity).toLocaleString('vi-VN')}₫
+                    </p>
                   </div>
                 </div>
-
-                <div className="text-right">
-                  <p className="text-sm text-gray-600 mb-2">Tạm tính</p>
-                  <p className="font-bold text-xl">
-                    {(item.product.price * item.quantity).toLocaleString('vi-VN')}₫
-                  </p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
 
             <button onClick={clearCart} className="text-red-600 hover:text-red-700 font-medium">
               Xóa tất cả

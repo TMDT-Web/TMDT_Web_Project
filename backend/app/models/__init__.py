@@ -5,7 +5,8 @@ Models package
 from app.models.base import Base
 from app.models.enums import UserRole, VipTier
 from app.models.user import User
-from app.models.product import Category, Collection, Product
+from app.models.product import Category, Product
+from app.models.collection import Collection, CollectionItem
 from app.models.order import Order, OrderItem, OrderStatus, PaymentMethod
 from app.models.cart import Cart, CartItem
 from app.models.chat import ChatSession, ChatMessage
@@ -19,6 +20,7 @@ __all__ = [
     "User",
     "Category",
     "Collection",
+    "CollectionItem",
     "Product",
     "Order",
     "OrderItem",

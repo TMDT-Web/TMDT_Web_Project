@@ -51,21 +51,44 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true)
         // ✅ Use generated CartService
         const cartData = await CartService.getCartApiV1CartGet()
-        
+
         // Convert server cart items to local format
-        const localItems: LocalCartItem[] = (cartData?.items || []).map((item: CartItemResponse) => ({
-          product: {
-            id: item.product_id,
-            name: item.product.name,
-            slug: item.product.slug,
-            price: item.product.price,
-            thumbnail_url: item.product.thumbnail_url,
-            stock: item.product.stock,
-            // Add other fields as needed
-          },
-          quantity: item.quantity,
-        }))
-        
+        // Convert server cart items to local format
+        const localItems: LocalCartItem[] = (cartData?.items || []).map((item: any) => {
+          // If it's a collection/combo item
+          if (item.collection_id && item.collection) {
+            return {
+              product: {
+                id: item.collection.id,
+                name: item.collection.name,
+                slug: item.collection.slug,
+                price: item.collection.sale_price || 0,
+                thumbnail_url: item.collection.banner_url,
+                stock: 999, // Collections don't have direct stock
+                isCollection: true, // Flag to identify this is a combo
+                collectionId: item.collection.id,
+              },
+              quantity: item.quantity,
+              cartItemId: item.id,
+            }
+          }
+
+          // Regular product item
+          return {
+            product: {
+              id: item.product.id,
+              name: item.product.name,
+              slug: item.product.slug,
+              price: item.product.sale_price || item.product.price,
+              thumbnail_url: item.product.thumbnail_url,
+              stock: item.product.stock,
+              isCollection: false,
+            },
+            quantity: item.quantity,
+            cartItemId: item.id,
+          }
+        })
+
         setItems(localItems)
       } catch (error) {
         console.error('Failed to load cart from server:', error)
@@ -121,7 +144,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       // Clear local cart after sync
       storage.remove(STORAGE_KEYS.CART)
-      
+
       // Reload from server
       await loadCart()
     } catch (error) {
@@ -132,16 +155,21 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   /**
    * Add item to cart
    */
+  /**
+   * Add item to cart
+   */
   const addItem = async (product: any, quantity = 1) => {
     if (isAuthenticated) {
       try {
         setIsLoading(true)
         // ✅ Use generated CartService - server will handle merging
+        // Pass is_collection flag explicitly to prevent ID collision
         await CartService.addToCartApiV1CartAddPost({
           product_id: product.id,
           quantity: quantity,
-        })
-        
+          is_collection: !!product.isCollection
+        } as any)
+
         // Reload cart from server
         await loadCart()
       } catch (error) {
@@ -153,21 +181,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } else {
       // Local cart update
       setItems((prev) => {
-        const existingItem = prev.find((item) => item.product.id === product.id)
-        
+        // Check if item exists (matching ID AND isCollection flag)
+        const existingItem = prev.find((item) =>
+          item.product.id === product.id &&
+          !!item.product.isCollection === !!product.isCollection
+        )
+
         if (existingItem) {
           return prev.map((item) =>
-            item.product.id === product.id
+            item.product.id === product.id && !!item.product.isCollection === !!product.isCollection
               ? { ...item, quantity: item.quantity + quantity }
               : item
           )
         }
-        
+
         return [...prev, { product, quantity }]
       })
     }
   }
-
   /**
    * Remove item from cart
    */
@@ -177,8 +208,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true)
         // Find the cart item ID
         const cartData = await CartService.getCartApiV1CartGet()
-        const itemToRemove = cartData.items.find(item => item.product_id === productId)
-        
+        // Check both product_id and collection_id
+        const itemToRemove = (cartData.items as any[]).find(item =>
+          item.product_id === productId || item.collection_id === productId
+        )
+
         if (itemToRemove) {
           // ✅ Use generated CartService
           await CartService.removeFromCartApiV1CartItemIdDelete(itemToRemove.id)
@@ -210,8 +244,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true)
         // Find the cart item ID
         const cartData = await CartService.getCartApiV1CartGet()
-        const itemToUpdate = cartData.items.find(item => item.product_id === productId)
-        
+        // Check both product_id and collection_id
+        const itemToUpdate = (cartData.items as any[]).find(item =>
+          item.product_id === productId || item.collection_id === productId
+        )
+
         if (itemToUpdate) {
           // ✅ Use generated CartService
           await CartService.updateCartItemApiV1CartItemIdPut(itemToUpdate.id, {
