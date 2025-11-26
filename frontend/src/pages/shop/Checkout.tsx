@@ -1,7 +1,7 @@
 /**
  * Checkout Page - Order checkout with shipping info
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useCart } from '@/context/CartContext'
@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext'
 import { orderService } from '@/services/order.service'
 import { PaymentGateway } from '@/types'
 import { formatImageUrl } from '@/utils/format'
+import { addressService, Province, District, Ward } from '@/services/address.service'
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart()
@@ -18,11 +19,105 @@ export default function Checkout() {
   const [formData, setFormData] = useState({
     shipping_contact_name: user?.full_name || '',
     shipping_contact_phone: user?.phone || '',
-    shipping_address: '',
+    province_code: 0,
+    province_name: '',
+    district_code: 0,
+    district_name: '',
+    ward_code: 0,
+    ward_name: '',
+    street_address: '',
     notes: '',
     payment_gateway: 'cod' as PaymentGateway,
     use_reward_points: false
   })
+
+  // State for managing address data
+  const [provinces, setProvinces] = useState<Province[]>([])
+  const [districts, setDistricts] = useState<District[]>([])
+  const [wards, setWards] = useState<Ward[]>([])
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(true)
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false)
+  const [isLoadingWards, setIsLoadingWards] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  // Load all provinces on component mount
+  useEffect(() => {
+    const loadProvinces = async () => {
+      try {
+        setIsLoadingProvinces(true)
+        setLoadError(null)
+        const data = await addressService.getProvinces()
+        if (!data || data.length === 0) {
+          throw new Error('Không có dữ liệu tỉnh/thành phố')
+        }
+        setProvinces(data)
+      } catch (error) {
+        console.error('Failed to load provinces:', error)
+        setLoadError('Không thể tải danh sách tỉnh/thành phố. Vui lòng kiểm tra kết nối internet và tải lại trang.')
+      } finally {
+        setIsLoadingProvinces(false)
+      }
+    }
+    loadProvinces()
+  }, [])
+
+  // Load districts when province changes
+  useEffect(() => {
+    const loadDistricts = async () => {
+      if (formData.province_code) {
+        try {
+          setIsLoadingDistricts(true)
+          const data = await addressService.getDistrictsByProvince(formData.province_code)
+          setDistricts(data)
+          // Reset district and ward when province changes
+          setFormData(prev => ({
+            ...prev,
+            district_code: 0,
+            district_name: '',
+            ward_code: 0,
+            ward_name: ''
+          }))
+          setWards([])
+        } catch (error) {
+          console.error('Failed to load districts:', error)
+          alert('Không thể tải danh sách quận/huyện. Vui lòng thử lại!')
+        } finally {
+          setIsLoadingDistricts(false)
+        }
+      } else {
+        setDistricts([])
+        setWards([])
+      }
+    }
+    loadDistricts()
+  }, [formData.province_code])
+
+  // Load wards when district changes
+  useEffect(() => {
+    const loadWards = async () => {
+      if (formData.district_code) {
+        try {
+          setIsLoadingWards(true)
+          const data = await addressService.getWardsByDistrict(formData.district_code)
+          setWards(data)
+          // Reset ward when district changes
+          setFormData(prev => ({
+            ...prev,
+            ward_code: 0,
+            ward_name: ''
+          }))
+        } catch (error) {
+          console.error('Failed to load wards:', error)
+          alert('Không thể tải danh sách phường/xã. Vui lòng thử lại!')
+        } finally {
+          setIsLoadingWards(false)
+        }
+      } else {
+        setWards([])
+      }
+    }
+    loadWards()
+  }, [formData.district_code])
 
   const createOrderMutation = useMutation({
     mutationFn: orderService.createOrder,
@@ -87,11 +182,37 @@ export default function Checkout() {
       return
     }
 
+    // Validate address fields
+    if (!formData.province_code || !formData.province_name) {
+      alert('Vui lòng chọn Tỉnh/Thành phố!')
+      return
+    }
+    if (!formData.district_code || !formData.district_name) {
+      alert('Vui lòng chọn Quận/Huyện!')
+      return
+    }
+    if (!formData.ward_code || !formData.ward_name) {
+      alert('Vui lòng chọn Phường/Xã!')
+      return
+    }
+    if (!formData.street_address || !formData.street_address.trim()) {
+      alert('Vui lòng nhập Số nhà, tên đường!')
+      return
+    }
+
+    // Combine address fields into a single string
+    const fullAddress = [
+      formData.street_address.trim(),
+      formData.ward_name,
+      formData.district_name,
+      formData.province_name
+    ].filter(Boolean).join(', ')
+
     // Map form data and cart items to backend API structure
     const orderPayload: any = {
       full_name: formData.shipping_contact_name,
       phone_number: formData.shipping_contact_phone,
-      shipping_address: formData.shipping_address,
+      shipping_address: fullAddress,
       payment_method: formData.payment_gateway,
       items: items.map(item => {
         const orderItem: any = {
@@ -113,6 +234,7 @@ export default function Checkout() {
     }
 
     console.log('Order payload:', orderPayload) // Debug log
+    console.log('Full address:', fullAddress) // Debug log
 
     createOrderMutation.mutate(orderPayload)
   }
@@ -121,6 +243,27 @@ export default function Checkout() {
     <div className="section-padding bg-[rgb(var(--color-bg-light))] min-h-screen">
       <div className="container-custom">
         <h1 className="text-3xl md:text-4xl font-bold mb-8">Thanh toán</h1>
+
+        {/* Error Message */}
+        {loadError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-red-800 font-medium">{loadError}</p>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                >
+                  Tải lại trang
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="grid lg:grid-cols-3 gap-8">
@@ -152,14 +295,98 @@ export default function Checkout() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2">Địa chỉ giao hàng *</label>
-                    <textarea
+                    <label className="block text-sm font-medium mb-2">Tỉnh/Thành phố *</label>
+                    <select
                       required
-                      rows={3}
-                      placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
+                      disabled={isLoadingProvinces}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      value={formData.province_code}
+                      onChange={(e) => {
+                        const code = Number(e.target.value)
+                        const province = provinces.find(p => p.code === code)
+                        setFormData({
+                          ...formData,
+                          province_code: code,
+                          province_name: province?.name || ''
+                        })
+                      }}
+                    >
+                      <option value={0}>
+                        {isLoadingProvinces ? 'Đang tải...' : '-- Chọn Tỉnh/Thành phố --'}
+                      </option>
+                      {provinces.map((province) => (
+                        <option key={province.code} value={province.code}>
+                          {province.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">Quận/Huyện *</label>
+                    <select
+                      required
+                      disabled={!formData.province_code || isLoadingDistricts}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      value={formData.district_code}
+                      onChange={(e) => {
+                        const code = Number(e.target.value)
+                        const district = districts.find(d => d.code === code)
+                        setFormData({
+                          ...formData,
+                          district_code: code,
+                          district_name: district?.name || ''
+                        })
+                      }}
+                    >
+                      <option value={0}>
+                        {isLoadingDistricts ? 'Đang tải...' : '-- Chọn Quận/Huyện --'}
+                      </option>
+                      {districts.map((district) => (
+                        <option key={district.code} value={district.code}>
+                          {district.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">Phường/Xã *</label>
+                    <select
+                      required
+                      disabled={!formData.district_code || isLoadingWards}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      value={formData.ward_code}
+                      onChange={(e) => {
+                        const code = Number(e.target.value)
+                        const ward = wards.find(w => w.code === code)
+                        setFormData({
+                          ...formData,
+                          ward_code: code,
+                          ward_name: ward?.name || ''
+                        })
+                      }}
+                    >
+                      <option value={0}>
+                        {isLoadingWards ? 'Đang tải...' : '-- Chọn Phường/Xã --'}
+                      </option>
+                      {wards.map((ward) => (
+                        <option key={ward.code} value={ward.code}>
+                          {ward.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">Số nhà, tên đường *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ví dụ: Số 123, Đường Nguyễn Văn A"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]"
-                      value={formData.shipping_address}
-                      onChange={(e) => setFormData({ ...formData, shipping_address: e.target.value })}
+                      value={formData.street_address}
+                      onChange={(e) => setFormData({ ...formData, street_address: e.target.value })}
                     />
                   </div>
 
