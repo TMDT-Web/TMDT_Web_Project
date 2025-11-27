@@ -28,13 +28,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         // Check if user is already logged in
         const token = localStorage.getItem('token')
-        const savedUser = storage.get<UserResponse>(STORAGE_KEYS.USER)
 
-        if (token && savedUser) {
-          setUser(savedUser)
+        if (token) {
+          try {
+            // Always fetch fresh user data from backend when token exists
+            const currentUser = await authService.getCurrentUser()
+            storage.set(STORAGE_KEYS.USER, currentUser)
+            setUser(currentUser)
+          } catch (fetchError) {
+            console.error('Failed to fetch user with token:', fetchError)
+            setUser(null)
+            localStorage.removeItem('token')
+            localStorage.removeItem('refresh_token')
+            storage.remove(STORAGE_KEYS.USER)
+          }
+        } else {
+          setUser(null)
+          storage.remove(STORAGE_KEYS.USER) // Clear user from storage if no token
         }
       } catch (error) {
-        // On error (e.g., 401), just clear state - do NOT trigger redirect or reload
+        // On other errors, clear state
         console.error('Auth initialization error:', error)
         setUser(null)
         localStorage.removeItem('token')
@@ -51,10 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (data: LoginData) => {
     // ✅ authService.login now saves token to 'token' key automatically
     const tokens = await authService.login(data)
-    
+
     // Note: token is already saved by authService.login to 'token' key
     // We only need to save refresh_token and get user info
-    
+
     // Get user info using generated client
     const userResponse = await authService.getCurrentUser()
     storage.set(STORAGE_KEYS.USER, userResponse)
@@ -73,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('refresh_token')
     storage.remove(STORAGE_KEYS.USER)
     setUser(null)
-    
+
     // Call logout endpoint
     authService.logout().catch(err => {
       console.error('Logout API call failed:', err)

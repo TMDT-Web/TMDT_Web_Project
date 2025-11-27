@@ -165,30 +165,31 @@ export default function Orders() {
                         const productName = item.product_name || item.product?.name || 'Sản phẩm'
                         const price = item.price_at_purchase || item.price || 0
                         const subtotal = price * item.quantity
-                        
+
                         return (
-                        <div key={idx} className="flex gap-4">
-                          {item.product?.image_url && (
-                            <img
-                              src={item.product.image_url}
-                              alt={productName}
-                              className="w-20 h-20 object-cover rounded-lg"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <p className="font-medium text-slate-800">{productName}</p>
-                            {item.variant && (
-                              <p className="text-sm text-gray-500">Phân loại: {item.variant}</p>
+                          <div key={idx} className="flex gap-4">
+                            {item.product?.image_url && (
+                              <img
+                                src={item.product.image_url}
+                                alt={productName}
+                                className="w-20 h-20 object-cover rounded-lg"
+                              />
                             )}
-                            <p className="text-sm text-gray-600 mt-1">
-                              {formatPrice(price)} x {item.quantity}
-                            </p>
+                            <div className="flex-1">
+                              <p className="font-medium text-slate-800">{productName}</p>
+                              {item.variant && (
+                                <p className="text-sm text-gray-500">Phân loại: {item.variant}</p>
+                              )}
+                              <p className="text-sm text-gray-600 mt-1">
+                                {formatPrice(price)} x {item.quantity}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium text-slate-800">{formatPrice(subtotal)}</p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-medium text-slate-800">{formatPrice(subtotal)}</p>
-                          </div>
-                        </div>
-                      )})}
+                        )
+                      })}
                     </div>
                   ) : (
                     <p className="text-gray-500 mb-4">Không có sản phẩm</p>
@@ -254,7 +255,7 @@ export default function Orders() {
                         Hủy đơn
                       </button>
                     )}
-                    <button 
+                    <button
                       onClick={() => setSelectedOrder(order)}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                     >
@@ -308,30 +309,31 @@ export default function Orders() {
                       const productName = item.product_name || item.product?.name || 'Sản phẩm'
                       const price = item.price_at_purchase || item.price || 0
                       const subtotal = price * item.quantity
-                      
+
                       return (
-                      <div key={idx} className="flex gap-4 p-3 bg-gray-50 rounded-lg">
-                        {item.product?.image_url && (
-                          <img
-                            src={item.product.image_url}
-                            alt={productName}
-                            className="w-20 h-20 object-cover rounded"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <p className="font-medium text-slate-800">{productName}</p>
-                          {item.variant && (
-                            <p className="text-sm text-gray-500 mt-1">Phân loại: {item.variant}</p>
+                        <div key={idx} className="flex gap-4 p-3 bg-gray-50 rounded-lg">
+                          {item.product?.image_url && (
+                            <img
+                              src={item.product.image_url}
+                              alt={productName}
+                              className="w-20 h-20 object-cover rounded"
+                            />
                           )}
-                          <div className="flex items-center justify-between mt-2">
-                            <p className="text-sm text-gray-600">
-                              {formatPrice(price)} x {item.quantity}
-                            </p>
-                            <p className="font-medium text-slate-800">{formatPrice(subtotal)}</p>
+                          <div className="flex-1">
+                            <p className="font-medium text-slate-800">{productName}</p>
+                            {item.variant && (
+                              <p className="text-sm text-gray-500 mt-1">Phân loại: {item.variant}</p>
+                            )}
+                            <div className="flex items-center justify-between mt-2">
+                              <p className="text-sm text-gray-600">
+                                {formatPrice(price)} x {item.quantity}
+                              </p>
+                              <p className="font-medium text-slate-800">{formatPrice(subtotal)}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )})}
+                      )
+                    })}
                   </div>
                 </div>
 

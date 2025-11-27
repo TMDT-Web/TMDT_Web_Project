@@ -1,7 +1,7 @@
 """
 Authentication Schemas
 """
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 
@@ -28,15 +28,16 @@ class LoginRequest(BaseModel):
 class RegisterRequest(BaseModel):
     """Register request"""
     email: EmailStr
-    password: str
-    full_name: str
+    password: str = Field(..., min_length=6)
+    full_name: str = Field(..., min_length=2, max_length=255)
     phone: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
     """Change password request"""
-    old_password: str
-    new_password: str
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6)
+    confirm_password: str = Field(..., min_length=6)
 
 
 class ResetPasswordRequest(BaseModel):

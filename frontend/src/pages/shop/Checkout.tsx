@@ -10,6 +10,7 @@ import { orderService } from '@/services/order.service'
 import { PaymentGateway } from '@/types'
 import { formatImageUrl } from '@/utils/format'
 import { addressService, Province, District, Ward } from '@/services/address.service'
+import { useQuery } from '@tanstack/react-query'
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart()
@@ -69,26 +70,17 @@ export default function Checkout() {
           setIsLoadingDistricts(true)
           const data = await addressService.getDistrictsByProvince(formData.province_code)
           setDistricts(data)
-          // Reset district and ward when province changes
-          setFormData(prev => ({
-            ...prev,
-            district_code: 0,
-            district_name: '',
-            ward_code: 0,
-            ward_name: ''
-          }))
-          setWards([])
         } catch (error) {
           console.error('Failed to load districts:', error)
-          alert('Không thể tải danh sách quận/huyện. Vui lòng thử lại!')
         } finally {
           setIsLoadingDistricts(false)
         }
       } else {
         setDistricts([])
-        setWards([])
       }
     }
+    // Only load if districts are empty or don't match province (optimization)
+    // But for simplicity, just load. The check is handled by the dependency.
     loadDistricts()
   }, [formData.province_code])
 
@@ -100,15 +92,8 @@ export default function Checkout() {
           setIsLoadingWards(true)
           const data = await addressService.getWardsByDistrict(formData.district_code)
           setWards(data)
-          // Reset ward when district changes
-          setFormData(prev => ({
-            ...prev,
-            ward_code: 0,
-            ward_name: ''
-          }))
         } catch (error) {
           console.error('Failed to load wards:', error)
-          alert('Không thể tải danh sách phường/xã. Vui lòng thử lại!')
         } finally {
           setIsLoadingWards(false)
         }
@@ -118,6 +103,67 @@ export default function Checkout() {
     }
     loadWards()
   }, [formData.district_code])
+
+  // Fetch user addresses for pre-filling
+  const { data: addresses } = useQuery({
+    queryKey: ['my-addresses'],
+    queryFn: () => addressService.getMyAddresses(),
+    enabled: !!user
+  })
+
+  // Pre-fill form with default address
+  useEffect(() => {
+    const syncAddress = async () => {
+      // Only run if we have addresses, provinces, and the form is not yet filled (or we want to force fill default)
+      // Checking province_code === 0 ensures we don't overwrite user's manual changes if they navigate away and back? 
+      // Actually, navigation unmounts component, so state is lost anyway.
+      if (addresses && addresses.length > 0 && provinces.length > 0 && formData.province_code === 0) {
+        const defaultAddr = addresses.find(a => a.is_default) || addresses[0]
+
+        // Find Province
+        const province = provinces.find(p => p.name === defaultAddr.city)
+        if (!province) return
+
+        // Load Districts
+        const districtsList = await addressService.getDistrictsByProvince(province.code)
+        const district = districtsList.find(d => d.name === defaultAddr.district)
+
+        if (!district) {
+          setFormData(prev => ({
+            ...prev,
+            shipping_contact_name: defaultAddr.receiver_name || user?.full_name || '',
+            shipping_contact_phone: defaultAddr.receiver_phone || user?.phone || '',
+            street_address: defaultAddr.address_line,
+            province_code: province.code,
+            province_name: province.name
+          }))
+          setDistricts(districtsList)
+          return
+        }
+
+        // Load Wards
+        const wardsList = await addressService.getWardsByDistrict(district.code)
+        const ward = wardsList.find(w => w.name === defaultAddr.ward)
+
+        setFormData(prev => ({
+          ...prev,
+          shipping_contact_name: defaultAddr.receiver_name || user?.full_name || '',
+          shipping_contact_phone: defaultAddr.receiver_phone || user?.phone || '',
+          street_address: defaultAddr.address_line,
+          province_code: province.code,
+          province_name: province.name,
+          district_code: district.code,
+          district_name: district.name,
+          ward_code: ward?.code || 0,
+          ward_name: ward?.name || ''
+        }))
+
+        setDistricts(districtsList)
+        setWards(wardsList)
+      }
+    }
+    syncAddress()
+  }, [addresses, provinces, user, formData.province_code])
 
   const createOrderMutation = useMutation({
     mutationFn: orderService.createOrder,
@@ -307,7 +353,11 @@ export default function Checkout() {
                         setFormData({
                           ...formData,
                           province_code: code,
-                          province_name: province?.name || ''
+                          province_name: province?.name || '',
+                          district_code: 0,
+                          district_name: '',
+                          ward_code: 0,
+                          ward_name: ''
                         })
                       }}
                     >
@@ -335,7 +385,9 @@ export default function Checkout() {
                         setFormData({
                           ...formData,
                           district_code: code,
-                          district_name: district?.name || ''
+                          district_name: district?.name || '',
+                          ward_code: 0,
+                          ward_name: ''
                         })
                       }}
                     >

@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.auth import RegisterRequest, Token, LoginRequest, RefreshTokenRequest
+from app.schemas.auth import RegisterRequest, Token, LoginRequest, RefreshTokenRequest, ChangePasswordRequest
 from app.schemas.user import UserResponse
 from app.services.auth_service import AuthService
 from app.api.deps import get_current_user
@@ -62,3 +62,25 @@ def refresh_token(
     """
     token = AuthService.refresh_access_token(db, data.refresh_token)
     return token
+
+
+@router.post("/change-password")
+def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Change password for current user
+    
+    Requires current password for verification and new password with confirmation.
+    """
+    AuthService.change_password(
+        db,
+        current_user,
+        data.current_password,
+        data.new_password,
+        data.confirm_password
+    )
+    return {"message": "Password changed successfully"}
+

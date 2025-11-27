@@ -4,6 +4,8 @@
 import { AuthenticationService } from '@/client'
 import type { Token, UserResponse, RegisterRequest } from '@/client'
 
+import { apiClient } from './apiClient'
+
 export interface LoginData {
   email: string
   password: string
@@ -14,6 +16,12 @@ export interface RegisterData {
   password: string
   full_name: string
   phone?: string
+}
+
+export interface ChangePasswordRequest {
+  current_password: string
+  new_password: string
+  confirm_password: string
 }
 
 export const authService = {
@@ -27,12 +35,12 @@ export const authService = {
       username: data.email,
       password: data.password,
     })
-    
+
     // ✅ CRUCIAL: Save token to localStorage with key 'token' (not 'access_token')
     // This matches the apiClient.ts configuration
     localStorage.setItem('token', response.access_token)
     localStorage.setItem('refresh_token', response.refresh_token)
-    
+
     return response
   },
 
@@ -46,7 +54,7 @@ export const authService = {
       full_name: data.full_name,
       phone: data.phone || null,
     }
-    
+
     const response = await AuthenticationService.registerApiV1AuthRegisterPost(registerRequest)
     return response
   },
@@ -70,5 +78,20 @@ export const authService = {
       localStorage.removeItem('token')
       localStorage.removeItem('refresh_token')
     }
+  },
+
+  /**
+   * Change password
+   */
+  async changePassword(data: ChangePasswordRequest): Promise<void> {
+    await apiClient.post('/api/v1/auth/change-password', data)
+  },
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(data: { full_name?: string; phone?: string; avatar_url?: string }): Promise<UserResponse> {
+    const response = await apiClient.put('/api/v1/users/me', data)
+    return response.data
   },
 }

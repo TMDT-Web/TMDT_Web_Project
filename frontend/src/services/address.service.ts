@@ -3,6 +3,8 @@
  * Free API with full data for all 63 provinces/cities in Vietnam
  */
 
+import { apiClient } from './apiClient'
+
 export interface Ward {
     code: number
     name: string
@@ -101,5 +103,118 @@ export const addressService = {
             console.error('Error fetching wards:', error)
             throw error
         }
+    },
+
+    // ============ BACKEND ADDRESS CRUD OPERATIONS ============
+
+    /**
+     * Get all addresses of current user from backend
+     */
+    async getMyAddresses(): Promise<UserAddress[]> {
+        try {
+            const response = await apiClient.get('/api/v1/addresses')
+            return response.data
+        } catch (error) {
+            console.error('Error fetching user addresses:', error)
+            throw error
+        }
+    },
+
+    /**
+     * Get default address of current user
+     */
+    async getDefaultAddress(): Promise<UserAddress | null> {
+        try {
+            const addresses = await this.getMyAddresses()
+            return addresses.find(addr => addr.is_default) || null
+        } catch (error) {
+            console.error('Error fetching default address:', error)
+            return null
+        }
+    },
+
+    /**
+     * Create new address for current user
+     */
+    async createAddress(data: CreateAddressData): Promise<UserAddress> {
+        try {
+            const response = await apiClient.post('/api/v1/addresses', data)
+            return response.data
+        } catch (error) {
+            console.error('Error creating address:', error)
+            throw error
+        }
+    },
+
+    /**
+     * Update existing address
+     */
+    async updateAddress(addressId: number, data: UpdateAddressData): Promise<UserAddress> {
+        try {
+            const response = await apiClient.put(`/api/v1/addresses/${addressId}`, data)
+            return response.data
+        } catch (error) {
+            console.error('Error updating address:', error)
+            throw error
+        }
+    },
+
+    /**
+     * Set address as default
+     */
+    async setDefaultAddress(addressId: number): Promise<UserAddress> {
+        try {
+            const response = await apiClient.post(`/api/v1/addresses/${addressId}/set-default`)
+            return response.data
+        } catch (error) {
+            console.error('Error setting default address:', error)
+            throw error
+        }
     }
 }
+
+// ============ BACKEND ADDRESS TYPES ============
+
+export interface UserAddress {
+    id: number
+    user_id: number
+    name: string
+    receiver_name: string
+    receiver_phone: string
+    address_line: string
+    ward: string | null
+    district: string
+    city: string
+    postal_code: string | null
+    is_default: boolean
+    notes: string | null
+    created_at: string
+    updated_at: string
+}
+
+export interface CreateAddressData {
+    name: string
+    receiver_name: string
+    receiver_phone: string
+    address_line: string
+    ward?: string
+    district: string
+    city: string
+    postal_code?: string
+    is_default?: boolean
+    notes?: string
+}
+
+export interface UpdateAddressData {
+    name?: string
+    receiver_name?: string
+    receiver_phone?: string
+    address_line?: string
+    ward?: string
+    district?: string
+    city?: string
+    postal_code?: string
+    is_default?: boolean
+    notes?: string
+}
+
