@@ -1,7 +1,7 @@
 """
 Application Configuration Settings
 """
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 import os
 
@@ -57,9 +57,10 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = "admin@luxefurniture.com"
     ADMIN_PASSWORD: str = "Admin@123456"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        case_sensitive=True,
+        env_file_encoding='utf-8'
+    )
 
 
 # Create settings instance
