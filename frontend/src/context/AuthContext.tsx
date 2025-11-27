@@ -91,6 +91,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     authService.logout().catch(err => {
       console.error('Logout API call failed:', err)
     })
+
+    // Redirect to home
+    window.location.href = '/'
   }
 
   return (

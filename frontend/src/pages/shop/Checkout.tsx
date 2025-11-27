@@ -27,6 +27,7 @@ export default function Checkout() {
     ward_code: 0,
     ward_name: '',
     street_address: '',
+    address_type: 'Nhà riêng',
     notes: '',
     payment_gateway: 'cod' as PaymentGateway,
     use_reward_points: false
@@ -134,6 +135,7 @@ export default function Checkout() {
             shipping_contact_name: defaultAddr.receiver_name || user?.full_name || '',
             shipping_contact_phone: defaultAddr.receiver_phone || user?.phone || '',
             street_address: defaultAddr.address_line,
+            address_type: defaultAddr.name === 'Văn phòng' ? 'Văn phòng' : 'Nhà riêng',
             province_code: province.code,
             province_name: province.name
           }))
@@ -150,6 +152,7 @@ export default function Checkout() {
           shipping_contact_name: defaultAddr.receiver_name || user?.full_name || '',
           shipping_contact_phone: defaultAddr.receiver_phone || user?.phone || '',
           street_address: defaultAddr.address_line,
+          address_type: defaultAddr.name === 'Văn phòng' ? 'Văn phòng' : 'Nhà riêng',
           province_code: province.code,
           province_name: province.name,
           district_code: district.code,
@@ -248,7 +251,7 @@ export default function Checkout() {
 
     // Combine address fields into a single string
     const fullAddress = [
-      formData.street_address.trim(),
+      `(${formData.address_type}) ${formData.street_address.trim()}`,
       formData.ward_name,
       formData.district_name,
       formData.province_name
@@ -440,6 +443,34 @@ export default function Checkout() {
                       value={formData.street_address}
                       onChange={(e) => setFormData({ ...formData, street_address: e.target.value })}
                     />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">Loại địa chỉ</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="address_type"
+                          value="Nhà riêng"
+                          checked={formData.address_type === 'Nhà riêng'}
+                          onChange={(e) => setFormData({ ...formData, address_type: e.target.value })}
+                          className="w-4 h-4 text-[rgb(var(--color-wood))] focus:ring-[rgb(var(--color-wood))]"
+                        />
+                        <span className="ml-2">Nhà riêng</span>
+                      </label>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="address_type"
+                          value="Văn phòng"
+                          checked={formData.address_type === 'Văn phòng'}
+                          onChange={(e) => setFormData({ ...formData, address_type: e.target.value })}
+                          className="w-4 h-4 text-[rgb(var(--color-wood))] focus:ring-[rgb(var(--color-wood))]"
+                        />
+                        <span className="ml-2">Văn phòng</span>
+                      </label>
+                    </div>
                   </div>
 
                   <div className="md:col-span-2">
