@@ -35,12 +35,17 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<LocalCartItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth()
 
-  // Load cart on mount
+  // Load cart on mount and when auth status changes
   useEffect(() => {
+    // Skip loading while auth is still initializing
+    if (authLoading) {
+      return
+    }
+    
     loadCart()
-  }, [isAuthenticated])
+  }, [isAuthenticated, authLoading])
 
   /**
    * Load cart from server (if authenticated) or localStorage
@@ -69,6 +74,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setItems(localItems)
       } catch (error) {
         console.error('Failed to load cart from server:', error)
+        const status = (error as any)?.response?.status
+        if (status === 401) {
+          // Token might be expired - clear items and fall back to local
+          console.warn('Cart API returned 401 - may indicate expired token')
+        }
         // Fallback to localStorage
         loadLocalCart()
       } finally {

@@ -1,0 +1,212 @@
+[
+  {
+    "code": "HN",
+    "name": "Hà Nội",
+    "districts": [
+      {
+        "code": "HBT",
+        "name": "Quận Hai Bà Trưng",
+        "wards": [
+          { "code": "BKC", "name": "Phường Bạch Mai" },
+          { "code": "CMT", "name": "Phường Cầu Mới" },
+          { "code": "QB", "name": "Phường Quỳnh Bảo" }
+        ]
+      },
+      {
+        "code": "CG",
+        "name": "Quận Cầu Giấy",
+        "wards": [
+          { "code": "DCC", "name": "Phường Dịch Vọng" },
+          { "code": "NT", "name": "Phường Nghĩa Tân" },
+          { "code": "YN", "name": "Phường Yên Hòa" }
+        ]
+      },
+      {
+        "code": "TL",
+        "name": "Quận Tây Hồ",
+        "wards": [
+          { "code": "BB", "name": "Phường Bưởi" },
+          { "code": "TN", "name": "Phường Thụy Khuê" },
+          { "code": "XP", "name": "Phường Xuân La" }
+        ]
+      }
+    ]
+  },
+
+  {
+    "code": "HCM",
+    "name": "TP. Hồ Chí Minh",
+    "districts": [
+      {
+        "code": "Q1",
+        "name": "Quận 1",
+        "wards": [
+          { "code": "BN", "name": "Phường Bến Nghé" },
+          { "code": "BT", "name": "Phường Bến Thành" },
+          { "code": "PN", "name": "Phường Phạm Ngũ Lão" }
+        ]
+      },
+      {
+        "code": "Q3",
+        "name": "Quận 3",
+        "wards": [
+          { "code": "VP", "name": "Phường Võ Thị Sáu" },
+          { "code": "PM", "name": "Phường Phường 7" },
+          { "code": "NTD", "name": "Phường Nguyễn Thượng Hiền" }
+        ]
+      },
+      {
+        "code": "BTD",
+        "name": "Quận Bình Thạnh",
+        "wards": [
+          { "code": "PNN", "name": "Phường Phường 2" },
+          { "code": "W19", "name": "Phường 19" },
+          { "code": "W22", "name": "Phường 22" }
+        ]
+      }
+    ]
+  },
+
+  {
+    "code": "DN",
+    "name": "Đà Nẵng",
+    "districts": [
+      {
+        "code": "HC",
+        "name": "Quận Hải Châu",
+        "wards": [
+          { "code": "TTC", "name": "Phường Thạch Thang" },
+          { "code": "HP", "name": "Phường Hải Phước" },
+          { "code": "BC", "name": "Phường Bình Hiên" }
+        ]
+      },
+      {
+        "code": "SL",
+        "name": "Quận Sơn Trà",
+        "wards": [
+          { "code": "AT", "name": "Phường An Thượng" },
+          { "code": "PTH", "name": "Phường Phước Mỹ" },
+          { "code": "NCT", "name": "Phường Nại Hiên Đông" }
+        ]
+      },
+      {
+        "code": "NK",
+        "name": "Quận Ngũ Hành Sơn",
+        "wards": [
+          { "code": "MA", "name": "Phường Mỹ An" },
+          { "code": "KH", "name": "Phường Khuê Mỹ" },
+          { "code": "HD", "name": "Phường Hòa Hải" }
+        ]
+      }
+    ]
+  },
+
+  {
+    "code": "HP",
+    "name": "Hải Phòng",
+    "districts": [
+      {
+        "code": "HK",
+        "name": "Quận Hồng Bàng",
+        "wards": [
+          { "code": "HB", "name": "Phường Hạ Lý" },
+          { "code": "QL", "name": "Phường Quán Toan" },
+          { "code": "PH", "name": "Phường Phan Bội Châu" }
+        ]
+      },
+      {
+        "code": "LC",
+        "name": "Quận Lê Chân",
+        "wards": [
+          { "code": "DN", "name": "Phường Dư Hàng" },
+          { "code": "NH", "name": "Phường Niệm Nghĩa" },
+          { "code": "KV", "name": "Phường Kênh Dương" }
+        ]
+      },
+      {
+        "code": "NC",
+        "name": "Quận Ngô Quyền",
+        "wards": [
+          { "code": "MG", "name": "Phường Máy Chai" },
+          { "code": "TT", "name": "Phường Trại Cau" },
+          { "code": "DN2", "name": "Phường Đằng Giang" }
+        ]
+      }
+    ]
+  },
+
+  {
+    "code": "LA",
+    "name": "Long An",
+    "districts": [
+      {
+        "code": "TP",
+        "name": "TP Tân An",
+        "wards": [
+          { "code": "WP", "name": "Phường 1" },
+          { "code": "W2", "name": "Phường 2" },
+          { "code": "XA1", "name": "Xã Nhơn Thạnh Trung" }
+        ]
+      },
+      {
+        "code": "BTL",
+        "name": "Huyện Bến Lức",
+        "wards": [
+          { "code": "BL1", "name": "Thị trấn Bến Lức" },
+          { "code": "BL2", "name": "Xã Long Hiệp" },
+          { "code": "BL3", "name": "Xã An Thạnh" }
+        ]
+      },
+      {
+        "code": "CD",
+        "name": "Huyện Cần Đước",
+        "wards": [
+          { "code": "CD1", "name": "Thị trấn Cần Đước" },
+          { "code": "CD2", "name": "Xã Long Định" },
+          { "code": "CD3", "name": "Xã Phước Đông" }
+        ]
+      }
+    ]
+  },
+
+  {
+    "code": "BD",
+    "name": "Bình Dương",
+    "districts": [
+      {
+        "code": "TPM",
+        "name": "TP Thủ Dầu Một",
+        "wards": [
+          { "code": "P1", "name": "Phường Phú Cường" },
+          { "code": "P2", "name": "Phường Chánh Nghĩa" },
+          { "code": "P3", "name": "Phường Hiệp Thành" }
+        ]
+      },
+      {
+        "code": "DT",
+        "name": "Thị xã Dĩ An",
+        "wards": [
+          { "code": "DA1", "name": "Phường Dĩ An" },
+          { "code": "DA2", "name": "Phường Đông Hòa" },
+          { "code": "DA3", "name": "Phường Tân Bình" }
+        ]
+      }
+    ]
+  },
+
+  {
+    "code": "VT",
+    "name": "Vũng Tàu",
+    "districts": [
+      {
+        "code": "TPVT",
+        "name": "TP Vũng Tàu",
+        "wards": [
+          { "code": "VT1", "name": "Phường 1" },
+          { "code": "VT2", "name": "Phường 2" },
+          { "code": "VT3", "name": "Phường 3" }
+        ]
+      }
+    ]
+  }
+]

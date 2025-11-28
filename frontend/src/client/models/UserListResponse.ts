@@ -1,13 +1,8 @@
-/* generated using openapi-typescript-codegen -- do not edit */
-/* istanbul ignore file */
-/* tslint:disable */
-/* eslint-disable */
-import type { UserResponse } from './UserResponse';
-/**
- * User list response
- */
-export type UserListResponse = {
-    users: Array<UserResponse>;
-    total: number;
-};
+import type { UserResponse } from "./UserResponse";
 
+export type UserListResponse = {
+    users: UserResponse[];
+    total: number;
+
+    /** NOTHING ELSE HERE */
+};
