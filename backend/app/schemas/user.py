@@ -77,6 +77,9 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=255)
     phone: Optional[str] = Field(None, max_length=20)
     avatar_url: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+    address_id: Optional[int] = None
 
 
 class UserResponse(TimestampSchema, UserBase):
@@ -118,3 +121,12 @@ class LoyaltyInfo(BaseModel):
     
     class Config:
         from_attributes = True
+
+from pydantic import BaseModel
+
+class UserRoleUpdate(BaseModel):
+    role: str
+
+
+class UserStatusUpdate(BaseModel):
+    status: str

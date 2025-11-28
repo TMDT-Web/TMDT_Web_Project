@@ -80,7 +80,13 @@ export function setupApiClient() {
 
   // Configure token retrieval - must be async to match OpenAPI type
   OpenAPI.TOKEN = async () => {
-    return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || undefined;
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    if (token) {
+      console.log('✅ Token found in localStorage, length:', token.length);
+    } else {
+      console.warn('⚠️ No token found in localStorage');
+    }
+    return token || undefined;
   };
 
   // Setup axios interceptors for the generated client

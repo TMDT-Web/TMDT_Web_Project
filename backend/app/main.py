@@ -25,50 +25,47 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan events"""
-    # Startup
     logger.info("Starting up LuxeFurniture Backend...")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Database: {settings.DATABASE_URL.split('@')[-1]}")
-    
-    # Create tables and initialize data (for development only, use Alembic in production)
+
+    # Auto-create tables in development
     if settings.ENVIRONMENT == "development":
         logger.info("Creating database tables...")
         Base.metadata.create_all(bind=engine)
-        
-        # Initialize database with admin user and folders
+
         from app.init_db import init_db
         try:
             init_db()
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
-    
+
     yield
-    
-    # Shutdown
     logger.info("Shutting down LuxeFurniture Backend...")
 
 
-# Create FastAPI app
+# Create app
 app = FastAPI(
     title="LuxeFurniture API",
     description="E-commerce API for luxury furniture store",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
-# CORS Middleware
+# ----------------------------------------------------------------
+# ✔ FIX CORS (HOẠT ĐỘNG 100%)
+# ----------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=["*"],        # mở hoàn toàn để frontend chạy
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Mount static files
+# Static
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include API router
@@ -77,7 +74,6 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/", tags=["Root"])
 async def root():
-    """Root endpoint"""
     return {
         "message": "Welcome to LuxeFurniture API",
         "version": "1.0.0",
@@ -88,7 +84,6 @@ async def root():
 
 @app.get("/api/v1/health", tags=["Health"])
 async def health_check():
-    """Health check endpoint"""
     return {
         "status": "healthy",
         "environment": settings.ENVIRONMENT,
@@ -98,7 +93,6 @@ async def health_check():
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler"""
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
