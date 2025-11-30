@@ -79,6 +79,13 @@ class UserUpdate(BaseModel):
     avatar_url: Optional[str] = None
 
 
+class PasswordChange(BaseModel):
+    """Password change schema"""
+    current_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=8, description="New password must be at least 8 characters")
+
+
+
 class UserResponse(TimestampSchema, UserBase):
     """User response schema"""
     role: UserRole
