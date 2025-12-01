@@ -4,7 +4,7 @@ from app.api.api_v1.endpoints import (
     auth, users, products, orders, payments,
     chat, upload, addresses, collections,
     cart, dashboard, banners,
-    users_admin, addresses_admin
+    users_admin, addresses_admin, contact
 )
 
 api_router = APIRouter()
@@ -27,3 +27,4 @@ api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
 api_router.include_router(upload.router, prefix="/upload", tags=["Upload"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(banners.router, prefix="/banners", tags=["Banners"])
+api_router.include_router(contact.router, prefix="/contact", tags=["Contact"])
