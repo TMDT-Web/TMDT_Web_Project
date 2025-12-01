@@ -29,12 +29,13 @@ Write-Host ""
 Write-Host "[1/5] Creating/Updating .env files..." -ForegroundColor Yellow
 
 # Update backend .env
+$backendEnvPath = "backend/.env"
 $backendEnvContent = @()
-if (Test-Path .env) {
-  $backendEnvContent = Get-Content .env | Where-Object { $_ -notmatch '^FRONTEND_BASE_URL=' }
+if (Test-Path $backendEnvPath) {
+  $backendEnvContent = Get-Content $backendEnvPath | Where-Object { $_ -notmatch '^FRONTEND_BASE_URL=' }
 }
 $backendEnvContent += "FRONTEND_BASE_URL=$ngrokUrl"
-$backendEnvContent | Set-Content .env -Encoding UTF8
+$backendEnvContent | Set-Content $backendEnvPath -Encoding UTF8
 Write-Host "✓ Backend .env updated with FRONTEND_BASE_URL=$ngrokUrl" -ForegroundColor Green
 
 # Ask if user wants to setup backend ngrok too

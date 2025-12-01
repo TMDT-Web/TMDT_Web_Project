@@ -69,6 +69,7 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = "Admin@123456"
     
     model_config = SettingsConfigDict(
+        env_file='.env',
         case_sensitive=True,
         env_file_encoding='utf-8'
     )
