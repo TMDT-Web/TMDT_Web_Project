@@ -1,132 +1,50 @@
-/* generated using openapi-typescript-codegen -- do not edit */
-/* istanbul ignore file */
-/* tslint:disable */
 /* eslint-disable */
-import type { AddressCreate } from '../models/AddressCreate';
-import type { AddressResponse } from '../models/AddressResponse';
-import type { AddressUpdate } from '../models/AddressUpdate';
-import type { CancelablePromise } from '../core/CancelablePromise';
-import { OpenAPI } from '../core/OpenAPI';
-import { request as __request } from '../core/request';
+import { OpenAPI } from "../core/OpenAPI";
+import { request as __request } from "../core/request";
+import type { AddressResponse } from "../models/AddressResponse";
+
 export class AddressesService {
-    /**
-     * Get My Addresses
-     * Get all addresses of current user
-     * @returns AddressResponse Successful Response
-     * @throws ApiError
-     */
-    public static getMyAddressesApiV1AddressesGet(): CancelablePromise<Array<AddressResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/addresses',
-        });
-    }
-    /**
-     * Create Address
-     * Create new address
-     * @param requestBody
-     * @returns AddressResponse Successful Response
-     * @throws ApiError
-     */
-    public static createAddressApiV1AddressesPost(
-        requestBody: AddressCreate,
-    ): CancelablePromise<AddressResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/addresses',
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-    /**
-     * Get Address
-     * Get specific address
-     * @param addressId
-     * @returns AddressResponse Successful Response
-     * @throws ApiError
-     */
-    public static getAddressApiV1AddressesAddressIdGet(
-        addressId: number,
-    ): CancelablePromise<AddressResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/addresses/{address_id}',
-            path: {
-                'address_id': addressId,
-            },
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-    /**
-     * Update Address
-     * Update address
-     * @param addressId
-     * @param requestBody
-     * @returns AddressResponse Successful Response
-     * @throws ApiError
-     */
-    public static updateAddressApiV1AddressesAddressIdPut(
-        addressId: number,
-        requestBody: AddressUpdate,
-    ): CancelablePromise<AddressResponse> {
-        return __request(OpenAPI, {
-            method: 'PUT',
-            url: '/api/v1/addresses/{address_id}',
-            path: {
-                'address_id': addressId,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-    /**
-     * Delete Address
-     * Delete address
-     * @param addressId
-     * @returns void
-     * @throws ApiError
-     */
-    public static deleteAddressApiV1AddressesAddressIdDelete(
-        addressId: number,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/v1/addresses/{address_id}',
-            path: {
-                'address_id': addressId,
-            },
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
-    /**
-     * Set Default Address
-     * Set address as default
-     * @param addressId
-     * @returns AddressResponse Successful Response
-     * @throws ApiError
-     */
-    public static setDefaultAddressApiV1AddressesAddressIdSetDefaultPost(
-        addressId: number,
-    ): CancelablePromise<AddressResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/addresses/{address_id}/set-default',
-            path: {
-                'address_id': addressId,
-            },
-            errors: {
-                422: `Validation Error`,
-            },
-        });
-    }
+  /** ADMIN: get all addresses for a user */
+  public static async adminGet(userId: number): Promise<AddressResponse[]> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: `/api/v1/addresses/admin/${userId}`,
+    }) as Promise<AddressResponse[]>;
+  }
+
+  /** Get current user's addresses */
+  public static async getMyAddressesApiV1AddressesGet(): Promise<AddressResponse[]> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: `/api/v1/addresses`,
+    }) as Promise<AddressResponse[]>;
+  }
+
+  /** Create a new address for current user */
+  public static async createAddressApiV1AddressesPost(payload: any): Promise<AddressResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: `/api/v1/addresses`,
+      body: payload,
+      mediaType: "application/json",
+    }) as Promise<AddressResponse>;
+  }
+
+  /** Update address by id for current user */
+  public static async updateAddressApiV1AddressesAddressIdPut(addressId: number, payload: any): Promise<AddressResponse> {
+    return __request(OpenAPI, {
+      method: "PUT",
+      url: `/api/v1/addresses/${addressId}`,
+      body: payload,
+      mediaType: "application/json",
+    }) as Promise<AddressResponse>;
+  }
+
+  /** Delete address by id for current user */
+  public static async deleteAddressApiV1AddressesAddressIdDelete(addressId: number): Promise<void> {
+    return __request(OpenAPI, {
+      method: "DELETE",
+      url: `/api/v1/addresses/${addressId}`,
+    }) as Promise<void>;
+  }
 }

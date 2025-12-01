@@ -33,7 +33,7 @@ def update_my_profile(
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(current_user, field, value)
-    
+
     db.commit()
     db.refresh(current_user)
     return current_user
@@ -65,16 +65,25 @@ def change_password(
 def get_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     """Get all users (admin only)"""
-    total = db.query(User).count()
-    users = db.query(User).offset(skip).limit(limit).all()
-    
-    return UserListResponse(users=users, total=total)
+    try:
+        total = db.query(User).count()
+        users = db.query(User).offset(skip).limit(limit).all()
+
+        # Convert ORM → schema
+        user_list = [UserResponse.model_validate(u) for u in users]
+
+        return UserListResponse(users=user_list, total=total)
+    except Exception as e:
+        from app.core.exceptions import APIException
+        raise APIException(status_code=500, message=f"Error fetching users: {str(e)}")
 
 
+# ============================
+#      ADMIN — GET USER
+# ============================
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(
     user_id: int,
@@ -88,6 +97,126 @@ def get_user(
     return user
 
 
+# ============================
+#      ADMIN — UPDATE USER
+# ============================
+@router.put("/{user_id}", response_model=UserResponse)
+def update_user(
+    user_id: int,
+    data: UserUpdate,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update user by ID (admin only)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise NotFoundException("User not found")
+
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(user, field, value)
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+# ============================
+#      ADMIN — UPDATE USER STATUS
+# ============================
+@router.put("/{user_id}/status")
+def update_user_status(
+    user_id: int,
+    is_active: bool,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update user active status (admin only)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise NotFoundException("User not found")
+
+    user.is_active = is_active
+    db.commit()
+    db.refresh(user)
+    return {"message": "Status updated successfully", "is_active": user.is_active}
+
+
+# ============================
+#      ADMIN — UPDATE USER ROLE
+# ============================
+@router.put("/{user_id}/role")
+def update_user_role(
+    user_id: int,
+    role: str,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update user role (admin only)"""
+    from app.models.enums import UserRole
+    
+    # Validate role
+    valid_roles = [e.value for e in UserRole]
+    if role not in valid_roles:
+        raise ValueError(f"Invalid role. Must be one of: {', '.join(valid_roles)}")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise NotFoundException("User not found")
+
+    user.role = role
+    db.commit()
+    db.refresh(user)
+    return {"message": "Role updated successfully", "role": user.role}
+
+
+# ============================
+#      ADMIN — UPGRADE USER TO VIP
+# ============================
+@router.put("/{user_id}/upgrade-vip")
+def upgrade_user_vip(
+    user_id: int,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Upgrade user to VIP (admin only)"""
+    from app.models.enums import VipTier
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise NotFoundException("User not found")
+
+    # Upgrade to silver tier
+    user.vip_tier = VipTier.SILVER
+    db.commit()
+    db.refresh(user)
+    return {"message": "User upgraded to VIP", "vip_tier": user.vip_tier}
+
+
+# ============================
+#      ADMIN — RESET USER PASSWORD
+# ============================
+@router.post("/{user_id}/reset-password")
+def reset_user_password(
+    user_id: int,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Reset user password to default (admin only)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise NotFoundException("User not found")
+
+    from app.core.security import get_password_hash
+    # Reset to default password
+    user.hashed_password = get_password_hash("Password@123")
+    db.commit()
+    return {"message": "Password reset to 'Password@123'"}
+
+
+# ============================
+#      ADMIN — DELETE USER
+# ============================
 @router.delete("/{user_id}")
 def delete_user(
     user_id: int,
@@ -98,8 +227,8 @@ def delete_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise NotFoundException("User not found")
-    
+
     db.delete(user)
     db.commit()
-    
+
     return {"message": "User deleted successfully"}

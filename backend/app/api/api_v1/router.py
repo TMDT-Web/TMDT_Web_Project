@@ -1,17 +1,21 @@
-"""
-API v1 Router - Aggregate all endpoint routers
-"""
 from fastapi import APIRouter
 
 from app.api.api_v1.endpoints import (
-    auth, users, products, orders, payments, chat, upload, addresses,
-    collections, cart, dashboard, banners
+    auth, users, products, orders, payments,
+    chat, upload, addresses, collections,
+    cart, dashboard, banners,
+    users_admin, addresses_admin
 )
 
 api_router = APIRouter()
 
-# Include all endpoint routers
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+
+# ADMIN routes first (more specific paths must be registered before less specific ones)
+api_router.include_router(users_admin.router, prefix="/users/admin", tags=["Users Admin"])
+api_router.include_router(addresses_admin.router, prefix="/addresses/admin", tags=["Addresses Admin"])
+
+# Regular user routes
 api_router.include_router(users.router, prefix="/users", tags=["Users"])
 api_router.include_router(addresses.router, prefix="/addresses", tags=["Addresses"])
 api_router.include_router(products.router, prefix="/products", tags=["Products"])
