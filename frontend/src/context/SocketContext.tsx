@@ -32,6 +32,8 @@ interface SocketContextType {
   connectToSession: (sessionId: string) => void;
   disconnect: () => void;
   clearMessages: () => void;
+  isWidgetOpen: boolean;
+  toggleWidget: (isOpen: boolean) => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -54,6 +56,11 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
+
+  const toggleWidget = useCallback((isOpen: boolean) => {
+    setIsWidgetOpen(isOpen);
+  }, []);
 
   const getWsUrl = (sessionId: string) => {
     const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -216,6 +223,8 @@ export function SocketProvider({ children }: SocketProviderProps) {
         connectToSession,
         disconnect,
         clearMessages,
+        isWidgetOpen,
+        toggleWidget,
       }}
     >
       {children}
