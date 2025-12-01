@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (data: LoginData) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => void
+  updateUser: (user: UserResponse) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -51,10 +52,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (data: LoginData) => {
     // ✅ authService.login now saves token to 'token' key automatically
     const tokens = await authService.login(data)
-    
+
     // Note: token is already saved by authService.login to 'token' key
     // We only need to save refresh_token and get user info
-    
+
     // Get user info using generated client
     const userResponse = await authService.getCurrentUser()
     storage.set(STORAGE_KEYS.USER, userResponse)
@@ -73,11 +74,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('refresh_token')
     storage.remove(STORAGE_KEYS.USER)
     setUser(null)
-    
+
     // Call logout endpoint
     authService.logout().catch(err => {
       console.error('Logout API call failed:', err)
     })
+  }
+
+  const updateUser = (updatedUser: UserResponse) => {
+    setUser(updatedUser)
+    storage.set(STORAGE_KEYS.USER, updatedUser)
   }
 
   return (
@@ -89,6 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         register,
         logout,
+        updateUser,
       }}
     >
       {children}

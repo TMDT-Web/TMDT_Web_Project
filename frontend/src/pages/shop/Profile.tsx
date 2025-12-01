@@ -3,25 +3,30 @@
  */
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { Navigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { orderService } from '@/services/order.service'
+import { userService } from '@/services/user.service'
 import { OrderStatus, OrderPaymentStatus } from '@/types'
-import addressData from '@/utils/vietnam-address.json'
-import { AddressesService } from '@/client/services/AddressesService'
-import type { AddressCreate } from '@/client/models/AddressCreate'
-import type { AddressUpdate } from '@/client/models/AddressUpdate'
+import AddressSelector from '@/components/AddressSelector'
+import OrderDetailsModal from '@/components/OrderDetailsModal'
 import type { AddressResponse } from '@/client/models/AddressResponse'
+import type { OrderResponse } from '@/client/models/OrderResponse'
 
 export default function Profile() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'info' | 'addresses' | 'orders' | 'password'>('info')
+  const { user, logout, updateUser, isLoading: authLoading } = useAuth()
+  const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'password'>('info')
 
   const [formData, setFormData] = useState({
-    full_name: user?.full_name || '',
-    phone: user?.phone || '',
-    address: ''
+    full_name: '',
+    phone: '',
+    address: {
+      city: '',
+      district: '',
+      ward: '',
+      address_line: ''
+    }
   })
 
   // Address management state
@@ -46,53 +51,176 @@ export default function Profile() {
     confirm_password: ''
   })
 
-  if (!user) {
-    navigate('/login')
-    return null
-  }
+  const [defaultAddress, setDefaultAddress] = useState<AddressResponse | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Load addresses
-  useEffect(() => {
-    loadAddressesFromDB()
-  }, [])
+  // Fetch user addresses - MUST be called before any conditional returns
+  const { data: addresses } = useQuery({
+    queryKey: ['my-addresses'],
+    queryFn: userService.getAddresses,
+    enabled: !!user && activeTab === 'info'
+  })
 
-  const loadAddressesFromDB = async () => {
-    try {
-      const res = await AddressesService.getMyAddressesApiV1AddressesGet()
-      setAddresses(res)
-    } catch (err) {
-      console.error('Load addresses error', err)
-    }
-  }
-
-  const cities = addressData
-  const districts = addressForm.city_code ? cities.find(c => c.code === addressForm.city_code)?.districts || [] : []
-  const wards = addressForm.district_code ? districts.find(d => d.code === addressForm.district_code)?.wards || [] : []
-
-  // Fetch user orders
+  // Fetch user orders - MUST be called before any conditional returns
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ['my-orders'],
     queryFn: () => orderService.getMyOrders(1, 20),
-    enabled: activeTab === 'orders'
+    enabled: !!user && activeTab === 'orders'
   })
 
   const orders = ordersData?.orders || []
 
+  // Update profile mutation - MUST be called before any conditional returns
+  const updateProfileMutation = useMutation({
+    mutationFn: async () => {
+      // Update user profile (name, phone)
+      const userUpdate = {
+        full_name: formData.full_name,
+        phone: formData.phone
+      }
+      const updatedUser = await userService.updateProfile(userUpdate)
+
+      // Update or create address
+      const addressData = {
+        name: 'Địa chỉ mặc định',
+        receiver_name: formData.full_name,
+        receiver_phone: formData.phone,
+        city: formData.address.city,
+        district: formData.address.district,
+        ward: formData.address.ward || null,
+        address_line: formData.address.address_line,
+        is_default: true
+      }
+
+      if (defaultAddress) {
+        // Update existing address
+        await userService.updateAddress(defaultAddress.id, addressData)
+      } else {
+        // Create new address
+        await userService.createAddress(addressData)
+      }
+
+      return updatedUser
+    },
+    onSuccess: (updatedUser) => {
+      // Update user in context
+      updateUser(updatedUser)
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ['my-addresses'] })
+      alert('Cập nhật thông tin thành công!')
+    },
+    onError: (error: any) => {
+      console.error('Profile update error:', error)
+      alert('Cập nhật thông tin thất bại. Vui lòng thử lại!')
+    }
+  })
+
+  // Change password mutation - MUST be called before any conditional returns
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { current_password: string, new_password: string }) => {
+      return await userService.changePassword(data)
+    },
+    onSuccess: () => {
+      alert('Đổi mật khẩu thành công!')
+      setPasswordData({ current_password: '', new_password: '', confirm_password: '' })
+    },
+    onError: (error: any) => {
+      console.error('Change password error:', error)
+      alert(error.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại!')
+    }
+  })
+
+  // Update form data when user data is loaded
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        full_name: user.full_name || '',
+        phone: user.phone || ''
+      }))
+    }
+  }, [user])
+
+  // Load default address into form when addresses are fetched
+  useEffect(() => {
+    if (addresses && addresses.length > 0) {
+      const defaultAddr = addresses.find(addr => addr.is_default) || addresses[0]
+      setDefaultAddress(defaultAddr)
+      setFormData(prev => ({
+        ...prev,
+        address: {
+          city: defaultAddr.city,
+          district: defaultAddr.district,
+          ward: defaultAddr.ward || '',
+          address_line: defaultAddr.address_line
+        }
+      }))
+    }
+  }, [addresses])
+
+  // NOW we can do conditional returns - ALL HOOKS MUST BE ABOVE THIS LINE
+
+  // Show loading state while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="section-padding bg-[rgb(var(--color-bg-light))] min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-4 border-gray-300 border-t-[rgb(var(--color-wood))] rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600">Đang tải...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: API call
-    alert('Cập nhật thông tin thành công!')
+
+    // Validate address fields
+    if (!formData.address.city || !formData.address.district || !formData.address.address_line) {
+      alert('Vui lòng điền đầy đủ thông tin địa chỉ!')
+      return
+    }
+
+    updateProfileMutation.mutate()
   }
+
 
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate password confirmation
     if (passwordData.new_password !== passwordData.confirm_password) {
       alert('Mật khẩu xác nhận không khớp!')
       return
     }
-    // TODO: API call
-    alert('Đổi mật khẩu thành công!')
-    setPasswordData({ current_password: '', new_password: '', confirm_password: '' })
+
+    // Validate password length
+    if (passwordData.new_password.length < 8) {
+      alert('Mật khẩu mới phải có ít nhất 8 ký tự!')
+      return
+    }
+
+    // Call API
+    changePasswordMutation.mutate({
+      current_password: passwordData.current_password,
+      new_password: passwordData.new_password
+    })
+  }
+
+  const handleViewOrderDetails = (order: OrderResponse) => {
+    setSelectedOrder(order)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedOrder(null)
   }
 
   // Address management functions
@@ -341,7 +469,7 @@ export default function Profile() {
                       type="text"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]"
                       value={formData.full_name}
-                      onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                     />
                   </div>
 
@@ -362,7 +490,15 @@ export default function Profile() {
                       type="tel"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]"
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <AddressSelector
+                      value={formData.address}
+                      onChange={(address) => setFormData({ ...formData, address })}
+                      required={false}
                     />
                   </div>
 
@@ -579,7 +715,7 @@ export default function Profile() {
             {activeTab === 'orders' && (
               <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm">
                 <h2 className="font-bold text-2xl mb-6">Đơn hàng của tôi</h2>
-                
+
                 {isLoading ? (
                   <div className="text-center py-12">
                     <p className="text-gray-600">Đang tải...</p>
@@ -587,6 +723,9 @@ export default function Profile() {
                 ) : orders.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-gray-600 mb-4">Bạn chưa có đơn hàng nào</p>
+                    <a href="/products" className="btn-primary inline-block">
+                      Mua sắm ngay
+                    </a>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -607,6 +746,20 @@ export default function Profile() {
                             {getStatusText(order.status as OrderStatus)}
                           </span>
                         </div>
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-gray-600 text-sm">{order.items.length} sản phẩm</p>
+                            <p className="font-bold text-[rgb(var(--color-wood))] text-xl">
+                              {order.total_amount.toLocaleString('vi-VN')}₫
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleViewOrderDetails(order as unknown as OrderResponse)}
+                            className="btn-secondary"
+                          >
+                            Xem chi tiết
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -626,7 +779,7 @@ export default function Profile() {
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]"
                       value={passwordData.current_password}
-                      onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})}
+                      onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
                     />
                   </div>
 
@@ -637,7 +790,7 @@ export default function Profile() {
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]"
                       value={passwordData.new_password}
-                      onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
+                      onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
                     />
                   </div>
 
@@ -648,7 +801,7 @@ export default function Profile() {
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-wood))]"
                       value={passwordData.confirm_password}
-                      onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
                     />
                   </div>
 
@@ -661,6 +814,13 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Order Details Modal */}
+      <OrderDetailsModal
+        order={selectedOrder}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   )
 }
