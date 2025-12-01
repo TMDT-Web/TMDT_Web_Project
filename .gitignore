@@ -49,6 +49,12 @@ env/
 *.log
 logs/
 
+# Ngrok
+ngrok.exe
+ngrok
+ngrok.log
+ngrok_*.log
+
 # Testing
 .coverage
 htmlcov/
