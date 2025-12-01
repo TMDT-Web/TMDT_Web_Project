@@ -11,20 +11,22 @@ export default function ChatWidget() {
     createSession,
     connectToSession,
     sendMessage,
+    isWidgetOpen,
+    toggleWidget,
   } = useSocket()
 
-  const [isOpen, setIsOpen] = useState(false)
+  // const [isOpen, setIsOpen] = useState(false) // Removed local state
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (isOpen && user && !sessionId) {
-      ;(async () => {
+    if (isWidgetOpen && user && !sessionId) {
+      ; (async () => {
         const newId = await createSession()
         connectToSession(newId)
       })()
     }
-  }, [isOpen, user])
+  }, [isWidgetOpen, user])
 
   // Auto-scroll
   useEffect(() => {
@@ -40,9 +42,9 @@ export default function ChatWidget() {
   return (
     <>
       {/* Button mở khung chat */}
-      {!isOpen && (
+      {!isWidgetOpen && (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => toggleWidget(true)}
           className="fixed bottom-6 right-6 bg-blue-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-blue-700 transition"
         >
           💬 Chat
@@ -50,7 +52,7 @@ export default function ChatWidget() {
       )}
 
       {/* KHUNG CHAT */}
-      {isOpen && (
+      {isWidgetOpen && (
         <div
           className="fixed bottom-6 right-6 bg-white shadow-2xl rounded-2xl border border-gray-200 flex flex-col"
           style={{ width: 380, height: 520 }}
@@ -64,16 +66,15 @@ export default function ChatWidget() {
               <p className="font-semibold text-lg">Hỗ trợ khách hàng</p>
               <div className="flex items-center gap-2 text-sm">
                 <span
-                  className={`w-3 h-3 rounded-full ${
-                    isConnected ? 'bg-green-400' : 'bg-gray-400'
-                  }`}
+                  className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400' : 'bg-gray-400'
+                    }`}
                 />
                 <span>{isConnected ? 'Đã kết nối' : 'Đang kết nối...'}</span>
               </div>
             </div>
 
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => toggleWidget(false)}
               className="text-white/80 hover:text-white text-xl"
             >
               ✕
@@ -94,24 +95,22 @@ export default function ChatWidget() {
             {messages.map((msg, idx) => (
               <div
                 key={msg.id || idx}
-                className={`mb-3 flex ${
-                  msg.sender === 'user' ? 'justify-end' : 'justify-start'
-                }`}
+                className={`mb-3 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
               >
                 <div
-                  className={`px-4 py-2 rounded-xl max-w-[70%] text-sm shadow ${
-                    msg.sender === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-gray-200 text-gray-800'
-                  }`}
+                  className={`px-4 py-2 rounded-xl max-w-[70%] text-sm shadow ${msg.sender === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white border border-gray-200 text-gray-800'
+                    }`}
                 >
                   {msg.message}
                   <div className="text-[10px] opacity-70 mt-1">
                     {msg.created_at
                       ? new Date(msg.created_at).toLocaleTimeString('vi-VN', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
                       : ''}
                   </div>
                 </div>
