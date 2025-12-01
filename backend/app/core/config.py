@@ -2,7 +2,8 @@
 Application Configuration Settings
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from pydantic import field_validator
+from typing import List, Any, Union
 import os
 
 
@@ -26,7 +27,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # CORS
-    ALLOWED_ORIGINS: List[str] = [
+    ALLOWED_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
         "http://localhost:5173"
     ]
@@ -34,7 +35,7 @@ class Settings(BaseSettings):
     # File Upload
     MAX_FILE_SIZE: int = 10485760  # 10MB
     UPLOAD_DIR: str = "static/images"
-    ALLOWED_EXTENSIONS: List[str] = ["jpg", "jpeg", "png", "gif", "webp"]
+    ALLOWED_EXTENSIONS: Union[List[str], str] = ["jpg", "jpeg", "png", "gif", "webp"]
     
     # Email (Optional)
     SMTP_HOST: str = "smtp.gmail.com"
@@ -61,6 +62,13 @@ class Settings(BaseSettings):
         case_sensitive=True,
         env_file_encoding='utf-8'
     )
+
+    @field_validator("ALLOWED_ORIGINS", "ALLOWED_EXTENSIONS", mode="before")
+    @classmethod
+    def parse_list_from_str(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            return [e.strip() for e in v.split(",")]
+        return v
 
 
 # Create settings instance

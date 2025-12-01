@@ -2,24 +2,106 @@
  * Contact Page - Liên hệ
  * Minimal Scandinavian Design with Chat Widget
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSocket } from '@/context/SocketContext'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
 export default function Contact() {
+  const { toggleWidget } = useSocket()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
+    subject: 'product_inquiry',
     message: ''
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<{
+    type: 'success' | 'error' | null
+    message: string
+  }>({ type: null, message: '' })
+
+  // Auto-hide success message after 5 seconds
+  useEffect(() => {
+    if (submitStatus.type === 'success') {
+      const timer = setTimeout(() => {
+        setSubmitStatus({ type: null, message: '' })
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [submitStatus])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Handle form submission
-    console.log('Form submitted:', formData)
-    alert('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.')
+    setIsSubmitting(true)
+    setSubmitStatus({ type: null, message: '' })
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        console.error('JSON parse error:', jsonError)
+        data = { message: '', detail: '' }
+      }
+
+      if (response.ok) {
+        setSubmitStatus({
+          type: 'success',
+          message: data.message || 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.'
+        })
+        // Clear form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: 'product_inquiry',
+          message: ''
+        })
+      } else {
+        // Handle FastAPI validation errors (array of objects) or string error
+        let errorMessage = 'Đã có lỗi xảy ra. Vui lòng thử lại sau.'
+
+        if (data.detail) {
+          if (typeof data.detail === 'string') {
+            errorMessage = data.detail
+          } else if (Array.isArray(data.detail)) {
+            // Extract messages from validation errors
+            errorMessage = data.detail
+              .map((err: any) => `${err.loc.join('.')}: ${err.msg}`)
+              .join(', ')
+          } else if (typeof data.detail === 'object') {
+            errorMessage = JSON.stringify(data.detail)
+          }
+        }
+
+        setSubmitStatus({
+          type: 'error',
+          message: errorMessage
+        })
+      }
+    } catch (error) {
+      console.error('Form submission error:', error)
+      setSubmitStatus({
+        type: 'error',
+        message: 'Không thể kết nối đến server. Vui lòng thử lại sau.'
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -104,7 +186,10 @@ export default function Contact() {
                 <p className="text-minimal mb-4">
                   Cần tư vấn ngay? Chat với chúng tôi để được hỗ trợ nhanh chóng!
                 </p>
-                <button className="btn-primary">
+                <button
+                  className="btn-primary"
+                  onClick={() => toggleWidget(true)}
+                >
                   Bắt Đầu Chat
                 </button>
               </div>
@@ -159,6 +244,27 @@ export default function Contact() {
                 </div>
 
                 <div>
+                  <label htmlFor="subject" className="block text-sm font-medium mb-2">
+                    Chủ đề <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="subject"
+                    name="subject"
+                    required
+                    value={formData.subject}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-[rgb(var(--color-border))] focus:outline-none focus:border-[rgb(var(--color-primary))] transition bg-white"
+                  >
+                    <option value="product_inquiry">Tư vấn sản phẩm</option>
+                    <option value="order_support">Hỗ trợ đơn hàng</option>
+                    <option value="delivery">Vận chuyển & Lắp đặt</option>
+                    <option value="warranty_return">Bảo hành & Đổi trả</option>
+                    <option value="partnership">Hợp tác kinh doanh</option>
+                    <option value="other">Khác</option>
+                  </select>
+                </div>
+
+                <div>
                   <label htmlFor="message" className="block text-sm font-medium mb-2">
                     Nội dung <span className="text-red-500">*</span>
                   </label>
@@ -173,8 +279,22 @@ export default function Contact() {
                   ></textarea>
                 </div>
 
-                <button type="submit" className="btn-primary w-full">
-                  Gửi Tin Nhắn
+                {/* Status Message */}
+                {submitStatus.type && (
+                  <div className={`p-4 rounded ${submitStatus.type === 'success'
+                    ? 'bg-green-50 text-green-800 border border-green-200'
+                    : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}>
+                    {submitStatus.message}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Đang gửi...' : 'Gửi Tin Nhắn'}
                 </button>
               </form>
             </div>
