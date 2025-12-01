@@ -15,7 +15,15 @@ export const userService = {
      * Update current user profile
      */
     updateProfile: async (data: UserUpdate) => {
-        return await UsersService.updateMyProfileApiV1UsersMePut(data)
+        return await __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/users/me',
+            body: data,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        })
     },
 
     /**
@@ -60,12 +68,5 @@ export const userService = {
      */
     deleteAddress: async (addressId: number): Promise<void> => {
         return await AddressesService.deleteAddressApiV1AddressesAddressIdDelete(addressId)
-    },
-
-    /**
-     * Set an address as default
-     */
-    setDefaultAddress: async (addressId: number): Promise<AddressResponse> => {
-        return await AddressesService.setDefaultAddressApiV1AddressesAddressIdSetDefaultPost(addressId)
     }
 }

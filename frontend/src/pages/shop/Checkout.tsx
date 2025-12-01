@@ -1,9 +1,9 @@
 /**
  * Checkout Page - Order checkout with shipping info + Address Selector (FINAL)
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -11,8 +11,9 @@ import { useAuth } from "@/context/AuthContext";
 import { orderService } from "@/services/order.service";
 import { PaymentGateway } from "@/types/models";
 
-import AddressSelector from "@/components/address/AddressSelector";
+import AddressSelector from "@/components/AddressSelector";
 import { formatImageUrl } from "@/utils/format";
+import { userService } from "@/services/user.service";
 
 export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
@@ -22,7 +23,12 @@ export default function Checkout() {
   /** SHIPPING INFO */
   const [shippingName, setShippingName] = useState(user?.full_name || "");
   const [shippingPhone, setShippingPhone] = useState(user?.phone || "");
-  const [shippingAddress, setShippingAddress] = useState("");
+  const [shippingAddress, setShippingAddress] = useState({
+    city: '',
+    district: '',
+    ward: '',
+    address_line: ''
+  });
 
   /** PAYMENT — USE ENUM EXACTLY AS models.ts */
   const [paymentGateway, setPaymentGateway] = useState<PaymentGateway>(
@@ -30,6 +36,28 @@ export default function Checkout() {
   );
 
   const [notes, setNotes] = useState("");
+
+  // Fetch user addresses to pre-fill default address
+  const { data: addresses } = useQuery({
+    queryKey: ['my-addresses'],
+    queryFn: userService.getAddresses,
+    enabled: !!user
+  });
+
+  // Auto-fill shipping address from default address
+  useEffect(() => {
+    if (addresses && addresses.length > 0) {
+      const defaultAddr = addresses.find(addr => addr.is_default) || addresses[0];
+      if (defaultAddr) {
+        setShippingAddress({
+          city: defaultAddr.city,
+          district: defaultAddr.district,
+          ward: defaultAddr.ward || '',
+          address_line: defaultAddr.address_line
+        });
+      }
+    }
+  }, [addresses]);
 
   /** ORDER SUBMIT */
   const createOrderMutation = useMutation({
@@ -84,15 +112,24 @@ export default function Checkout() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!shippingAddress.trim()) {
-      alert("Vui lòng chọn hoặc nhập địa chỉ giao hàng!");
+    // Validate structured address
+    if (!shippingAddress.city || !shippingAddress.district || !shippingAddress.address_line) {
+      alert("Vui lòng điền đầy đủ thông tin địa chỉ giao hàng!");
       return;
     }
+
+    // Combine address into a single string
+    const fullAddress = [
+      shippingAddress.address_line,
+      shippingAddress.ward,
+      shippingAddress.district,
+      shippingAddress.city
+    ].filter(Boolean).join(', ');
 
     const payload = {
       full_name: shippingName,
       phone_number: shippingPhone,
-      shipping_address: shippingAddress,
+      shipping_address: fullAddress,
       payment_method: paymentGateway, // ENUM OK
       items: items.map((item) => ({
         product_id: item.product.id,
@@ -149,6 +186,7 @@ export default function Checkout() {
                     <AddressSelector
                       value={shippingAddress}
                       onChange={(v) => setShippingAddress(v)}
+                      required={true}
                     />
                   </div>
 
