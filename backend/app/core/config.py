@@ -43,15 +43,25 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = "noreply@luxefurniture.com"
     
-    # Payment Gateways
-    MOMO_PARTNER_CODE: str = ""
-    MOMO_ACCESS_KEY: str = ""
-    MOMO_SECRET_KEY: str = ""
+    # Payment Gateways - Momo
+    MOMO_PARTNER_CODE: str = "MOMOTEST123456"
+    MOMO_ACCESS_KEY: str = "F8590EC7094EA49A"
+    MOMO_SECRET_KEY: str = "fa22d573f9f8d665a3b26a96acd5d02d"
     MOMO_ENDPOINT: str = "https://test-payment.momo.vn"
+    MOMO_RETURN_URL: str = "http://localhost:3000/checkout/callback"
+    MOMO_NOTIFY_URL: str = "http://localhost:8000/api/v1/payments/momo/notify"
     
-    VNPAY_TMN_CODE: str = ""
-    VNPAY_HASH_SECRET: str = ""
+    # Payment Gateways - VNPay
+    VNPAY_TMN_CODE: str = "TMNCODE123456"
+    VNPAY_SECRET_KEY: str = "SECRETKEY123456"
+    # Legacy/alternate name expected by PaymentService
+    VNPAY_HASH_SECRET: str = "SECRETKEY123456"
     VNPAY_URL: str = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
+    VNPAY_RETURN_URL: str = "http://localhost:3000/checkout/callback"
+    VNPAY_NOTIFY_URL: str = "http://localhost:8000/api/v1/payments/vnpay/notify"
+
+    # Frontend base URL (used for QR payment links and callbacks)
+    FRONTEND_BASE_URL: str = "http://localhost:3000"
     
     # Admin
     ADMIN_EMAIL: str = "admin@luxefurniture.com"

@@ -230,6 +230,7 @@ export default function UserManage() {
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">ID</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Người dùng</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Vai trò</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">VIP</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
               <th className="px-6 py-3 text-right text-sm font-semibold text-gray-700">Thao tác</th>
             </tr>
@@ -259,11 +260,25 @@ export default function UserManage() {
 
                 <td className="px-6 py-4 text-sm">
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                    u.vip_tier === 'diamond'
+                      ? 'bg-cyan-100 text-cyan-800 border border-cyan-300'
+                      : u.vip_tier === 'gold'
+                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                      : u.vip_tier === 'silver'
+                      ? 'bg-gray-200 text-gray-700 border border-gray-400'
+                      : 'bg-white text-gray-600 border border-gray-200'
+                  }`}>
+                    {u.vip_tier === 'diamond' ? '💎 Diamond' : u.vip_tier === 'gold' ? '🥇 Gold' : u.vip_tier === 'silver' ? '🥈 Silver' : 'Member'}
+                  </span>
+                </td>
+
+                <td className="px-6 py-4 text-sm">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                     u.is_active
                       ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {u.is_active ? '✓ Hoạt động' : '✕ Bị khóa'}
+                    {u.is_active ? 'Hoạt động' : 'Bị khóa'}
                   </span>
                 </td>
 
@@ -280,23 +295,42 @@ export default function UserManage() {
                       </button>
 
                       {u.role === UserRole.CUSTOMER && (
-                        <button
-                          className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium transition-all duration-200 hover:shadow-md"
-                          onClick={async () => {
-                            await UsersService.upgradeVip(u.id);
-                            setVipNotification({ 
-                              show: true, 
-                              message: `Nâng VIP thành công cho ${u.full_name}!`,
-                              userName: u.full_name 
-                            });
-                            setTimeout(() => {
-                              setVipNotification({ show: false, message: '', userName: '' });
-                            }, 3000);
-                            loadUsers();
-                          }}
-                        >
-                          Nâng VIP
-                        </button>
+                        <>
+                          <button
+                            className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium transition-all duration-200 hover:shadow-md"
+                            onClick={async () => {
+                              await UsersService.upgradeVip(u.id);
+                              setVipNotification({ 
+                                show: true, 
+                                message: `Nâng VIP thành công cho ${u.full_name}!`,
+                                userName: u.full_name 
+                              });
+                              setTimeout(() => {
+                                setVipNotification({ show: false, message: '', userName: '' });
+                              }, 3000);
+                              loadUsers();
+                            }}
+                          >
+                            Nâng VIP
+                          </button>
+                          <button
+                            className="inline-flex items-center px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-all duration-200 hover:shadow-md"
+                            onClick={async () => {
+                              await UsersService.downgradeVip(u.id);
+                              setVipNotification({ 
+                                show: true, 
+                                message: `Hạ VIP thành công cho ${u.full_name}!`,
+                                userName: u.full_name 
+                              });
+                              setTimeout(() => {
+                                setVipNotification({ show: false, message: '', userName: '' });
+                              }, 3000);
+                              loadUsers();
+                            }}
+                          >
+                            Hạ VIP
+                          </button>
+                        </>
                       )}
 
                       <button

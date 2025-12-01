@@ -46,6 +46,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=your-super-secret-key-change-in-production
       - ENVIRONMENT=development
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:3000}
     volumes:
       - ./backend:/app
       - backend_static:/app/static  # Persist uploaded images
@@ -67,7 +68,8 @@ services:
     ports:
       - "3000:80"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      # Empty = use nginx proxy to forward /api to backend
+      - VITE_API_URL=
     depends_on:
       - backend
     networks:

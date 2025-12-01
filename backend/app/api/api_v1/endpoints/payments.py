@@ -14,6 +14,87 @@ from app.models.user import User
 router = APIRouter()
 
 
+@router.post("/create")
+async def create_payment(
+    payload: dict,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Unified create payment endpoint
+    Body: { order_id: int, gateway: str }
+    """
+    order_id = int(payload.get("order_id", 0))
+    gateway = (payload.get("gateway") or "vnpay").lower()
+
+    # Basic validations and get order
+    order = OrderService.get_order_by_id(db, order_id)
+    if order.user_id != current_user.id:
+        from app.core.exceptions import ForbiddenException
+        raise ForbiddenException("Access denied")
+
+    from app.core.exceptions import BadRequestException
+    if order.is_paid:
+        raise BadRequestException("Order has already been paid")
+
+    if order.status == OrderStatus.CANCELLED:
+        raise BadRequestException("Cannot pay for cancelled order")
+
+    if order.status == OrderStatus.COMPLETED:
+        raise BadRequestException("Order is already completed")
+
+    if order.status not in [OrderStatus.PENDING, OrderStatus.AWAITING_PAYMENT, OrderStatus.CONFIRMED]:
+        raise BadRequestException(f"Order status '{order.status}' is not eligible for payment")
+
+    if gateway == "momo":
+        payment_data = await PaymentService.create_momo_payment(
+            order_id=order.id,
+            amount=order.total_amount,
+            order_info=f"Payment for order #{order.id}",
+            return_url=f"http://localhost:3000/payment/return?provider=momo",
+            notify_url=f"http://localhost:8000/api/v1/payments/momo/notify"
+        )
+        # Normalize MoMo response to unified shape
+        # MoMo sandbox returns JSON with keys like 'payUrl' or 'payUrl' (varies by API)
+        payment_url = None
+        message = ""
+        success = False
+
+        if isinstance(payment_data, dict):
+            # common field names
+            payment_url = payment_data.get('payUrl') or payment_data.get('payurl') or payment_data.get('redirectUrl') or payment_data.get('data', {}).get('payUrl') if payment_data.get('data') else None
+            message = payment_data.get('message') or payment_data.get('msg') or ''
+            # success criteria depends on MoMo response structure
+            if payment_data.get('resultCode') == 0 or payment_data.get('status') == 'success' or payment_url:
+                success = True
+
+        return {
+            'success': success,
+            'payment_url': payment_url or "",
+            'message': message or 'Momo payment created'
+        }
+
+    elif gateway == "vnpay":
+        payment_url = PaymentService.create_vnpay_payment(
+            order_id=order.id,
+            amount=order.total_amount,
+            order_desc=f"Payment for order #{order.id}",
+            return_url=f"http://localhost:3000/payment/return?provider=vnpay",
+            ip_addr=request.client.host
+        )
+        return {"payment_url": payment_url}
+
+    elif gateway in ["cod", "bank_transfer"]:
+        # No external redirect needed
+        order.payment_method = gateway
+        from app.core.database import get_db as _gd
+        db.commit()
+        return {"payment_url": "", "message": f"Payment method {gateway} selected"}
+
+    else:
+        raise BadRequestException("Unsupported payment gateway")
+
+
 @router.post("/momo/create")
 async def create_momo_payment(
     order_id: int,
@@ -161,3 +242,63 @@ async def vnpay_payment_return(
         return {"success": True, "message": "Payment successful"}
     
     return {"success": False, "message": "Payment failed"}
+
+
+@router.post("/qr/generate")
+async def generate_qr_payment(
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generate QR code for payment confirmation
+    Body: { order_id: int, payment_method: str }
+    """
+    from app.services.qr_service import generate_qr_code
+    from app.core.exceptions import BadRequestException
+    
+    order_id = int(payload.get("order_id", 0))
+    payment_method = payload.get("payment_method", "bank_transfer")  # momo, vnpay, or bank_transfer
+    
+    # Get and validate order
+    order = OrderService.get_order_by_id(db, order_id)
+    
+    if order.user_id != current_user.id:
+        from app.core.exceptions import ForbiddenException
+        raise ForbiddenException("Access denied")
+    
+    if order.is_paid:
+        raise BadRequestException("Order has already been paid")
+    
+    # Update payment method based on user selection
+    if payment_method in ["momo", "vnpay", "bank_transfer"]:
+        order.payment_method = payment_method
+        db.commit()
+    
+    # Generate QR code
+    qr_data_uri = generate_qr_code(order_id)
+    
+    return {
+        "success": True,
+        "qr_code": qr_data_uri,
+        "order_id": order_id,
+        "amount": order.total_amount,
+        "message": f"QR code for order #{order_id}"
+    }
+
+
+@router.post("/qr/confirm")
+async def confirm_qr_payment(
+    payload: dict,
+    db: Session = Depends(get_db)
+):
+    """Confirm QR code payment - Public endpoint (no auth required)
+    Body: { order_id: int }
+    """
+    from app.services.qr_service import confirm_qr_payment
+    
+    order_id = int(payload.get("order_id", 0))
+    
+    # Confirm payment
+    result = confirm_qr_payment(order_id, db)
+    
+    return result

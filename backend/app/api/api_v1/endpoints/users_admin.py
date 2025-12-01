@@ -67,3 +67,25 @@ def admin_upgrade_vip(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.put("/{user_id}/downgrade-vip", response_model=UserResponse)
+def admin_downgrade_vip(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(get_current_admin_user)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "User not found")
+
+    tier_order = ["member", "silver", "gold", "diamond"]
+
+    current_index = tier_order.index(user.vip_tier.value)
+    if current_index > 0:
+        prev_tier = tier_order[current_index - 1]
+        user.vip_tier = VipTier(prev_tier)
+
+    db.commit()
+    db.refresh(user)
+    return user

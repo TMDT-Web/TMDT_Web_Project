@@ -2,7 +2,9 @@
  * Configuration Constants
  */
 
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// Use relative URLs to leverage Vite proxy when empty
+// This allows frontend to call /api which proxy forwards to backend container
+export const API_URL = import.meta.env.VITE_API_URL || ''
 export const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
 export const APP_NAME = import.meta.env.VITE_APP_NAME || 'LuxeFurniture'
 

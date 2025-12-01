@@ -11,6 +11,7 @@ interface ChatSession {
   session_id: string
   user_id: number
   username?: string
+  vip_tier?: string
   status: string
   created_at: string
   updated_at: string
@@ -149,9 +150,20 @@ export default function ChatSupport() {
                     👤
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-800 truncate">
-                      {session.username || `User #${session.user_id}`}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-slate-800 truncate">
+                        {session.username || `User #${session.user_id}`}
+                      </p>
+                      {session.vip_tier && session.vip_tier !== 'member' && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          session.vip_tier === 'diamond' ? 'bg-cyan-100 text-cyan-700' :
+                          session.vip_tier === 'gold' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-200 text-gray-700'
+                        }`}>
+                          {session.vip_tier === 'diamond' ? '💎' : session.vip_tier === 'gold' ? '🥇' : '🥈'}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600 truncate">
                       Session: {session.session_id.substring(0, 10)}...
                     </p>
@@ -178,9 +190,20 @@ export default function ChatSupport() {
                   👤
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-800">
-                    {currentSession?.username || `User #${currentSession?.user_id}`}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-slate-800">
+                      {currentSession?.username || `User #${currentSession?.user_id}`}
+                    </p>
+                    {currentSession?.vip_tier && currentSession.vip_tier !== 'member' && (
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        currentSession.vip_tier === 'diamond' ? 'bg-cyan-100 text-cyan-700 border border-cyan-300' :
+                        currentSession.vip_tier === 'gold' ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' :
+                        'bg-gray-200 text-gray-700 border border-gray-400'
+                      }`}>
+                        {currentSession.vip_tier === 'diamond' ? '💎 Diamond' : currentSession.vip_tier === 'gold' ? '🥇 Gold' : '🥈 Silver'}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500">
                     {isConnected ? '🟢 Đã kết nối' : '⚫ Mất kết nối'}
                   </p>

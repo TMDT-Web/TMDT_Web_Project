@@ -271,6 +271,21 @@ export default function Profile() {
                 </div>
                 <h3 className="font-bold text-lg">{user.full_name}</h3>
                 <p className="text-sm text-gray-600">{user.email}</p>
+                
+                {/* VIP Badge */}
+                <div className="mt-3 flex justify-center">
+                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
+                    user.vip_tier === 'diamond'
+                      ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg'
+                      : user.vip_tier === 'gold'
+                      ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-lg'
+                      : user.vip_tier === 'silver'
+                      ? 'bg-gradient-to-r from-gray-300 to-gray-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 border border-gray-200'
+                  }`}>
+                    {user.vip_tier === 'diamond' ? '💎 Diamond VIP' : user.vip_tier === 'gold' ? '🥇 Gold VIP' : user.vip_tier === 'silver' ? '🥈 Silver VIP' : '⭐ Member'}
+                  </span>
+                </div>
               </div>
 
               <nav className="space-y-2">
@@ -334,6 +349,39 @@ export default function Profile() {
             {activeTab === 'info' && (
               <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm">
                 <h2 className="font-bold text-2xl mb-6">Thông tin cá nhân</h2>
+                
+                {/* VIP Info Card */}
+                <div className={`mb-6 p-4 rounded-lg border-2 ${
+                  user.vip_tier === 'diamond'
+                    ? 'bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-300'
+                    : user.vip_tier === 'gold'
+                    ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300'
+                    : user.vip_tier === 'silver'
+                    ? 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-300'
+                    : 'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Hạng thành viên</p>
+                      <p className={`text-xl font-bold ${
+                        user.vip_tier === 'diamond' ? 'text-cyan-600' :
+                        user.vip_tier === 'gold' ? 'text-yellow-600' :
+                        user.vip_tier === 'silver' ? 'text-gray-600' :
+                        'text-gray-500'
+                      }`}>
+                        {user.vip_tier === 'diamond' ? '💎 Diamond VIP' : 
+                         user.vip_tier === 'gold' ? '🥇 Gold VIP' : 
+                         user.vip_tier === 'silver' ? '🥈 Silver VIP' : 
+                         '⭐ Member'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600 mb-1">Điểm tích lũy</p>
+                      <p className="text-xl font-bold text-[rgb(var(--color-wood))]">{user.loyalty_points || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Họ và tên</label>

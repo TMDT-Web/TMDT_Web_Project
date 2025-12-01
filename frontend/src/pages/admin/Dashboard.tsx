@@ -1,70 +1,154 @@
 /**
  * Admin Dashboard - Enterprise style with stats, charts, tables
  */
+import { useQuery } from '@tanstack/react-query'
+import { orderService } from '@/services/order.service'
+import { UsersService } from '@/client/services/UsersService'
+import { ProductsService } from '@/client/services/ProductsService'
 
 export default function Dashboard() {
-  // Mock data for now (TODO: integrate with real API)
+  // Fetch real data
+  const { data: ordersData } = useQuery({
+    queryKey: ['adminOrders'],
+    queryFn: () => orderService.getAllOrders(1, 100)
+  })
+
+  const { data: usersData } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => UsersService.getAll()
+  })
+
+  const { data: productsData } = useQuery({
+    queryKey: ['allProducts'],
+    queryFn: () => ProductsService.getProductsApiV1ProductsGet(0, 1000)
+  })
+
+  const orders = ordersData?.orders || []
+  const users = usersData?.users || []
+  const products = productsData?.products || []
+
+  // Calculate real stats - only count completed orders
+  const completedOrders = orders.filter(o => o.status === 'completed')
+  
+  const currentMonth = new Date().getMonth()
+  const currentYear = new Date().getFullYear()
+  
+  const monthlyOrders = completedOrders.filter(o => {
+    const orderDate = new Date(o.created_at)
+    return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear
+  })
+
+  const monthlyRevenue = monthlyOrders.reduce((sum, order) => sum + order.total_amount, 0)
+  const totalCustomers = users.filter(u => u.role === 'customer').length
+  const totalProducts = products.length
+
+  // Calculate revenue by month (last 6 months) - only completed orders
+  const monthlyRevenueData = []
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date()
+    date.setMonth(date.getMonth() - i)
+    const month = date.getMonth()
+    const year = date.getFullYear()
+    
+    const monthOrders = completedOrders.filter(o => {
+      const orderDate = new Date(o.created_at)
+      return orderDate.getMonth() === month && orderDate.getFullYear() === year
+    })
+    
+    const revenue = monthOrders.reduce((sum, order) => sum + order.total_amount, 0)
+    monthlyRevenueData.push({
+      month: `T${month + 1}`,
+      revenue
+    })
+  }
+
   const stats = [
     {
       label: 'Doanh thu tháng',
-      value: '₫125,500,000',
-      change: 12.5,
+      value: monthlyRevenue.toLocaleString('vi-VN') + ' ₫',
+      change: 0,
       icon: '💰',
       color: '#10b981'
     },
     {
       label: 'Đơn hàng mới',
-      value: '48',
-      change: 8.2,
+      value: monthlyOrders.length.toString(),
+      change: 0,
       icon: '🛒',
       color: '#3b82f6'
     },
     {
       label: 'Khách hàng',
-      value: '1,234',
-      change: 15.3,
+      value: totalCustomers.toString(),
+      change: 0,
       icon: '👥',
       color: '#8b5cf6'
     },
     {
       label: 'Sản phẩm',
-      value: '156',
+      value: totalProducts.toString(),
       change: 0,
       icon: '📦',
       color: '#f59e0b'
     }
   ]
 
-  const monthlyRevenueData = [
-    { month: 'T1', revenue: 95000000 },
-    { month: 'T2', revenue: 105000000 },
-    { month: 'T3', revenue: 88000000 },
-    { month: 'T4', revenue: 115000000 },
-    { month: 'T5', revenue: 130000000 },
-    { month: 'T6', revenue: 125000000 }
-  ]
+  // Calculate top products by revenue - only completed orders
+  const productSales = new Map<number, { name: string, revenue: number, quantity: number }>()
+  
+  completedOrders.forEach(order => {
+    order.items?.forEach(item => {
+      const productId = item.product_id
+      const productName = item.product_name || item.product?.name || 'Sản phẩm'
+      const revenue = (item.price_at_purchase || item.price || 0) * item.quantity
+      
+      if (productSales.has(productId)) {
+        const current = productSales.get(productId)!
+        current.revenue += revenue
+        current.quantity += item.quantity
+      } else {
+        productSales.set(productId, {
+          name: productName,
+          revenue,
+          quantity: item.quantity
+        })
+      }
+    })
+  })
 
-  const topProducts = [
-    { name: 'Sofa Monaco', revenue: 45000000, sales: 28 },
-    { name: 'Bàn ăn Milan', revenue: 38000000, sales: 32 },
-    { name: 'Giường Copenhagen', revenue: 35000000, sales: 22 },
-    { name: 'Kệ sách Stockholm', revenue: 28000000, sales: 45 },
-    { name: 'Ghế Barcelona', revenue: 22000000, sales: 38 }
-  ]
+  const topProducts = Array.from(productSales.values())
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5)
 
-  const recentOrders = [
-    { id: '#ORD-2024-003', customer: 'Lê Minh Tuấn', products: 'Bàn ăn Milan, Ghế ăn x4', total: '₫32,500,000', status: 'pending', date: '22/12/2024' },
-    { id: '#ORD-2024-002', customer: 'Phạm Thị Mai', products: 'Giường Copenhagen King', total: '₫15,900,000', status: 'shipping', date: '20/12/2024' },
-    { id: '#ORD-2024-001', customer: 'Nguyễn Văn An', products: 'Sofa Monaco 3 chỗ', total: '₫22,500,000', status: 'delivered', date: '18/12/2024' }
-  ]
+  // Recent orders (last 5)
+  const recentOrders = orders
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5)
+    .map(order => ({
+      id: `#${order.id.toString().padStart(6, '0')}`,
+      customer: order.full_name,
+      products: order.items && order.items.length > 0
+        ? order.items.length === 1
+          ? order.items[0].product_name || order.items[0].product?.name || 'Sản phẩm'
+          : `${order.items[0].product_name || order.items[0].product?.name || 'Sản phẩm'} (+${order.items.length - 1})`
+        : 'Không có sản phẩm',
+      total: order.total_amount.toLocaleString('vi-VN') + ' ₫',
+      status: order.status,
+      date: new Date(order.created_at).toLocaleDateString('vi-VN')
+    }))
 
   const maxRevenue = Math.max(...monthlyRevenueData.map(d => d.revenue))
 
   const getStatusClass = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'shipping': return 'bg-blue-100 text-blue-800'
-      case 'delivered': return 'bg-green-100 text-green-800'
+      case 'awaiting_payment': return 'bg-orange-100 text-orange-800'
+      case 'confirmed': return 'bg-blue-100 text-blue-800'
+      case 'processing': return 'bg-indigo-100 text-indigo-800'
+      case 'shipping': return 'bg-purple-100 text-purple-800'
+      case 'completed': return 'bg-green-100 text-green-800'
+      case 'cancelled': return 'bg-red-100 text-red-800'
+      case 'refunded': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -72,8 +156,13 @@ export default function Dashboard() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'pending': return 'Chờ xác nhận'
+      case 'awaiting_payment': return 'Chờ thanh toán'
+      case 'confirmed': return 'Đã xác nhận'
+      case 'processing': return 'Đang xử lý'
       case 'shipping': return 'Đang giao'
-      case 'delivered': return 'Đã giao'
+      case 'completed': return 'Hoàn thành'
+      case 'cancelled': return 'Đã hủy'
+      case 'refunded': return 'Đã hoàn tiền'
       default: return status
     }
   }
@@ -141,20 +230,22 @@ export default function Dashboard() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h3 className="text-lg font-semibold text-slate-800 mb-6">Sản phẩm bán chạy</h3>
           <div className="space-y-4">
-            {topProducts.map((product, index) => (
+            {topProducts.length > 0 ? topProducts.map((product, index) => (
               <div key={index} className="flex items-center gap-4">
                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-semibold text-sm flex-shrink-0">
                   {index + 1}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-800 truncate">{product.name}</p>
-                  <p className="text-sm text-gray-600">{product.revenue.toLocaleString('vi-VN')} VND</p>
+                  <p className="text-sm text-gray-600">{product.revenue.toLocaleString('vi-VN')} ₫</p>
                 </div>
                 <div className="text-sm text-gray-600 whitespace-nowrap">
-                  {product.sales} đã bán
+                  {product.quantity} đã bán
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-8 text-gray-500">Chưa có dữ liệu bán hàng</div>
+            )}
           </div>
         </div>
       </div>
@@ -180,7 +271,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {recentOrders.map((order, index) => (
+              {recentOrders.length > 0 ? recentOrders.map((order, index) => (
                 <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 px-4">
                     <span className="text-sm font-mono text-blue-600">{order.id}</span>
@@ -195,7 +286,11 @@ export default function Dashboard() {
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-600">{order.date}</td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-500">Chưa có đơn hàng nào</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -109,9 +109,10 @@ class ChatService:
             .all()
         )
 
-        # 🔥 FIX: Thêm username = full_name
+        # 🔥 FIX: Thêm username = full_name và vip_tier
         for s in sessions:
             s.username = s.user.full_name if s.user else None
+            s.vip_tier = s.user.vip_tier.value if s.user else None
 
         return sessions
 
@@ -125,6 +126,7 @@ class ChatService:
         )
         for s in sessions:
             s.username = s.user.full_name if s.user else None
+            s.vip_tier = s.user.vip_tier.value if s.user else None
         return sessions
 
     @staticmethod

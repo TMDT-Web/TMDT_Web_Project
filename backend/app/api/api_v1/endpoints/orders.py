@@ -10,6 +10,7 @@ from app.schemas.order import OrderResponse, OrderCreate, OrderUpdate, OrderList
 from app.services.order_service import OrderService
 from app.api.deps import get_current_user, get_current_admin_user
 from app.models.user import User
+from app.models.order import OrderStatus
 
 router = APIRouter()
 
@@ -76,4 +77,30 @@ def update_order(
 ):
     """Update order status (admin only)"""
     order = OrderService.update_order(db, order_id, data)
+    return order
+
+
+@router.post("/{order_id}/cancel", response_model=OrderResponse)
+def cancel_order(
+    order_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Cancel order (user can only cancel their own pending orders)"""
+    from app.core.exceptions import ForbiddenException
+    
+    order = OrderService.get_order_by_id(db, order_id)
+    
+    # Check authorization
+    if order.user_id != current_user.id and not current_user.is_admin:
+        raise ForbiddenException("Access denied")
+    
+    # Check if order can be cancelled
+    if order.status not in [OrderStatus.PENDING, OrderStatus.AWAITING_PAYMENT]:
+        from app.core.exceptions import BadRequestException
+        raise BadRequestException("Can only cancel pending or awaiting payment orders")
+    
+    # Update to cancelled status
+    order_update = OrderUpdate(status=OrderStatus.CANCELLED)
+    order = OrderService.update_order(db, order_id, order_update)
     return order

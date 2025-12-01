@@ -40,5 +40,13 @@ export class UsersService {
       url: `/api/v1/users/admin/${userId}/upgrade-vip`,
     });
   }
+
+  /** ADMIN: downgrade VIP tier */
+  public static downgradeVip(userId: number) {
+    return __request(OpenAPI, {
+      method: "PUT",
+      url: `/api/v1/users/admin/${userId}/downgrade-vip`,
+    });
+  }
 }
   

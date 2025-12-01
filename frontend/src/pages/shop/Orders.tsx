@@ -50,7 +50,7 @@ export default function Orders() {
       case 'cod': return 'Thanh toán khi nhận hàng'
       case 'bank_transfer': return 'Chuyển khoản ngân hàng'
       case 'momo': return 'Ví MoMo'
-      case 'vnpay': return 'VNPay'
+      case 'vnpay': return 'VNPay QR'
       default: return method
     }
   }
@@ -220,7 +220,22 @@ export default function Orders() {
                   <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-gray-500 mb-1">Phương thức thanh toán</p>
-                      <p className="text-gray-800 font-medium">{getPaymentMethodText(order.payment_method)}</p>
+                      <div className="flex items-center gap-2">
+                        {/* Logo image with fallback hidden on error */}
+                        {order.payment_method === 'momo' && (
+                          <img src={(() => { try { return new URL('../../assets/momo.png', import.meta.url).href; } catch { return '/payments/momo.png'; } })()} alt="MoMo" className="w-5 h-5 object-contain"
+                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                        )}
+                        {order.payment_method === 'vnpay' && (
+                          <img src={(() => { try { return new URL('../../assets/vnpay.png', import.meta.url).href; } catch { return '/payments/vnpay.png'; } })()} alt="VNPay" className="w-5 h-5 object-contain"
+                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                        )}
+                        {order.payment_method === 'bank_transfer' && (
+                          <img src={(() => { try { return new URL('../../assets/bank.png', import.meta.url).href; } catch { return '/payments/bank.png'; } })()} alt="Bank" className="w-5 h-5 object-contain"
+                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                        )}
+                        <p className="text-gray-800 font-medium">{getPaymentMethodText(order.payment_method)}</p>
+                      </div>
                       {order.is_paid ? (
                         <span className="inline-block mt-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                           Đã thanh toán
@@ -354,7 +369,21 @@ export default function Orders() {
                   <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Phương thức:</span>
-                      <span className="text-gray-800">{getPaymentMethodText(selectedOrder.payment_method)}</span>
+                      <div className="flex items-center gap-2">
+                        {selectedOrder.payment_method === 'momo' && (
+                          <img src={(() => { try { return new URL('../../assets/momo.png', import.meta.url).href; } catch { return '/payments/momo.png'; } })()} alt="MoMo" className="w-5 h-5 object-contain"
+                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                        )}
+                        {selectedOrder.payment_method === 'vnpay' && (
+                          <img src={(() => { try { return new URL('../../assets/vnpay.png', import.meta.url).href; } catch { return '/payments/vnpay.png'; } })()} alt="VNPay" className="w-5 h-5 object-contain"
+                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                        )}
+                        {selectedOrder.payment_method === 'bank_transfer' && (
+                          <img src={(() => { try { return new URL('../../assets/bank.png', import.meta.url).href; } catch { return '/payments/bank.png'; } })()} alt="Bank" className="w-5 h-5 object-contain"
+                               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                        )}
+                        <span className="text-gray-800">{getPaymentMethodText(selectedOrder.payment_method)}</span>
+                      </div>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Trạng thái:</span>

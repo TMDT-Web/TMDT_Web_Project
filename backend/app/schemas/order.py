@@ -52,6 +52,13 @@ class OrderUpdate(BaseModel):
     cancellation_reason: Optional[str] = None
     is_paid: Optional[bool] = None
     shipping_fee: Optional[float] = None
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    shipping_address: Optional[str] = None
+    note: Optional[str] = None
+    subtotal: Optional[float] = None
+    discount_amount: Optional[float] = None
+    payment_method: Optional[str] = None
 
 
 class OrderResponse(TimestampSchema, OrderBase):

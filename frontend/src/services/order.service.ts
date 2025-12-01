@@ -92,4 +92,9 @@ export const orderService = {
     const response = await api.put<Order>(`/api/v1/orders/${id}`, { status })
     return response.data
   },
+
+  async updateOrder(id: number, data: Partial<Order>): Promise<Order> {
+    const response = await api.put<Order>(`/api/v1/orders/${id}`, data)
+    return response.data
+  },
 }

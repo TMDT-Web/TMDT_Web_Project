@@ -41,6 +41,7 @@ class ChatSessionResponse(TimestampSchema, ChatSessionBase):
     """Chat session response"""
     user_id: Optional[int] = None  # Allow guest users (no user_id)
     username: Optional[str] = None
+    vip_tier: Optional[str] = None
     status: ChatStatus
     admin_id: Optional[int] = None
     messages: List[ChatMessageResponse] = []

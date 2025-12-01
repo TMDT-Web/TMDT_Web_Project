@@ -9,6 +9,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 
 import { orderService } from "@/services/order.service";
+import { paymentService } from "@/services/payment.service";
 import { PaymentGateway } from "@/types/models";
 
 import AddressSelector from "@/components/address/AddressSelector";
@@ -29,23 +30,64 @@ export default function Checkout() {
     PaymentGateway.COD
   );
 
+  /** BANK SELECTION */
+  const [selectedBank, setSelectedBank] = useState("vietcombank");
+  
+  const banks = [
+    { id: "vietcombank", name: "Vietcombank", logo: "vietcombank.png" },
+    { id: "techcombank", name: "Techcombank", logo: "techcombank.png" },
+    { id: "mbbank", name: "MB Bank", logo: "mbbank.png" },
+    { id: "bidv", name: "BIDV", logo: "bidv.png" },
+    { id: "agribank", name: "Agribank", logo: "agribank.png" },
+    { id: "vietinbank", name: "VietinBank", logo: "vietinbank.png" },
+    { id: "tpbank", name: "TPBank", logo: "tpbank.png" },
+  ];
+
   const [notes, setNotes] = useState("");
 
   /** ORDER SUBMIT */
   const createOrderMutation = useMutation({
-    mutationFn: orderService.createOrder,
+    mutationFn: async (orderData: any) => {
+      // Create order first
+      const order = await orderService.createOrder(orderData);
+      
+      // Handle payment gateway redirection
+      if (order.payment_method === PaymentGateway.VNPAY) {
+        const response = await paymentService.initVNPayPayment(order.id);
+        if (response.success && response.payment_url) {
+          // Redirect to VNPay
+          window.location.href = response.payment_url;
+        }
+      } else if (order.payment_method === PaymentGateway.MOMO) {
+        const response = await paymentService.initMomoPayment(order.id);
+        if (response.success && response.payment_url) {
+          // Redirect to Momo
+          window.location.href = response.payment_url;
+        }
+      }
+      
+      return order;
+    },
     onSuccess: (data) => {
       clearCart();
 
-      if (data.payment?.payment_url) {
-        window.location.href = data.payment.payment_url;
-      } else {
+      // Handle different payment methods
+      if (data.payment_method === PaymentGateway.COD) {
         alert(
           `Đặt hàng thành công!\nMã đơn hàng: #${data.id}\nTổng tiền: ${data.total_amount.toLocaleString(
             "vi-VN"
-          )}₫`
+          )}₫\n\nPhương thức: Thanh toán khi nhận hàng`
         );
-        navigate("/");
+        navigate(`/orders`);
+      } else if (data.payment_method === PaymentGateway.MOMO) {
+        // Redirect to QR payment with Momo selected
+        navigate(`/payment/qr?order_id=${data.id}&amount=${data.total_amount}&method=momo`);
+      } else if (data.payment_method === PaymentGateway.VNPAY) {
+        // Redirect to QR payment with VNPay selected
+        navigate(`/payment/qr?order_id=${data.id}&amount=${data.total_amount}&method=vnpay`);
+      } else if (data.payment_method === PaymentGateway.BANK_TRANSFER) {
+        // Redirect to QR payment with Bank Transfer selected
+        navigate(`/payment/qr?order_id=${data.id}&amount=${data.total_amount}&method=bank`);
       }
     },
     onError: (error: any) => {
@@ -173,7 +215,7 @@ export default function Checkout() {
 
                 <div className="space-y-3">
                   {/* COD */}
-                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-[rgb(var(--color-wood))]">
+                  <label className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-[rgb(var(--color-wood))]">
                     <input
                       type="radio"
                       name="payment"
@@ -182,13 +224,12 @@ export default function Checkout() {
                       onChange={() =>
                         setPaymentGateway(PaymentGateway.COD)
                       }
-                      className="mr-3"
+                      className="mr-1"
                     />
                     <span>Thanh toán khi nhận hàng (COD)</span>
                   </label>
 
-                  {/* MOMO */}
-                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-[rgb(var(--color-wood))]">
+                  <label className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-[rgb(var(--color-wood))]">
                     <input
                       type="radio"
                       name="payment"
@@ -197,13 +238,25 @@ export default function Checkout() {
                       onChange={() =>
                         setPaymentGateway(PaymentGateway.MOMO)
                       }
-                      className="mr-3"
+                      className="mr-1"
+                    />
+                    <img
+                      src={(() => {
+                        try {
+                          const url = new URL('../../assets/momo.png', import.meta.url).href;
+                          return url;
+                        } catch {
+                          return '/payments/momo.png';
+                        }
+                      })()}
+                      alt="MoMo"
+                      className="w-7 h-7 object-contain"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
                     <span>Ví MoMo</span>
                   </label>
 
-                  {/* VNPAY */}
-                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-[rgb(var(--color-wood))]">
+                  <label className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-[rgb(var(--color-wood))]">
                     <input
                       type="radio"
                       name="payment"
@@ -212,27 +265,93 @@ export default function Checkout() {
                       onChange={() =>
                         setPaymentGateway(PaymentGateway.VNPAY)
                       }
-                      className="mr-3"
+                      className="mr-1"
                     />
-                    <span>VNPay</span>
+                    <img
+                      src={(() => {
+                        try {
+                          const url = new URL('../../assets/vnpay.png', import.meta.url).href;
+                          return url;
+                        } catch {
+                          return '/payments/vnpay.png';
+                        }
+                      })()}
+                      alt="VNPay"
+                      className="w-7 h-7 object-contain"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    <span>VNPay QR</span>
                   </label>
 
-                  {/* BANK TRANSFER */}
-                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-[rgb(var(--color-wood))]">
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={PaymentGateway.BANK_TRANSFER}
-                      checked={
-                        paymentGateway === PaymentGateway.BANK_TRANSFER
-                      }
-                      onChange={() =>
-                        setPaymentGateway(PaymentGateway.BANK_TRANSFER)
-                      }
-                      className="mr-3"
-                    />
-                    <span>Chuyển khoản ngân hàng</span>
-                  </label>
+                  <div className="border-2 rounded-lg p-4">
+                    <label className="flex items-center gap-3 cursor-pointer hover:text-[rgb(var(--color-wood))]">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={PaymentGateway.BANK_TRANSFER}
+                        checked={
+                          paymentGateway === PaymentGateway.BANK_TRANSFER
+                        }
+                        onChange={() =>
+                          setPaymentGateway(PaymentGateway.BANK_TRANSFER)
+                        }
+                        className="mr-1"
+                      />
+                      <img
+                        src={(() => {
+                          try {
+                            const url = new URL('../../assets/bank.png', import.meta.url).href;
+                            return url;
+                          } catch {
+                            return '/payments/bank.png';
+                          }
+                        })()}
+                        alt="Bank"
+                        className="w-7 h-7 object-contain"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                      <span>Chuyển khoản ngân hàng</span>
+                    </label>
+
+                    {paymentGateway === PaymentGateway.BANK_TRANSFER && (
+                      <div className="mt-4 pt-4 border-t">
+                        <label className="block text-sm font-medium mb-3">
+                          Chọn ngân hàng
+                        </label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {banks.map((bank) => (
+                            <button
+                              key={bank.id}
+                              type="button"
+                              onClick={() => setSelectedBank(bank.id)}
+                              className={`p-3 border-2 rounded-lg flex flex-col items-center gap-2 hover:border-[rgb(var(--color-wood))] transition-colors ${
+                                selectedBank === bank.id
+                                  ? "border-[rgb(var(--color-wood))] bg-[rgb(var(--color-wood))]/5"
+                                  : "border-gray-200"
+                              }`}
+                            >
+                              <img
+                                src={(() => {
+                                  try {
+                                    const url = new URL(`../../assets/banks/${bank.logo}`, import.meta.url).href;
+                                    return url;
+                                  } catch {
+                                    return `/banks/${bank.logo}`;
+                                  }
+                                })()}
+                                alt={bank.name}
+                                className="w-12 h-12 object-contain"
+                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                              />
+                              <span className="text-xs text-center">
+                                {bank.name}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
