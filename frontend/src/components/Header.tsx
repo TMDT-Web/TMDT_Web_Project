@@ -1,8 +1,8 @@
 /**
  * Header Component - Scandinavian Minimal Design
  */
-import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
 import AuthModal from './AuthModal'
@@ -13,12 +13,16 @@ interface HeaderProps {
 }
 
 export default function Header({ externalAuthModalState, onAuthModalClose }: HeaderProps) {
+  const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { items, totalItems } = useCart()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login')
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchText, setSearchText] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
 
   // Handle external auth modal state from MainLayout
   useEffect(() => {
@@ -55,12 +59,55 @@ export default function Header({ externalAuthModalState, onAuthModalClose }: Hea
 
           {/* Right Actions */}
           <div className="flex items-center space-x-6">
-            {/* Search Icon */}
-            <button className="text-[rgb(var(--color-text-dark))] hover:text-[rgb(var(--color-wood))] transition">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
+            {/* Search */}
+            <div className="flex items-center gap-2">
+              <input
+                ref={searchRef}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onBlur={() => {
+                  if (!searchText) setIsSearchOpen(false)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setIsSearchOpen(false)
+                    ;(e.target as HTMLInputElement).blur()
+                  }
+                  if (e.key === 'Enter') {
+                    const q = searchText.trim()
+                    if (q) {
+                      const url = `/products?search=${encodeURIComponent(q)}`
+                      window.dispatchEvent(new CustomEvent('perform-product-search', { detail: { query: q } }))
+                      navigate(url)
+                    }
+                  }
+                }}
+                placeholder="Tìm kiếm..."
+                className={`transition-all duration-300 border border-[rgb(var(--color-border))] rounded-full text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-primary))]
+                  ${isSearchOpen ? 'w-40 md:w-64 px-4 py-2 opacity-100' : 'w-0 px-0 py-0 opacity-0 pointer-events-none'}`}
+              />
+              <button
+                className="text-[rgb(var(--color-text-dark))] hover:text-[rgb(var(--color-wood))] transition"
+                aria-label="Tìm kiếm"
+                onClick={() => {
+                  if (isSearchOpen) {
+                    const q = searchText.trim()
+                    if (q) {
+                      const url = `/products?search=${encodeURIComponent(q)}`
+                      window.dispatchEvent(new CustomEvent('perform-product-search', { detail: { query: q } }))
+                      navigate(url)
+                    }
+                  } else {
+                    setIsSearchOpen(true)
+                    setTimeout(() => searchRef.current?.focus(), 10)
+                  }
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </div>
 
             {/* User Account */}
             {user ? (
