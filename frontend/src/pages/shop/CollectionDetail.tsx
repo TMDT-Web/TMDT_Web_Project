@@ -4,15 +4,17 @@
  */
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { CollectionsService, CartService } from '@/client'
+import { CollectionsService } from '@/client'
 import type { CollectionWithProductsResponse, ProductResponse } from '@/client'
 import { formatImageUrl, formatPrice } from '@/utils/format'
 import { useAuth } from '@/context/AuthContext'
+import { useCart } from '@/context/CartContext'
 import { useToast } from '@/components/Toast'
 
 export default function CollectionDetail() {
   const { id } = useParams<{ id: string }>()
   const { isAuthenticated } = useAuth()
+  const { addCollection } = useCart()
   const toast = useToast()
   const [collection, setCollection] = useState<CollectionWithProductsResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,7 +49,7 @@ export default function CollectionDetail() {
     }, 0)
   }
 
-  // Thêm tất cả sản phẩm trong collection vào giỏ hàng
+  // Thêm bộ sưu tập vào giỏ hàng (sử dụng addCollection từ CartContext)
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
       toast.warning('Vui lòng đăng nhập để thêm vào giỏ hàng')
@@ -62,21 +64,17 @@ export default function CollectionDetail() {
     try {
       setAddingToCart(true)
       
-      // Thêm từng sản phẩm vào giỏ hàng
-      for (const product of collection.products) {
-        await CartService.addToCartApiV1CartAddPost({
-          requestBody: {
-            product_id: product.id,
-            quantity: 1
-          }
-        })
-      }
+      // Sử dụng addCollection để thêm cả bộ sưu tập với giá ưu đãi
+      await addCollection(collection)
 
       setAddedToCart(true)
-      toast.success('Đã thêm tất cả sản phẩm vào giỏ hàng!')
+      const discountInfo = collection.sale_price 
+        ? ` với giá ưu đãi ${formatPrice(collection.sale_price)}`
+        : ''
+      toast.success(`Đã thêm bộ sưu tập "${collection.name}" vào giỏ hàng${discountInfo}!`)
       setTimeout(() => setAddedToCart(false), 3000)
     } catch (err) {
-      console.error('Error adding to cart:', err)
+      console.error('Error adding collection to cart:', err)
       toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng')
     } finally {
       setAddingToCart(false)

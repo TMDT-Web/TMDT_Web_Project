@@ -32,5 +32,6 @@ export const STORAGE_KEYS = {
   AUTH_TOKEN: 'luxe_auth_token',
   REFRESH_TOKEN: 'luxe_refresh_token',
   CART: 'luxe_cart',
+  CART_COLLECTIONS: 'luxe_cart_collections',  // Track collections added to cart
   USER: 'luxe_user',
 } as const

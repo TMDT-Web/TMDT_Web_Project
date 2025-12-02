@@ -17,7 +17,8 @@ export default function CollectionManage() {
     slug: '',
     description: '',
     banner_url: '',
-    is_active: true
+    is_active: true,
+    sale_price: ''
   })
   const [selectedProducts, setSelectedProducts] = useState<number[]>([])
   const [bannerFile, setBannerFile] = useState<File | null>(null)
@@ -40,7 +41,7 @@ export default function CollectionManage() {
 
   const handleCreate = () => {
     setEditingCollection(null)
-    setFormData({ name: '', slug: '', description: '', banner_url: '', is_active: true })
+    setFormData({ name: '', slug: '', description: '', banner_url: '', is_active: true, sale_price: '' })
     setSelectedProducts([])
     setBannerFile(null)
     setBannerPreview('')
@@ -54,7 +55,8 @@ export default function CollectionManage() {
       slug: collection.slug,
       description: collection.description || '',
       banner_url: collection.banner_url || '',
-      is_active: collection.is_active ?? true
+      is_active: collection.is_active ?? true,
+      sale_price: collection.sale_price?.toString() || ''
     })
     setBannerPreview(collection.banner_url || '')
     setBannerFile(null)
@@ -107,8 +109,12 @@ export default function CollectionManage() {
       }
 
       const payload = {
-        ...formData,
-        banner_url: bannerUrl || undefined
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description,
+        banner_url: bannerUrl || undefined,
+        is_active: formData.is_active,
+        sale_price: formData.sale_price ? parseFloat(formData.sale_price) : undefined
       }
 
       if (editingCollection) {
@@ -195,6 +201,11 @@ export default function CollectionManage() {
                   {collection.is_active ? 'Hoạt động' : 'Tắt'}
                 </span>
               </div>
+              {collection.sale_price && (
+                <p className="text-lg font-bold text-red-600 mb-2">
+                  Giá ưu đãi: {collection.sale_price.toLocaleString('vi-VN')}₫
+                </p>
+              )}
               <p className="text-sm text-gray-600 mb-3">{collection.description}</p>
               <div className="flex gap-2">
                 <button
@@ -256,6 +267,18 @@ export default function CollectionManage() {
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Giá ưu đãi khi mua cả bộ (VNĐ)</label>
+                <input
+                  type="number"
+                  placeholder="Để trống nếu không có giá ưu đãi"
+                  value={formData.sale_price}
+                  onChange={(e) => setFormData({...formData, sale_price: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Giá khuyến mãi khi khách mua cả bộ sưu tập thay vì mua từng sản phẩm</p>
               </div>
 
               <div>
