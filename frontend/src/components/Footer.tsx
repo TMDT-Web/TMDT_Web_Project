@@ -74,15 +74,15 @@ export default function Footer() {
           <div>
             <h4 className="font-medium mb-4">Liên hệ</h4>
             <ul className="space-y-2 text-sm text-gray-300">
-              <li>123 Nguyễn Huệ, Q1, TP.HCM</li>
+              <li>273 An Dương Vương, Q5, TP.HCM</li>
               <li>
-                <a href="tel:0123456789" className="hover:text-white transition">
-                  0123 456 789
+                <a href="tel:0934191038" className="hover:text-white transition">
+                  0934191038
                 </a>
               </li>
               <li>
-                <a href="mailto:hello@luxefurniture.vn" className="hover:text-white transition">
-                  hello@luxefurniture.vn
+                <a href="mailto:3123560077@sv.sgu.edu.vn" className="hover:text-white transition">
+                  3123560077@sv.sgu.edu.vn
                 </a>
               </li>
             </ul>

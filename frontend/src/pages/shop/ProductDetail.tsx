@@ -177,31 +177,67 @@ export default function ProductDetail() {
 
             {(product.dimensions || product.specs) && (
               <div className="border-t pt-6 space-y-3">
-                <h3 className="font-bold text-lg mb-4">Thông tin sản phẩm:</h3>
-                {product.dimensions && typeof product.dimensions === 'object' && (
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-600">Kích thước:</span>
-                    <span className="font-medium">{JSON.stringify(product.dimensions)}</span>
-                  </div>
-                )}
-                {product.specs && typeof product.specs === 'object' && Object.entries(product.specs).map(([key, value]) => (
-                  <div key={key} className="flex justify-between py-2 border-b">
-                    <span className="text-gray-600">{key}:</span>
-                    <span className="font-medium">{String(value)}</span>
-                  </div>
-                ))}
-                {product.weight && <div className="flex justify-between py-2 border-b"><span className="text-gray-600">Trọng lượng:</span><span className="font-medium">{product.weight}kg</span></div>}
+              <h3 className="font-bold text-lg mb-4">Thông tin sản phẩm:</h3>
+              {product.dimensions && typeof product.dimensions === 'object' && (
+                <div className="flex justify-between py-2 border-b">
+                      <span className="text-gray-600">Kích thước:</span>
+                      <span className="font-medium">
+                      {typeof product.dimensions === 'object' && product.dimensions !== null
+                      ? Object.entries(product.dimensions)
+                      .map(([key, value]) => {
+                      const vietnameseDimensions: Record<string, string> = {
+                        'length': 'Dài',
+                        'width': 'Rộng',
+                        'height': 'Cao',
+                        'depth': 'Sâu',
+                        'diameter': 'Đường kính',
+                        'unit': 'Đơn vị'
+                      };
+                      const displayKey = vietnameseDimensions[key] || key;
+                      return `${displayKey}: ${value}`;
+                      })
+                      .join(' × ')
+                      : String(product.dimensions)}
+                      </span>
+                </div>
+              )}
+              {product.specs && typeof product.specs === 'object' && Object.entries(product.specs).map(([key, value]) => {
+                // Ẩn color_hex
+                if (key === 'color_hex') return null;
+                
+                // Ánh xạ key sang tiếng Việt
+                const vietnameseKeys: Record<string, string> = {
+                'material': 'Chất liệu',
+                'color': 'Màu sắc',
+                'size': 'Kích cỡ',
+                'weight': 'Trọng lượng',
+                'brand': 'Thương hiệu',
+                'origin': 'Xuất xứ',
+                'warranty': 'Bảo hành',
+                'manufacturer': 'Nhà sản xuất'
+                };
+                
+                const displayKey = vietnameseKeys[key] || key.charAt(0).toUpperCase() + key.slice(1);
+                
+                return (
+                <div key={key} className="flex justify-between py-2 border-b">
+                  <span className="text-gray-600">{displayKey}:</span>
+                  <span className="font-medium">{String(value)}</span>
+                </div>
+                );
+              })}
+              {product.weight && <div className="flex justify-between py-2 border-b"><span className="text-gray-600">Trọng lượng:</span><span className="font-medium">{product.weight}kg</span></div>}
               </div>
             )}
+            </div>
           </div>
-        </div>
 
-        {product.description && (
-          <div className="bg-white rounded-2xl p-8 md:p-12 shadow-sm mt-8">
+          {product.description && (
+            <div className="bg-white rounded-2xl p-8 md:p-12 shadow-sm mt-8">
             <h2 className="text-2xl font-bold mb-6">Mô tả sản phẩm</h2>
             <div className="prose max-w-none text-gray-700 leading-relaxed">{product.description}</div>
-          </div>
-        )}
+            </div>
+          )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
           {[{icon:'🚚',title:'Giao hàng miễn phí',desc:'Đơn hàng trên 500k'},{icon:'✅',title:'Chính hãng 100%',desc:'Cam kết hàng chính hãng'},{icon:'↩️',title:'Đổi trả 7 ngày',desc:'Miễn phí đổi trả'},{icon:'🛡️',title:'Bảo hành',desc:'Hỗ trợ tận tâm'}].map((item, idx) => (
