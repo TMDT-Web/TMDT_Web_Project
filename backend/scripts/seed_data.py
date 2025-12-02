@@ -14,6 +14,7 @@ from app.core.database import SessionLocal
 from app.models.user import User
 from app.models.enums import UserRole, VipTier
 from app.models.product import Category, Product, Collection
+from app.models.banner import Banner
 from app.core.security import get_password_hash
 
 # Configure logging
@@ -24,7 +25,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # =============================================================================
-# CATEGORIES - 4 main categories with images
+# CATEGORIES - 6 main categories with images
 # =============================================================================
 CATEGORIES = [
     {
@@ -50,6 +51,18 @@ CATEGORIES = [
         "slug": "phong-lam-viec",
         "description": "Nội thất văn phòng và phòng làm việc: bàn làm việc, ghế công thái học, kệ sách, tủ hồ sơ.",
         "image_url": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800"
+    },
+    {
+        "name": "Ngoại Thất",
+        "slug": "ngoai-that",
+        "description": "Nội thất sân vườn và ban công: bàn ghế ngoài trời, xích đu, ghế tắm nắng, ô che nắng và đèn trang trí.",
+        "image_url": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800"
+    },
+    {
+        "name": "Phụ Kiện & Decor",
+        "slug": "phu-kien-decor",
+        "description": "Phụ kiện trang trí nội thất: đèn trang trí, thảm, gương, tranh treo tường, cây cảnh và các vật dụng decor.",
+        "image_url": "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?w=800"
     },
 ]
 
@@ -575,6 +588,272 @@ PRODUCTS = [
             "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800"
         ]
     },
+
+    # =========================================================================
+    # NGOẠI THẤT (Outdoor) - 5 products
+    # =========================================================================
+    {
+        "name": "Bộ Bàn Ghế Sân Vườn Mây Nhựa",
+        "slug": "bo-ban-ghe-san-vuon-may-nhua",
+        "description": "Bộ bàn ghế sân vườn gồm 1 bàn và 4 ghế, chất liệu mây nhựa PE cao cấp chống UV và chịu nước. Khung nhôm không gỉ, đệm ghế tháo giặt được.",
+        "short_description": "Bộ bàn 4 ghế mây nhựa PE, chống UV",
+        "price": 18500000,
+        "sale_price": 14900000,
+        "sku": "NT-BGS-001",
+        "category_slug": "ngoai-that",
+        "collection_slug": None,
+        "stock": 15,
+        "weight": 65.0,
+        "dimensions": {"length": 150, "width": 90, "height": 75, "unit": "cm"},
+        "specs": {"material": "Mây nhựa PE, Khung nhôm, Kính cường lực", "color": "Nâu tự nhiên", "color_hex": "#8B4513"},
+        "is_featured": True,
+        "images": [
+            "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
+            "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=800"
+        ]
+    },
+    {
+        "name": "Xích Đu Treo Sân Vườn",
+        "slug": "xich-du-treo-san-vuon",
+        "description": "Xích đu treo sân vườn với ghế đan mây tự nhiên, khung thép sơn tĩnh điện. Đệm nước chống thấm, chịu tải đến 150kg. Lắp đặt dễ dàng.",
+        "short_description": "Xích đu mây treo, khung thép, chịu 150kg",
+        "price": 8900000,
+        "sale_price": 7500000,
+        "sku": "NT-XDU-001",
+        "category_slug": "ngoai-that",
+        "collection_slug": None,
+        "stock": 20,
+        "weight": 35.0,
+        "dimensions": {"length": 120, "width": 80, "height": 200, "unit": "cm"},
+        "specs": {"material": "Mây tự nhiên, Thép sơn tĩnh điện, Vải chống nước", "color": "Be tự nhiên", "color_hex": "#F5F5DC"},
+        "is_featured": True,
+        "images": [
+            "https://images.unsplash.com/photo-1600585154363-67eb9e2e2099?w=800",
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800"
+        ]
+    },
+    {
+        "name": "Ghế Tắm Nắng Gấp Gọn",
+        "slug": "ghe-tam-nang-gap-gon",
+        "description": "Ghế tắm nắng gấp gọn với 5 tư thế điều chỉnh. Chất liệu textilene thoáng khí, khung nhôm siêu nhẹ. Có bánh xe di chuyển dễ dàng.",
+        "short_description": "Ghế tắm nắng gấp gọn, 5 tư thế",
+        "price": 3900000,
+        "sale_price": 3200000,
+        "sku": "NT-GTN-001",
+        "category_slug": "ngoai-that",
+        "collection_slug": None,
+        "stock": 35,
+        "weight": 8.0,
+        "dimensions": {"length": 190, "width": 65, "height": 35, "unit": "cm"},
+        "specs": {"material": "Textilene, Khung nhôm, Bánh xe cao su", "color": "Xám đậm", "color_hex": "#4A4A4A"},
+        "is_featured": False,
+        "images": [
+            "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800",
+            "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800"
+        ]
+    },
+    {
+        "name": "Ô Che Nắng Lệch Tâm 3m",
+        "slug": "o-che-nang-lech-tam-3m",
+        "description": "Ô che nắng lệch tâm đường kính 3m với vải chống UV 98%. Hệ thống quay 360 độ, nghiêng đa hướng. Chân đế granite 25kg chắc chắn.",
+        "short_description": "Ô lệch tâm 3m, quay 360°, chống UV",
+        "price": 5500000,
+        "sale_price": 4500000,
+        "sku": "NT-OCN-001",
+        "category_slug": "ngoai-that",
+        "collection_slug": None,
+        "stock": 25,
+        "weight": 32.0,
+        "dimensions": {"length": 300, "width": 300, "height": 250, "unit": "cm"},
+        "specs": {"material": "Vải polyester chống UV, Cột nhôm, Chân granite", "color": "Be cát", "color_hex": "#C2B280"},
+        "is_featured": False,
+        "images": [
+            "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800",
+            "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800"
+        ]
+    },
+    {
+        "name": "Đèn Năng Lượng Mặt Trời Sân Vườn",
+        "slug": "den-nang-luong-mat-troi-san-vuon",
+        "description": "Bộ 4 đèn LED năng lượng mặt trời cắm sân vườn. Tự động sáng khi trời tối, chống nước IP65. Pin sạc 8-10 giờ sáng liên tục.",
+        "short_description": "Bộ 4 đèn solar LED sân vườn",
+        "price": 890000,
+        "sale_price": 690000,
+        "sku": "NT-DEN-001",
+        "category_slug": "ngoai-that",
+        "collection_slug": None,
+        "stock": 100,
+        "weight": 0.8,
+        "dimensions": {"length": 12, "width": 12, "height": 40, "unit": "cm"},
+        "specs": {"material": "Nhựa ABS chống UV, LED, Pin solar", "color": "Đen", "color_hex": "#000000"},
+        "is_featured": False,
+        "images": [
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800",
+            "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800"
+        ]
+    },
+
+    # =========================================================================
+    # PHỤ KIỆN & DECOR - 6 products
+    # =========================================================================
+    {
+        "name": "Đèn Chùm Pha Lê Hiện Đại",
+        "slug": "den-chum-pha-le-hien-dai",
+        "description": "Đèn chùm pha lê K9 cao cấp với thiết kế đương đại. 12 bóng LED tiết kiệm điện, điều khiển từ xa 3 chế độ sáng. Phù hợp phòng khách rộng.",
+        "short_description": "Đèn chùm pha lê K9, 12 bóng LED",
+        "price": 12500000,
+        "sale_price": 9900000,
+        "sku": "PK-DEN-001",
+        "category_slug": "phu-kien-decor",
+        "collection_slug": "luxury-premium",
+        "stock": 10,
+        "weight": 15.0,
+        "dimensions": {"length": 80, "width": 80, "height": 60, "unit": "cm"},
+        "specs": {"material": "Pha lê K9, Inox mạ vàng, LED", "color": "Trong suốt - Vàng", "color_hex": "#FFD700"},
+        "is_featured": True,
+        "images": [
+            "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?w=800",
+            "https://images.unsplash.com/photo-1540932239986-30128078f3c5?w=800"
+        ]
+    },
+    {
+        "name": "Thảm Lông Xù Phòng Khách",
+        "slug": "tham-long-xu-phong-khach",
+        "description": "Thảm lông xù cao cấp 4cm với sợi polyester siêu mềm. Đế chống trượt TPR, dễ vệ sinh bằng máy hút bụi. Kích thước 160x230cm.",
+        "short_description": "Thảm lông xù 160x230cm, đế chống trượt",
+        "price": 2900000,
+        "sale_price": 2400000,
+        "sku": "PK-THA-001",
+        "category_slug": "phu-kien-decor",
+        "collection_slug": "scandinavian-nordic",
+        "stock": 40,
+        "weight": 8.0,
+        "dimensions": {"length": 230, "width": 160, "height": 4, "unit": "cm"},
+        "specs": {"material": "Polyester, Đế TPR chống trượt", "color": "Xám nhạt", "color_hex": "#D3D3D3"},
+        "is_featured": True,
+        "images": [
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800",
+            "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800"
+        ]
+    },
+    {
+        "name": "Gương Trang Trí Mặt Trời",
+        "slug": "guong-trang-tri-mat-troi",
+        "description": "Gương trang trí hình mặt trời với khung kim loại mạ vàng đồng. Đường kính 80cm, gương HD chống méo. Điểm nhấn hoàn hảo cho phòng khách.",
+        "short_description": "Gương mặt trời Ø80cm, khung mạ vàng",
+        "price": 3500000,
+        "sale_price": 2800000,
+        "sku": "PK-GUO-001",
+        "category_slug": "phu-kien-decor",
+        "collection_slug": "luxury-premium",
+        "stock": 25,
+        "weight": 5.0,
+        "dimensions": {"length": 80, "width": 80, "height": 5, "unit": "cm"},
+        "specs": {"material": "Gương HD, Khung kim loại mạ vàng đồng", "color": "Vàng đồng", "color_hex": "#CD7F32"},
+        "is_featured": False,
+        "images": [
+            "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?w=800",
+            "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800"
+        ]
+    },
+    {
+        "name": "Bộ Tranh Canvas Trừu Tượng",
+        "slug": "bo-tranh-canvas-truu-tuong",
+        "description": "Bộ 3 tranh canvas trừu tượng phong cách minimalist. In UV chất lượng cao, khung gỗ thông tự nhiên. Sẵn móc treo tường.",
+        "short_description": "Bộ 3 tranh canvas 40x60cm",
+        "price": 1800000,
+        "sale_price": 1500000,
+        "sku": "PK-TRA-001",
+        "category_slug": "phu-kien-decor",
+        "collection_slug": "minimalist-2025",
+        "stock": 50,
+        "weight": 3.0,
+        "dimensions": {"length": 60, "width": 40, "height": 3, "unit": "cm"},
+        "specs": {"material": "Canvas, Mực UV, Khung gỗ thông", "color": "Đa màu", "color_hex": "#808080"},
+        "is_featured": False,
+        "images": [
+            "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?w=800",
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800"
+        ]
+    },
+    {
+        "name": "Cây Cọ Nhân Tạo 1.5m",
+        "slug": "cay-co-nhan-tao-1-5m",
+        "description": "Cây cọ nhân tạo cao 1.5m với chậu xi măng giả đá. Lá PE chống UV bền màu, thân nhựa dẻo tự nhiên. Không cần tưới nước, luôn xanh tươi.",
+        "short_description": "Cây cọ giả 1.5m, chậu xi măng",
+        "price": 1200000,
+        "sale_price": 980000,
+        "sku": "PK-CAY-001",
+        "category_slug": "phu-kien-decor",
+        "collection_slug": "scandinavian-nordic",
+        "stock": 60,
+        "weight": 6.0,
+        "dimensions": {"length": 30, "width": 30, "height": 150, "unit": "cm"},
+        "specs": {"material": "Lá PE, Thân nhựa dẻo, Chậu xi măng", "color": "Xanh lá - Xám", "color_hex": "#228B22"},
+        "is_featured": False,
+        "images": [
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800",
+            "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800"
+        ]
+    },
+    {
+        "name": "Nến Thơm Sáp Đậu Nành",
+        "slug": "nen-thom-sap-dau-nanh",
+        "description": "Nến thơm cao cấp từ sáp đậu nành 100% tự nhiên. Hương Lavender thư giãn, cháy 50 giờ. Hũ thủy tinh tái sử dụng, bấc cotton.",
+        "short_description": "Nến sáp đậu nành, hương Lavender",
+        "price": 350000,
+        "sale_price": 290000,
+        "sku": "PK-NEN-001",
+        "category_slug": "phu-kien-decor",
+        "collection_slug": None,
+        "stock": 150,
+        "weight": 0.4,
+        "dimensions": {"length": 8, "width": 8, "height": 10, "unit": "cm"},
+        "specs": {"material": "Sáp đậu nành, Bấc cotton, Hũ thủy tinh", "color": "Trắng ngà", "color_hex": "#FFFAF0"},
+        "is_featured": False,
+        "images": [
+            "https://images.unsplash.com/photo-1513519245088-0e12902e35ca?w=800",
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800"
+        ]
+    },
+]
+
+# =============================================================================
+# BANNERS - Homepage carousel banners
+# =============================================================================
+BANNERS = [
+    {
+        "title": "Khuyến Mãi Mùa Đông 2025",
+        "subtitle": "Giảm đến 40% tất cả nội thất phòng khách",
+        "image_url": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1920",
+        "link_url": "/category/phong-khach",
+        "is_active": True,
+        "display_order": 1
+    },
+    {
+        "title": "Bộ Sưu Tập Luxury Premium",
+        "subtitle": "Nội thất cao cấp với chất liệu thượng hạng",
+        "image_url": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920",
+        "link_url": "/collection/luxury-premium",
+        "is_active": True,
+        "display_order": 2
+    },
+    {
+        "title": "Phong Cách Scandinavian",
+        "subtitle": "Đơn giản, thanh lịch và tiện nghi",
+        "image_url": "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=1920",
+        "link_url": "/collection/scandinavian-nordic",
+        "is_active": True,
+        "display_order": 3
+    },
+    {
+        "title": "Nội Thất Sân Vườn",
+        "subtitle": "Tận hưởng không gian ngoài trời",
+        "image_url": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920",
+        "link_url": "/category/ngoai-that",
+        "is_active": True,
+        "display_order": 4
+    },
 ]
 
 def seed_admin_user() -> None:
@@ -738,6 +1017,41 @@ def seed_products(category_map: dict[str, int], collection_map: dict[str, int]) 
         db.close()
 
 
+def seed_banners() -> None:
+    """Create or update homepage banners"""
+    db = SessionLocal()
+    try:
+        created_count = 0
+        updated_count = 0
+        
+        for banner_data in BANNERS:
+            # Check if banner with same display_order exists
+            banner = db.query(Banner).filter(Banner.display_order == banner_data["display_order"]).first()
+            
+            if banner:
+                # Update existing banner
+                for key, value in banner_data.items():
+                    setattr(banner, key, value)
+                updated_count += 1
+                logger.info(f"✓ Updated banner: {banner_data['title']}")
+            else:
+                # Create new banner
+                banner = Banner(**banner_data)
+                db.add(banner)
+                created_count += 1
+                logger.info(f"✓ Created banner: {banner_data['title']}")
+        
+        db.commit()
+        logger.info(f"Banners created: {created_count}, updated: {updated_count}")
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to seed banners: {str(e)}")
+        raise
+    finally:
+        db.close()
+
+
 def main() -> None:
     """Main seeding function with error handling and logging"""
     logger.info("=" * 70)
@@ -746,20 +1060,24 @@ def main() -> None:
     
     try:
         # Seed admin user
-        logger.info("\n📌 [1/4] Seeding admin user...")
+        logger.info("\n📌 [1/5] Seeding admin user...")
         seed_admin_user()
         
         # Seed categories
-        logger.info("\n📌 [2/4] Seeding categories (4 categories)...")
+        logger.info("\n📌 [2/5] Seeding categories (6 categories)...")
         category_map = seed_categories()
         
         # Seed collections
-        logger.info("\n📌 [3/4] Seeding collections (4 collections)...")
+        logger.info("\n📌 [3/5] Seeding collections (4 collections)...")
         collection_map = seed_collections()
         
         # Seed products
-        logger.info("\n📌 [4/4] Seeding products (23 products)...")
+        logger.info("\n📌 [4/5] Seeding products (34 products)...")
         seed_products(category_map, collection_map)
+        
+        # Seed banners
+        logger.info("\n📌 [5/5] Seeding banners (4 banners)...")
+        seed_banners()
         
         # Success summary
         logger.info("\n" + "=" * 70)
@@ -767,9 +1085,10 @@ def main() -> None:
         logger.info("=" * 70)
         logger.info("\n📊 Seeding Summary:")
         logger.info("   • Admin user: 1")
-        logger.info("   • Categories: 4 (Phòng Khách, Phòng Ngủ, Phòng Ăn & Bếp, Phòng Làm Việc)")
+        logger.info("   • Categories: 6 (Phòng Khách, Phòng Ngủ, Phòng Ăn & Bếp, Phòng Làm Việc, Ngoại Thất, Phụ Kiện & Decor)")
         logger.info("   • Collections: 4 (Minimalist 2025, Scandinavian Nordic, Luxury Premium, Modern Industrial)")
-        logger.info("   • Products: 23 (5-6 per category)")
+        logger.info("   • Products: 34 (5-6 per category)")
+        logger.info("   • Banners: 4 (Homepage carousel)")
         logger.info("\n🔐 Default Admin Credentials:")
         logger.info("   Email:    admin@gmail.com")
         logger.info("   Password: admin@123")

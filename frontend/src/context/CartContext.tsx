@@ -88,19 +88,30 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         // ✅ Use generated CartService
         const cartData = await CartService.getCartApiV1CartGet()
         
+        // Get current collections from localStorage to restore collectionId
+        const savedCollections = storage.get<CartCollection[]>(STORAGE_KEYS.CART_COLLECTIONS) || []
+        
         // Convert server cart items to local format
-        const localItems: LocalCartItem[] = (cartData?.items || []).map((item: CartItemResponse) => ({
-          product: {
-            id: item.product_id,
-            name: item.product.name,
-            slug: item.product.slug,
-            price: item.product.price,
-            thumbnail_url: item.product.thumbnail_url,
-            stock: item.product.stock,
-            // Add other fields as needed
-          },
-          quantity: item.quantity,
-        }))
+        const localItems: LocalCartItem[] = (cartData?.items || []).map((item: CartItemResponse) => {
+          // Find if this product belongs to any collection
+          const belongsToCollection = savedCollections.find(c => 
+            c.productIds.includes(item.product_id)
+          )
+          
+          return {
+            product: {
+              id: item.product_id,
+              name: item.product.name,
+              slug: item.product.slug,
+              price: item.product.price,
+              thumbnail_url: item.product.thumbnail_url,
+              stock: item.product.stock,
+              // Add other fields as needed
+            },
+            quantity: item.quantity,
+            collectionId: belongsToCollection?.id, // Restore collection tracking
+          }
+        })
         
         setItems(localItems)
       } catch (error) {
@@ -234,12 +245,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       productIds: products.map(p => p.id),
     }
 
-    // Check if collection already exists
-    setCollections(prev => {
-      const exists = prev.find(c => c.id === collection.id)
-      if (exists) return prev
-      return [...prev, newCollection]
-    })
+    // Check if collection already exists and update state
+    const currentCollections = storage.get<CartCollection[]>(STORAGE_KEYS.CART_COLLECTIONS) || []
+    const exists = currentCollections.find(c => c.id === collection.id)
+    
+    if (!exists) {
+      // Save to localStorage IMMEDIATELY before loadCart
+      const updatedCollections = [...currentCollections, newCollection]
+      storage.set(STORAGE_KEYS.CART_COLLECTIONS, updatedCollections)
+      setCollections(updatedCollections)
+    }
 
     // Add each product to cart with collection tracking
     for (const product of products) {
