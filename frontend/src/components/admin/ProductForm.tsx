@@ -221,10 +221,10 @@ export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct
     } else if (thumbnailFile) {
       // Upload file
       setUploadProgress('Uploading thumbnail...')
-      const response = await UploadService.uploadImageApiV1UploadImagePost({
-        formData: { file: thumbnailFile },
-        subfolder: 'products'
-      })
+      const response = await UploadService.uploadImageApiV1UploadImagePost(
+        { file: thumbnailFile },
+        'products'
+      )
       thumbnailUrl = response.url
     }
 
@@ -241,10 +241,10 @@ export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct
       // Upload files
       setUploadProgress(`Uploading ${additionalFiles.length} images...`)
       for (const file of additionalFiles) {
-        const response = await UploadService.uploadImageApiV1UploadImagePost({
-          formData: { file },
-          subfolder: 'products'
-        })
+        const response = await UploadService.uploadImageApiV1UploadImagePost(
+          { file },
+          'products'
+        )
         uploadedImages.push(response.url)
       }
     } else {

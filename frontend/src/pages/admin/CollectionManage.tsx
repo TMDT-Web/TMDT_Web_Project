@@ -101,10 +101,10 @@ export default function CollectionManage() {
       let bannerUrl = formData.banner_url
 
       if (bannerFile) {
-        const response = await UploadService.uploadImageApiV1UploadImagePost({
-          formData: { file: bannerFile },
-          subfolder: 'banners'
-        })
+        const response = await UploadService.uploadImageApiV1UploadImagePost(
+          { file: bannerFile },
+          'banners'
+        )
         bannerUrl = response.url
       }
 

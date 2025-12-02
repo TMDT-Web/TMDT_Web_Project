@@ -119,10 +119,10 @@ export default function BannerManage() {
 
       // Upload image if changed
       if (imageFile) {
-        const response = await UploadService.uploadImageApiV1UploadImagePost({
-          formData: { file: imageFile },
-          subfolder: 'banners'
-        })
+        const response = await UploadService.uploadImageApiV1UploadImagePost(
+          { file: imageFile },
+          'banners'
+        )
         imageUrl = response.url
       }
 

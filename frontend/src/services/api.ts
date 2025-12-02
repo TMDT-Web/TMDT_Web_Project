@@ -47,7 +47,7 @@ async function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) return null
   try {
     const tokenData = await AuthenticationService.refreshTokenApiV1AuthRefreshTokenPost({
-      refresh_token: refreshToken,
+      requestBody: { refresh_token: refreshToken },
     })
     localStorage.setItem('token', tokenData.access_token)
     localStorage.setItem('refresh_token', tokenData.refresh_token)

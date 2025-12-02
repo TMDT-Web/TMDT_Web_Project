@@ -83,9 +83,9 @@ export function SocketProvider({ children }: SocketProviderProps) {
       try {
         const { ChatService } = await import("@/client");
         const history =
-          await ChatService.getSessionMessagesApiV1ChatSessionsSessionIdMessagesGet({
-            sessionId: newSessionId
-          });
+          await ChatService.getSessionMessagesApiV1ChatSessionsSessionIdMessagesGet(
+            newSessionId
+          );
 
         setMessages(
           history.map((m: any) => ({

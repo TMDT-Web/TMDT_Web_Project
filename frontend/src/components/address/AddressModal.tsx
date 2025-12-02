@@ -42,7 +42,7 @@ export default function AddressModal({ onClose, onSuccess }) {
     };
 
     try {
-      await AddressesService.createAddressApiV1AddressesPost({ requestBody: payload });
+      await AddressesService.createAddressApiV1AddressesPost(payload);
       toast.success('Thêm địa chỉ thành công!');
       onSuccess();
       onClose();

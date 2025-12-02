@@ -86,10 +86,10 @@ export default function CategoryManage() {
 
       // Upload image if changed
       if (imageFile) {
-        const response = await UploadService.uploadImageApiV1UploadImagePost({
-          formData: { file: imageFile },
-          subfolder: 'categories'
-        })
+        const response = await UploadService.uploadImageApiV1UploadImagePost(
+          { file: imageFile },
+          'categories'
+        )
         imageUrl = response.url
       }
 
