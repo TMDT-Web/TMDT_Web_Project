@@ -8,6 +8,7 @@ export type CollectionResponse = {
     banner_url?: (string | null);
     description?: (string | null);
     is_active?: boolean;
+    sale_price?: (number | null);
     id: number;
 };
 

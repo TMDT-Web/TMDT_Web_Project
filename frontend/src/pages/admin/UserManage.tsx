@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { UsersService } from "@/client/services/UsersService";
 import { AddressesService } from "@/client/services/AddressesService";
+import { AddressesAdminService } from "@/client/services/AddressesAdminService";
 import addressData from "@/utils/vietnam-address.json";
 
 import type { UserResponse } from "@/client/models/UserResponse";
@@ -53,7 +54,7 @@ export default function UserManage() {
 
     setIsLoadingUsers(true);
     try {
-      const res = await UsersService.getAll();
+      const res = await UsersService.getUsersApiV1UsersGet({});
       setUsers(res.users);
     } catch (err) {
       console.error("Failed to load users:", err);
@@ -93,7 +94,7 @@ export default function UserManage() {
       phone: u.phone ?? "",
       role: u.role,
       is_active: u.is_active,
-      address_id: u.default_address_id ?? null,
+      address_id: null, // Will be set after loading addresses
     });
 
     // reset previous addresses / errors
@@ -101,7 +102,7 @@ export default function UserManage() {
     setAddressesError(null);
 
     try {
-      const res = await AddressesService.adminGet(u.id);
+      const res = await AddressesAdminService.adminGetAddressesApiV1AddressesAdminUserIdGet({ userId: u.id });
       setAddresses(res);
       setAddressesError(null);
     } catch (err) {
@@ -120,7 +121,7 @@ export default function UserManage() {
     if (!editing) return;
 
     try {
-      await UsersService.updateUser(editing.id, editForm);
+      await UsersService.updateUserApiV1UsersUserIdPut({ userId: editing.id, requestBody: editForm });
       setEditing(null);
       loadUsers();
     } catch (err) {
@@ -148,10 +149,10 @@ export default function UserManage() {
         is_default: false,
       };
 
-      await AddressesService.createAddressApiV1AddressesPost(payload);
+      await AddressesService.createAddressApiV1AddressesPost({ requestBody: payload });
       
       // Reload addresses
-      const res = await AddressesService.adminGet(editing.id);
+      const res = await AddressesAdminService.adminGetAddressesApiV1AddressesAdminUserIdGet({ userId: editing.id });
       setAddresses(res);
       
       // Reset form
@@ -299,7 +300,7 @@ export default function UserManage() {
                           <button
                             className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium transition-all duration-200 hover:shadow-md"
                             onClick={async () => {
-                              await UsersService.upgradeVip(u.id);
+                              await UsersService.upgradeUserVipApiV1UsersUserIdUpgradeVipPut({ userId: u.id });
                               setVipNotification({ 
                                 show: true, 
                                 message: `Nâng VIP thành công cho ${u.full_name}!`,
@@ -335,7 +336,7 @@ export default function UserManage() {
 
                       <button
                         onClick={async () => {
-                          await UsersService.updateStatus(u.id, !u.is_active);
+                          await UsersService.updateUserStatusApiV1UsersUserIdStatusPut({ userId: u.id, isActive: !u.is_active });
                           loadUsers();
                         }}
                         className={`inline-flex items-center px-4 py-2 rounded-lg text-white text-sm font-medium transition-all duration-200 hover:shadow-md ${

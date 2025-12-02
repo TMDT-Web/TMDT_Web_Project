@@ -24,8 +24,10 @@ export const authService = {
   async login(data: LoginData): Promise<Token> {
     // Use generated client - OAuth2 expects 'username' field
     const response = await AuthenticationService.loginApiV1AuthLoginPost({
-      username: data.email,
-      password: data.password,
+      formData: {
+        username: data.email,
+        password: data.password,
+      }
     })
     
     // ✅ CRUCIAL: Save token to localStorage with key 'token' (not 'access_token')
@@ -47,7 +49,7 @@ export const authService = {
       phone: data.phone || null,
     }
     
-    const response = await AuthenticationService.registerApiV1AuthRegisterPost(registerRequest)
+    const response = await AuthenticationService.registerApiV1AuthRegisterPost({ requestBody: registerRequest })
     return response
   },
 

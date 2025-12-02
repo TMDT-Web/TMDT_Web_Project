@@ -13,13 +13,14 @@ export class OrdersService {
     /**
      * Create Order
      * Create new order
-     * @param requestBody
      * @returns OrderResponse Successful Response
      * @throws ApiError
      */
-    public static createOrderApiV1OrdersPost(
+    public static createOrderApiV1OrdersPost({
+        requestBody,
+    }: {
         requestBody: OrderCreate,
-    ): CancelablePromise<OrderResponse> {
+    }): CancelablePromise<OrderResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/orders',
@@ -33,15 +34,16 @@ export class OrdersService {
     /**
      * Get All Orders
      * Get all orders (admin only)
-     * @param skip
-     * @param limit
      * @returns OrderListResponse Successful Response
      * @throws ApiError
      */
-    public static getAllOrdersApiV1OrdersGet(
+    public static getAllOrdersApiV1OrdersGet({
+        skip,
+        limit = 20,
+    }: {
         skip?: number,
-        limit: number = 20,
-    ): CancelablePromise<OrderListResponse> {
+        limit?: number,
+    }): CancelablePromise<OrderListResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/orders',
@@ -57,15 +59,16 @@ export class OrdersService {
     /**
      * Get My Orders
      * Get current user's orders
-     * @param skip
-     * @param limit
      * @returns OrderListResponse Successful Response
      * @throws ApiError
      */
-    public static getMyOrdersApiV1OrdersMyOrdersGet(
+    public static getMyOrdersApiV1OrdersMyOrdersGet({
+        skip,
+        limit = 20,
+    }: {
         skip?: number,
-        limit: number = 20,
-    ): CancelablePromise<OrderListResponse> {
+        limit?: number,
+    }): CancelablePromise<OrderListResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/orders/my-orders',
@@ -81,13 +84,14 @@ export class OrdersService {
     /**
      * Get Order
      * Get order by ID
-     * @param orderId
      * @returns OrderResponse Successful Response
      * @throws ApiError
      */
-    public static getOrderApiV1OrdersOrderIdGet(
+    public static getOrderApiV1OrdersOrderIdGet({
+        orderId,
+    }: {
         orderId: number,
-    ): CancelablePromise<OrderResponse> {
+    }): CancelablePromise<OrderResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/orders/{order_id}',
@@ -102,15 +106,16 @@ export class OrdersService {
     /**
      * Update Order
      * Update order status (admin only)
-     * @param orderId
-     * @param requestBody
      * @returns OrderResponse Successful Response
      * @throws ApiError
      */
-    public static updateOrderApiV1OrdersOrderIdPut(
+    public static updateOrderApiV1OrdersOrderIdPut({
+        orderId,
+        requestBody,
+    }: {
         orderId: number,
         requestBody: OrderUpdate,
-    ): CancelablePromise<OrderResponse> {
+    }): CancelablePromise<OrderResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/orders/{order_id}',

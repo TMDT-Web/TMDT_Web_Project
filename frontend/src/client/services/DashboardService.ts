@@ -31,13 +31,14 @@ export class DashboardService {
     /**
      * Get Recent Orders
      * Get recent orders (admin only)
-     * @param limit
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static getRecentOrdersApiV1DashboardRecentOrdersGet(
-        limit: number = 10,
-    ): CancelablePromise<any> {
+    public static getRecentOrdersApiV1DashboardRecentOrdersGet({
+        limit = 10,
+    }: {
+        limit?: number,
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/dashboard/recent-orders',
@@ -52,13 +53,14 @@ export class DashboardService {
     /**
      * Get Top Products
      * Get top selling products (admin only)
-     * @param limit
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static getTopProductsApiV1DashboardTopProductsGet(
-        limit: number = 10,
-    ): CancelablePromise<any> {
+    public static getTopProductsApiV1DashboardTopProductsGet({
+        limit = 10,
+    }: {
+        limit?: number,
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/dashboard/top-products',

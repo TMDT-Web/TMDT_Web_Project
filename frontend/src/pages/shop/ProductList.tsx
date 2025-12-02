@@ -44,16 +44,12 @@ export default function ProductList() {
     setError(null)
     try {
       // Use generated client - type-safe API call
-      const response = await ProductsService.getProductsApiV1ProductsGet(
-        (page - 1) * limit,                           // skip
-        limit,                                         // limit
-        categoryId ? parseInt(categoryId) : undefined, // categoryId
-        undefined,                                     // collectionId
-        search || undefined,                           // search
-        undefined,                                     // isFeatured
-        undefined,                                     // minPrice
-        undefined                                      // maxPrice
-      )
+      const response = await ProductsService.getProductsApiV1ProductsGet({
+        skip: (page - 1) * limit,
+        limit: limit,
+        categoryId: categoryId ? parseInt(categoryId) : undefined,
+        search: search || undefined,
+      })
       setProducts(response?.products || [])
       setTotal(response?.total || 0)
     } catch (err) {

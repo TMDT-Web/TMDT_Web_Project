@@ -14,13 +14,14 @@ export class AuthenticationService {
     /**
      * Register
      * Register a new user
-     * @param requestBody
      * @returns UserResponse Successful Response
      * @throws ApiError
      */
-    public static registerApiV1AuthRegisterPost(
+    public static registerApiV1AuthRegisterPost({
+        requestBody,
+    }: {
         requestBody: RegisterRequest,
-    ): CancelablePromise<UserResponse> {
+    }): CancelablePromise<UserResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/auth/register',
@@ -34,13 +35,14 @@ export class AuthenticationService {
     /**
      * Login
      * Login with email and password
-     * @param formData
      * @returns Token Successful Response
      * @throws ApiError
      */
-    public static loginApiV1AuthLoginPost(
+    public static loginApiV1AuthLoginPost({
+        formData,
+    }: {
         formData: Body_login_api_v1_auth_login_post,
-    ): CancelablePromise<Token> {
+    }): CancelablePromise<Token> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/auth/login',
@@ -80,13 +82,14 @@ export class AuthenticationService {
      * Refresh access token using refresh token
      *
      * Provide the refresh_token to get a new access_token and refresh_token.
-     * @param requestBody
      * @returns Token Successful Response
      * @throws ApiError
      */
-    public static refreshTokenApiV1AuthRefreshTokenPost(
+    public static refreshTokenApiV1AuthRefreshTokenPost({
+        requestBody,
+    }: {
         requestBody: RefreshTokenRequest,
-    ): CancelablePromise<Token> {
+    }): CancelablePromise<Token> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/auth/refresh-token',

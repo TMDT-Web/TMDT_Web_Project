@@ -18,12 +18,10 @@ import ProductList from './pages/shop/ProductList'
 import ProductDetail from './pages/shop/ProductDetail'
 import Cart from './pages/shop/Cart'
 import Checkout from './pages/shop/Checkout'
-import PaymentCallback from './pages/shop/PaymentCallback'
-import QRPayment from './pages/payment/QRPayment'
-import QRConfirm from './pages/payment/QRConfirm'
 import Orders from './pages/shop/Orders'
 import Profile from './pages/shop/Profile'
 import Collections from './pages/shop/Collections'
+import CollectionDetail from './pages/shop/CollectionDetail'
 import About from './pages/shop/About'
 import Contact from './pages/shop/Contact'
 
@@ -69,13 +67,11 @@ function App() {
                   <Route path="/products" element={<ProductList />} />
                   <Route path="/products/:slug" element={<ProductDetail />} />
                   <Route path="/collections" element={<Collections />} />
+                  <Route path="/collections/:id" element={<CollectionDetail />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/checkout/callback" element={<PaymentCallback />} />
-                  <Route path="/payment/qr" element={<QRPayment />} />
-                  <Route path="/payment/qr-confirm" element={<QRConfirm />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/profile" element={<Profile />} />
                 </Route>

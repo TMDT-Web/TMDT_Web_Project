@@ -71,3 +71,11 @@ export const calculateDiscountPrice = (
 ): number => {
   return originalPrice * (1 - discountPercent / 100)
 }
+
+/**
+ * Format price - alias for formatCurrency with shorter display
+ */
+export const formatPrice = (amount: number): string => {
+  // Format to millions VND for readability (e.g., "45,000,000 đ")
+  return new Intl.NumberFormat('vi-VN').format(amount) + ' đ'
+}

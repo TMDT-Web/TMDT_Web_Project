@@ -16,7 +16,7 @@ interface OrderDetailsModalProps {
 const ProductImage = ({ productId }: { productId: number }) => {
     const { data: product, isLoading } = useQuery({
         queryKey: ['product', productId],
-        queryFn: () => ProductsService.getProductApiV1ProductsProductIdGet(productId),
+        queryFn: () => ProductsService.getProductApiV1ProductsProductIdGet({ productId }),
         enabled: !!productId
     })
 

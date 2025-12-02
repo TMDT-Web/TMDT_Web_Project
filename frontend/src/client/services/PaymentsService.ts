@@ -9,13 +9,14 @@ export class PaymentsService {
     /**
      * Create Momo Payment
      * Create MoMo payment request
-     * @param orderId
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static createMomoPaymentApiV1PaymentsMomoCreatePost(
+    public static createMomoPaymentApiV1PaymentsMomoCreatePost({
+        orderId,
+    }: {
         orderId: number,
-    ): CancelablePromise<any> {
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/payments/momo/create',
@@ -42,13 +43,14 @@ export class PaymentsService {
     /**
      * Create Vnpay Payment
      * Create VNPAY payment URL
-     * @param orderId
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static createVnpayPaymentApiV1PaymentsVnpayCreatePost(
+    public static createVnpayPaymentApiV1PaymentsVnpayCreatePost({
+        orderId,
+    }: {
         orderId: number,
-    ): CancelablePromise<any> {
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/payments/vnpay/create',

@@ -22,14 +22,14 @@ export default function CollectionManage() {
 
   const { data: collectionsData, refetch } = useQuery({
     queryKey: ['collections'],
-    queryFn: () => CollectionsService.getCollectionsApiV1CollectionsGet()
+    queryFn: () => CollectionsService.getCollectionsApiV1CollectionsGet({})
   })
 
   const collections = collectionsData?.collections || []
 
   const { data: productsData } = useQuery({
     queryKey: ['products-for-collection'],
-    queryFn: () => ProductsService.getProductsApiV1ProductsGet(undefined, 100)
+    queryFn: () => ProductsService.getProductsApiV1ProductsGet({ limit: 100 })
   })
 
   const products = productsData?.products || []
@@ -95,10 +95,10 @@ export default function CollectionManage() {
       let bannerUrl = formData.banner_url
 
       if (bannerFile) {
-        const response = await UploadService.uploadImageApiV1UploadImagePost(
-          { file: bannerFile },
-          'banners'
-        )
+        const response = await UploadService.uploadImageApiV1UploadImagePost({
+          formData: { file: bannerFile },
+          subfolder: 'banners'
+        })
         bannerUrl = response.url
       }
 
@@ -108,27 +108,27 @@ export default function CollectionManage() {
       }
 
       if (editingCollection) {
-        await CollectionsService.updateCollectionApiV1CollectionsCollectionIdPut(
-          editingCollection.id,
-          payload as any
-        )
+        await CollectionsService.updateCollectionApiV1CollectionsCollectionIdPut({
+          collectionId: editingCollection.id,
+          requestBody: payload as any
+        })
         
         // Add/remove products if needed
         if (selectedProducts.length > 0) {
-          await CollectionsService.addProductsToCollectionApiV1CollectionsCollectionIdProductsPost(
-            editingCollection.id,
-            { product_ids: selectedProducts }
-          )
+          await CollectionsService.addProductsToCollectionApiV1CollectionsCollectionIdProductsPost({
+            collectionId: editingCollection.id,
+            requestBody: { product_ids: selectedProducts }
+          })
         }
       } else {
-        const newCollection = await CollectionsService.createCollectionApiV1CollectionsPost(payload as any)
+        const newCollection = await CollectionsService.createCollectionApiV1CollectionsPost({ requestBody: payload as any })
         
         // Add products to new collection
         if (selectedProducts.length > 0 && newCollection.id) {
-          await CollectionsService.addProductsToCollectionApiV1CollectionsCollectionIdProductsPost(
-            newCollection.id,
-            { product_ids: selectedProducts }
-          )
+          await CollectionsService.addProductsToCollectionApiV1CollectionsCollectionIdProductsPost({
+            collectionId: newCollection.id,
+            requestBody: { product_ids: selectedProducts }
+          })
         }
       }
 
@@ -148,7 +148,7 @@ export default function CollectionManage() {
     }
 
     try {
-      await CollectionsService.deleteCollectionApiV1CollectionsCollectionIdDelete(id)
+      await CollectionsService.deleteCollectionApiV1CollectionsCollectionIdDelete({ collectionId: id })
       refetch()
     } catch (error: any) {
       console.error('Error deleting collection:', error)

@@ -9,8 +9,8 @@ import { useAuth } from '@/context/AuthContext'
 
 interface ChatSession {
   session_id: string
-  user_id: number
-  username?: string
+  user_id?: number | null
+  username?: string | null
   vip_tier?: string
   status: string
   created_at: string
@@ -99,7 +99,7 @@ export default function ChatSupport() {
 
   const handleCloseSession = async (sessionId: string) => {
     if (!confirm('Đóng cuộc trò chuyện này?')) return
-    await ChatService.closeSessionApiV1ChatSessionsSessionIdClosePost(sessionId)
+    await ChatService.closeSessionApiV1ChatSessionsSessionIdClosePost({ sessionId })
     refetchSessions()
     if (selectedSession === sessionId) {
       setSelectedSession(null)

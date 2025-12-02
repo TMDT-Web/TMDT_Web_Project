@@ -124,8 +124,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       // Add each local item to server cart
       for (const item of localCart) {
         await CartService.addToCartApiV1CartAddPost({
-          product_id: item.product.id,
-          quantity: item.quantity,
+          requestBody: {
+            product_id: item.product.id,
+            quantity: item.quantity,
+          }
         })
       }
 
@@ -148,8 +150,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true)
         // ✅ Use generated CartService - server will handle merging
         await CartService.addToCartApiV1CartAddPost({
-          product_id: product.id,
-          quantity: quantity,
+          requestBody: {
+            product_id: product.id,
+            quantity: quantity,
+          }
         })
         
         // Reload cart from server
@@ -191,7 +195,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         
         if (itemToRemove) {
           // ✅ Use generated CartService
-          await CartService.removeFromCartApiV1CartItemIdDelete(itemToRemove.id)
+          await CartService.removeFromCartApiV1CartItemIdDelete({ itemId: itemToRemove.id })
           await loadCart()
         }
       } catch (error) {
@@ -224,8 +228,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         
         if (itemToUpdate) {
           // ✅ Use generated CartService
-          await CartService.updateCartItemApiV1CartItemIdPut(itemToUpdate.id, {
-            quantity: quantity,
+          await CartService.updateCartItemApiV1CartItemIdPut({
+            itemId: itemToUpdate.id,
+            requestBody: {
+              quantity: quantity,
+            }
           })
           await loadCart()
         }

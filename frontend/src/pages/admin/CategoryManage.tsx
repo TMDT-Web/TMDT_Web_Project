@@ -82,10 +82,10 @@ export default function CategoryManage() {
 
       // Upload image if changed
       if (imageFile) {
-        const response = await UploadService.uploadImageApiV1UploadImagePost(
-          { file: imageFile },
-          'categories'
-        )
+        const response = await UploadService.uploadImageApiV1UploadImagePost({
+          formData: { file: imageFile },
+          subfolder: 'categories'
+        })
         imageUrl = response.url
       }
 
@@ -95,12 +95,12 @@ export default function CategoryManage() {
       }
 
       if (editingCategory) {
-        await ProductsService.updateCategoryApiV1ProductsCategoriesCategoryIdPut(
-          editingCategory.id,
-          payload as any
-        )
+        await ProductsService.updateCategoryApiV1ProductsCategoriesCategoryIdPut({
+          categoryId: editingCategory.id,
+          requestBody: payload as any
+        })
       } else {
-        await ProductsService.createCategoryApiV1ProductsCategoriesPost(payload as any)
+        await ProductsService.createCategoryApiV1ProductsCategoriesPost({ requestBody: payload as any })
       }
 
       refetch()
@@ -119,7 +119,7 @@ export default function CategoryManage() {
     }
 
     try {
-      await ProductsService.deleteCategoryApiV1ProductsCategoriesCategoryIdDelete(id)
+      await ProductsService.deleteCategoryApiV1ProductsCategoriesCategoryIdDelete({ categoryId: id })
       refetch()
     } catch (error: any) {
       console.error('Error deleting category:', error)

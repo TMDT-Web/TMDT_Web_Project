@@ -8,7 +8,6 @@ import { request as __request } from '../core/request';
 export class HealthService {
     /**
      * Health Check
-     * Health check endpoint
      * @returns any Successful Response
      * @throws ApiError
      */

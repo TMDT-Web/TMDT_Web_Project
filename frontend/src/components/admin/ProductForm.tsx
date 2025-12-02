@@ -219,10 +219,10 @@ export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct
     } else if (thumbnailFile) {
       // Upload file
       setUploadProgress('Uploading thumbnail...')
-      const response = await UploadService.uploadImageApiV1UploadImagePost(
-        { file: thumbnailFile },
-        'products'
-      )
+      const response = await UploadService.uploadImageApiV1UploadImagePost({
+        formData: { file: thumbnailFile },
+        subfolder: 'products'
+      })
       thumbnailUrl = response.url
     }
 
@@ -239,10 +239,10 @@ export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct
       // Upload files
       setUploadProgress(`Uploading ${additionalFiles.length} images...`)
       for (const file of additionalFiles) {
-        const response = await UploadService.uploadImageApiV1UploadImagePost(
-          { file },
-          'products'
-        )
+        const response = await UploadService.uploadImageApiV1UploadImagePost({
+          formData: { file },
+          subfolder: 'products'
+        })
         uploadedImages.push(response.url)
       }
     } else {
@@ -304,12 +304,12 @@ export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct
 
       // Create or Update
       if (editingProduct) {
-        await ProductsService.updateProductApiV1ProductsProductIdPut(
-          editingProduct.id,
-          payload as any
-        )
+        await ProductsService.updateProductApiV1ProductsProductIdPut({
+          productId: editingProduct.id,
+          requestBody: payload as any
+        })
       } else {
-        await ProductsService.createProductApiV1ProductsPost(payload as any)
+        await ProductsService.createProductApiV1ProductsPost({ requestBody: payload as any })
       }
 
       setUploadProgress('Success!')

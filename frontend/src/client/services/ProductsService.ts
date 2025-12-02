@@ -16,27 +16,28 @@ export class ProductsService {
     /**
      * Get Products
      * Get all products with filters
-     * @param skip
-     * @param limit
-     * @param categoryId
-     * @param collectionId
-     * @param search
-     * @param isFeatured
-     * @param minPrice
-     * @param maxPrice
      * @returns ProductListResponse Successful Response
      * @throws ApiError
      */
-    public static getProductsApiV1ProductsGet(
+    public static getProductsApiV1ProductsGet({
+        skip,
+        limit = 20,
+        categoryId,
+        collectionId,
+        search,
+        isFeatured,
+        minPrice,
+        maxPrice,
+    }: {
         skip?: number,
-        limit: number = 20,
+        limit?: number,
         categoryId?: (number | null),
         collectionId?: (number | null),
         search?: (string | null),
         isFeatured?: (boolean | null),
         minPrice?: (number | null),
         maxPrice?: (number | null),
-    ): CancelablePromise<ProductListResponse> {
+    }): CancelablePromise<ProductListResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/products',
@@ -58,13 +59,14 @@ export class ProductsService {
     /**
      * Create Product
      * Create new product (admin only)
-     * @param requestBody
      * @returns ProductResponse Successful Response
      * @throws ApiError
      */
-    public static createProductApiV1ProductsPost(
+    public static createProductApiV1ProductsPost({
+        requestBody,
+    }: {
         requestBody: ProductCreate,
-    ): CancelablePromise<ProductResponse> {
+    }): CancelablePromise<ProductResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/products',
@@ -78,13 +80,14 @@ export class ProductsService {
     /**
      * Get Product
      * Get product by ID
-     * @param productId
      * @returns ProductResponse Successful Response
      * @throws ApiError
      */
-    public static getProductApiV1ProductsProductIdGet(
+    public static getProductApiV1ProductsProductIdGet({
+        productId,
+    }: {
         productId: number,
-    ): CancelablePromise<ProductResponse> {
+    }): CancelablePromise<ProductResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/products/{product_id}',
@@ -99,15 +102,16 @@ export class ProductsService {
     /**
      * Update Product
      * Update product (admin only)
-     * @param productId
-     * @param requestBody
      * @returns ProductResponse Successful Response
      * @throws ApiError
      */
-    public static updateProductApiV1ProductsProductIdPut(
+    public static updateProductApiV1ProductsProductIdPut({
+        productId,
+        requestBody,
+    }: {
         productId: number,
         requestBody: ProductUpdate,
-    ): CancelablePromise<ProductResponse> {
+    }): CancelablePromise<ProductResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/products/{product_id}',
@@ -124,13 +128,14 @@ export class ProductsService {
     /**
      * Delete Product
      * Delete product (admin only)
-     * @param productId
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static deleteProductApiV1ProductsProductIdDelete(
+    public static deleteProductApiV1ProductsProductIdDelete({
+        productId,
+    }: {
         productId: number,
-    ): CancelablePromise<any> {
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/products/{product_id}',
@@ -145,13 +150,14 @@ export class ProductsService {
     /**
      * Get Product By Slug
      * Get product by slug
-     * @param slug
      * @returns ProductResponse Successful Response
      * @throws ApiError
      */
-    public static getProductBySlugApiV1ProductsSlugSlugGet(
+    public static getProductBySlugApiV1ProductsSlugSlugGet({
+        slug,
+    }: {
         slug: string,
-    ): CancelablePromise<ProductResponse> {
+    }): CancelablePromise<ProductResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/products/slug/{slug}',
@@ -178,13 +184,14 @@ export class ProductsService {
     /**
      * Create Category
      * Create new category (admin only)
-     * @param requestBody
      * @returns CategoryResponse Successful Response
      * @throws ApiError
      */
-    public static createCategoryApiV1ProductsCategoriesPost(
+    public static createCategoryApiV1ProductsCategoriesPost({
+        requestBody,
+    }: {
         requestBody: CategoryCreate,
-    ): CancelablePromise<CategoryResponse> {
+    }): CancelablePromise<CategoryResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/products/categories/',
@@ -198,15 +205,16 @@ export class ProductsService {
     /**
      * Update Category
      * Update category (admin only)
-     * @param categoryId
-     * @param requestBody
      * @returns CategoryResponse Successful Response
      * @throws ApiError
      */
-    public static updateCategoryApiV1ProductsCategoriesCategoryIdPut(
+    public static updateCategoryApiV1ProductsCategoriesCategoryIdPut({
+        categoryId,
+        requestBody,
+    }: {
         categoryId: number,
         requestBody: CategoryUpdate,
-    ): CancelablePromise<CategoryResponse> {
+    }): CancelablePromise<CategoryResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/products/categories/{category_id}',
@@ -223,13 +231,14 @@ export class ProductsService {
     /**
      * Delete Category
      * Delete category (admin only)
-     * @param categoryId
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static deleteCategoryApiV1ProductsCategoriesCategoryIdDelete(
+    public static deleteCategoryApiV1ProductsCategoriesCategoryIdDelete({
+        categoryId,
+    }: {
         categoryId: number,
-    ): CancelablePromise<any> {
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/products/categories/{category_id}',

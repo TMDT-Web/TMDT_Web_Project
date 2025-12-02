@@ -16,17 +16,18 @@ export class CollectionsService {
     /**
      * Get Collections
      * Get all collections
-     * @param skip
-     * @param limit
-     * @param isActive
      * @returns CollectionListResponse Successful Response
      * @throws ApiError
      */
-    public static getCollectionsApiV1CollectionsGet(
+    public static getCollectionsApiV1CollectionsGet({
+        skip,
+        limit = 100,
+        isActive,
+    }: {
         skip?: number,
-        limit: number = 100,
+        limit?: number,
         isActive?: (boolean | null),
-    ): CancelablePromise<CollectionListResponse> {
+    }): CancelablePromise<CollectionListResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/collections',
@@ -45,13 +46,14 @@ export class CollectionsService {
      * Create new collection (admin only)
      *
      * If product_ids are provided, those products will be assigned to this collection.
-     * @param requestBody
      * @returns CollectionResponse Successful Response
      * @throws ApiError
      */
-    public static createCollectionApiV1CollectionsPost(
+    public static createCollectionApiV1CollectionsPost({
+        requestBody,
+    }: {
         requestBody: CollectionCreate,
-    ): CancelablePromise<CollectionResponse> {
+    }): CancelablePromise<CollectionResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/collections',
@@ -65,13 +67,14 @@ export class CollectionsService {
     /**
      * Get Collection
      * Get collection by ID with products
-     * @param collectionId
      * @returns CollectionWithProductsResponse Successful Response
      * @throws ApiError
      */
-    public static getCollectionApiV1CollectionsCollectionIdGet(
+    public static getCollectionApiV1CollectionsCollectionIdGet({
+        collectionId,
+    }: {
         collectionId: number,
-    ): CancelablePromise<CollectionWithProductsResponse> {
+    }): CancelablePromise<CollectionWithProductsResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/collections/{collection_id}',
@@ -89,15 +92,16 @@ export class CollectionsService {
      *
      * If product_ids are provided, the collection's products will be replaced with these products.
      * Existing products will be removed from the collection.
-     * @param collectionId
-     * @param requestBody
      * @returns CollectionResponse Successful Response
      * @throws ApiError
      */
-    public static updateCollectionApiV1CollectionsCollectionIdPut(
+    public static updateCollectionApiV1CollectionsCollectionIdPut({
+        collectionId,
+        requestBody,
+    }: {
         collectionId: number,
         requestBody: CollectionUpdate,
-    ): CancelablePromise<CollectionResponse> {
+    }): CancelablePromise<CollectionResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/collections/{collection_id}',
@@ -114,13 +118,14 @@ export class CollectionsService {
     /**
      * Delete Collection
      * Delete collection (admin only)
-     * @param collectionId
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static deleteCollectionApiV1CollectionsCollectionIdDelete(
+    public static deleteCollectionApiV1CollectionsCollectionIdDelete({
+        collectionId,
+    }: {
         collectionId: number,
-    ): CancelablePromise<any> {
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/collections/{collection_id}',
@@ -135,13 +140,14 @@ export class CollectionsService {
     /**
      * Get Collection By Slug
      * Get collection by slug with products
-     * @param slug
      * @returns CollectionWithProductsResponse Successful Response
      * @throws ApiError
      */
-    public static getCollectionBySlugApiV1CollectionsSlugSlugGet(
+    public static getCollectionBySlugApiV1CollectionsSlugSlugGet({
+        slug,
+    }: {
         slug: string,
-    ): CancelablePromise<CollectionWithProductsResponse> {
+    }): CancelablePromise<CollectionWithProductsResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/collections/slug/{slug}',
@@ -158,15 +164,16 @@ export class CollectionsService {
      * Add products to collection (admin only)
      *
      * This adds products without removing existing ones.
-     * @param collectionId
-     * @param requestBody
      * @returns CollectionResponse Successful Response
      * @throws ApiError
      */
-    public static addProductsToCollectionApiV1CollectionsCollectionIdProductsPost(
+    public static addProductsToCollectionApiV1CollectionsCollectionIdProductsPost({
+        collectionId,
+        requestBody,
+    }: {
         collectionId: number,
         requestBody: Body_add_products_to_collection_api_v1_collections__collection_id__products_post,
-    ): CancelablePromise<CollectionResponse> {
+    }): CancelablePromise<CollectionResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/collections/{collection_id}/products',
@@ -183,15 +190,16 @@ export class CollectionsService {
     /**
      * Remove Products From Collection
      * Remove products from collection (admin only)
-     * @param collectionId
-     * @param requestBody
      * @returns CollectionResponse Successful Response
      * @throws ApiError
      */
-    public static removeProductsFromCollectionApiV1CollectionsCollectionIdProductsDelete(
+    public static removeProductsFromCollectionApiV1CollectionsCollectionIdProductsDelete({
+        collectionId,
+        requestBody,
+    }: {
         collectionId: number,
         requestBody: Body_remove_products_from_collection_api_v1_collections__collection_id__products_delete,
-    ): CancelablePromise<CollectionResponse> {
+    }): CancelablePromise<CollectionResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/collections/{collection_id}/products',

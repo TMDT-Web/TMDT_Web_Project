@@ -34,7 +34,7 @@ export default function ProductDetail() {
       setLoading(true)
       setError(null)
       // Use generated client - type-safe API call
-      const data = await ProductsService.getProductBySlugApiV1ProductsSlugSlugGet(slug)
+      const data = await ProductsService.getProductBySlugApiV1ProductsSlugSlugGet({ slug })
       setProduct(data)
     } catch (err) {
       console.error('Error loading product:', err)

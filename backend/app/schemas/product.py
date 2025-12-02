@@ -46,6 +46,7 @@ class CollectionBase(BaseModel):
     banner_url: Optional[str] = None
     description: Optional[str] = None
     is_active: bool = True
+    sale_price: Optional[float] = None  # Giá ưu đãi khi mua cả bộ
 
 
 class CollectionCreate(CollectionBase):
@@ -58,6 +59,7 @@ class CollectionUpdate(BaseModel):
     banner_url: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
+    sale_price: Optional[float] = None
     product_ids: Optional[List[int]] = None
 
 

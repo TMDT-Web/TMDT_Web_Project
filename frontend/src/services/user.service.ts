@@ -53,20 +53,20 @@ export const userService = {
      * Create a new address
      */
     createAddress: async (data: AddressCreate): Promise<AddressResponse> => {
-        return await AddressesService.createAddressApiV1AddressesPost(data)
+        return await AddressesService.createAddressApiV1AddressesPost({ requestBody: data })
     },
 
     /**
      * Update an existing address
      */
     updateAddress: async (addressId: number, data: AddressUpdate): Promise<AddressResponse> => {
-        return await AddressesService.updateAddressApiV1AddressesAddressIdPut(addressId, data)
+        return await AddressesService.updateAddressApiV1AddressesAddressIdPut({ addressId, requestBody: data })
     },
 
     /**
      * Delete an address
      */
     deleteAddress: async (addressId: number): Promise<void> => {
-        return await AddressesService.deleteAddressApiV1AddressesAddressIdDelete(addressId)
+        return await AddressesService.deleteAddressApiV1AddressesAddressIdDelete({ addressId })
     }
 }

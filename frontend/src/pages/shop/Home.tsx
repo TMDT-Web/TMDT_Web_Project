@@ -25,7 +25,7 @@ export default function Home() {
 
       // Load featured products and categories in parallel
       const [productsResponse, categoriesResponse] = await Promise.all([
-        ProductsService.getProductsApiV1ProductsGet(0, 100),
+        ProductsService.getProductsApiV1ProductsGet({ skip: 0, limit: 100 }),
         ProductsService.getCategoriesApiV1ProductsCategoriesGet()
       ])
 

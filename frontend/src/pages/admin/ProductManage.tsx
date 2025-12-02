@@ -16,7 +16,7 @@ export default function ProductManage() {
 
   const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: () => ProductsService.getProductsApiV1ProductsGet(undefined, 100)
+    queryFn: () => ProductsService.getProductsApiV1ProductsGet({ limit: 100 })
   })
 
   const { data: categoriesData } = useQuery({
@@ -49,7 +49,7 @@ export default function ProductManage() {
     if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return
 
     try {
-      await ProductsService.deleteProductApiV1ProductsProductIdDelete(productId)
+      await ProductsService.deleteProductApiV1ProductsProductIdDelete({ productId })
       refetchProducts()
     } catch (error) {
       console.error('Failed to delete product:', error)

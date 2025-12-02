@@ -30,6 +30,9 @@ class Collection(Base):
     banner_url = Column(String, nullable=True) # Ảnh bìa bộ sưu tập to đẹp
     description = Column(Text)
     is_active = Column(Boolean, default=True)
+    
+    # Giá khuyến mãi cho bộ sưu tập (giá gốc = tổng giá sản phẩm)
+    sale_price = Column(Float, nullable=True)  # Giá ưu đãi khi mua cả bộ
 
     products = relationship("Product", back_populates="collection")
 

@@ -49,13 +49,14 @@ export class CartService {
     /**
      * Add To Cart
      * Add product to cart (or update quantity if exists)
-     * @param requestBody
      * @returns CartResponse Successful Response
      * @throws ApiError
      */
-    public static addToCartApiV1CartAddPost(
+    public static addToCartApiV1CartAddPost({
+        requestBody,
+    }: {
         requestBody: CartItemCreate,
-    ): CancelablePromise<CartResponse> {
+    }): CancelablePromise<CartResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/cart/add',
@@ -69,15 +70,16 @@ export class CartService {
     /**
      * Update Cart Item
      * Update cart item quantity
-     * @param itemId
-     * @param requestBody
      * @returns CartResponse Successful Response
      * @throws ApiError
      */
-    public static updateCartItemApiV1CartItemIdPut(
+    public static updateCartItemApiV1CartItemIdPut({
+        itemId,
+        requestBody,
+    }: {
         itemId: number,
         requestBody: CartItemUpdate,
-    ): CancelablePromise<CartResponse> {
+    }): CancelablePromise<CartResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/cart/{item_id}',
@@ -94,13 +96,14 @@ export class CartService {
     /**
      * Remove From Cart
      * Remove item from cart
-     * @param itemId
      * @returns CartResponse Successful Response
      * @throws ApiError
      */
-    public static removeFromCartApiV1CartItemIdDelete(
+    public static removeFromCartApiV1CartItemIdDelete({
+        itemId,
+    }: {
         itemId: number,
-    ): CancelablePromise<CartResponse> {
+    }): CancelablePromise<CartResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/cart/{item_id}',

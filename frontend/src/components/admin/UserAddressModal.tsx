@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { AdminAddressService } from "@/client/services/AdminAddressService";
+import { AddressesAdminService } from "@/client/services/AddressesAdminService";
+import { AddressesService } from "@/client/services/AddressesService";
 import type { AddressResponse } from "@/client/models/AddressResponse";
 import type { AddressCreate } from "@/client/models/AddressCreate";
 
@@ -16,7 +17,7 @@ export default function UserAddressModal({ user, onClose }) {
   });
 
   const load = async () => {
-    const data = await AdminAddressService.getUserAddresses(user.id);
+    const data = await AddressesAdminService.adminGetAddressesApiV1AddressesAdminUserIdGet({ userId: user.id });
     setList(data);
   };
 
@@ -25,7 +26,7 @@ export default function UserAddressModal({ user, onClose }) {
   }, []);
 
   const submit = async () => {
-    await AdminAddressService.create(user.id, form);
+    await AddressesService.createAddressApiV1AddressesPost({ requestBody: form });
     setForm({
       name: "",
       receiver_name: "",
@@ -39,7 +40,7 @@ export default function UserAddressModal({ user, onClose }) {
   };
 
   const remove = async (addrId: number) => {
-    await AdminAddressService.delete(user.id, addrId);
+    await AddressesService.deleteAddressApiV1AddressesAddressIdDelete({ addressId: addrId });
     load();
   };
 

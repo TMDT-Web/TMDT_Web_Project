@@ -8,6 +8,7 @@ export type CollectionCreate = {
     banner_url?: (string | null);
     description?: (string | null);
     is_active?: boolean;
+    sale_price?: (number | null);
     product_ids?: (Array<number> | null);
 };
 

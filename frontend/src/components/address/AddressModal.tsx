@@ -40,7 +40,7 @@ export default function AddressModal({ onClose, onSuccess }) {
     };
 
     try {
-      await AddressesService.createAddressApiV1AddressesPost(payload);
+      await AddressesService.createAddressApiV1AddressesPost({ requestBody: payload });
       onSuccess();
       onClose();
     } catch (err) {

@@ -50,7 +50,9 @@ async function refreshAccessToken(): Promise<string | null> {
   try {
     // Call refresh endpoint with correct parameter name
     const tokenData = await AuthenticationService.refreshTokenApiV1AuthRefreshTokenPost({
-      refresh_token: refreshToken
+      requestBody: {
+        refresh_token: refreshToken
+      }
     });
 
     // Store new tokens (using snake_case from API)
