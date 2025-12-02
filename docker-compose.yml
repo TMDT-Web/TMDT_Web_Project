@@ -42,11 +42,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres123@db:5432/luxefurniture
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=your-super-secret-key-change-in-production
-      - ENVIRONMENT=development
-      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:3000}
+      DATABASE_URL: postgresql://postgres:postgres123@db:5432/luxefurniture
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: your-super-secret-key-change-in-production
+      ENVIRONMENT: development
     env_file:
       - ./backend/.env
     volumes:
@@ -76,6 +75,16 @@ services:
       - backend
     networks:
       - luxefurniture_network
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    networks:
+      - luxefurniture_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:

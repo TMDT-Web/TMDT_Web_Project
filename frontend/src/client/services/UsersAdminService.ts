@@ -22,16 +22,15 @@ export class UsersAdminService {
     }
     /**
      * Admin Update User
+     * @param userId
+     * @param requestBody
      * @returns UserResponse Successful Response
      * @throws ApiError
      */
-    public static adminUpdateUserApiV1UsersAdminUserIdPut({
-        userId,
-        requestBody,
-    }: {
+    public static adminUpdateUserApiV1UsersAdminUserIdPut(
         userId: number,
         requestBody: UserUpdate,
-    }): CancelablePromise<UserResponse> {
+    ): CancelablePromise<UserResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/users/admin/{user_id}',
@@ -47,17 +46,36 @@ export class UsersAdminService {
     }
     /**
      * Admin Upgrade Vip
+     * @param userId
      * @returns UserResponse Successful Response
      * @throws ApiError
      */
-    public static adminUpgradeVipApiV1UsersAdminUserIdUpgradeVipPut({
-        userId,
-    }: {
+    public static adminUpgradeVipApiV1UsersAdminUserIdUpgradeVipPut(
         userId: number,
-    }): CancelablePromise<UserResponse> {
+    ): CancelablePromise<UserResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/users/admin/{user_id}/upgrade-vip',
+            path: {
+                'user_id': userId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Admin Downgrade Vip
+     * @param userId
+     * @returns UserResponse Successful Response
+     * @throws ApiError
+     */
+    public static adminDowngradeVipApiV1UsersAdminUserIdDowngradeVipPut(
+        userId: number,
+    ): CancelablePromise<UserResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/users/admin/{user_id}/downgrade-vip',
             path: {
                 'user_id': userId,
             },

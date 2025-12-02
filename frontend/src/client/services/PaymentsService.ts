@@ -7,6 +7,27 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class PaymentsService {
     /**
+     * Create Payment
+     * Unified create payment endpoint
+     * Body: { order_id: int, gateway: str }
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static createPaymentApiV1PaymentsCreatePost(
+        requestBody: Record<string, any>,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/payments/create',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
      * Create Momo Payment
      * Create MoMo payment request
      * @returns any Successful Response
@@ -72,6 +93,48 @@ export class PaymentsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/payments/vnpay/return',
+        });
+    }
+    /**
+     * Generate Qr Payment
+     * Generate QR code for payment confirmation
+     * Body: { order_id: int, payment_method: str }
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static generateQrPaymentApiV1PaymentsQrGeneratePost(
+        requestBody: Record<string, any>,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/payments/qr/generate',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Confirm Qr Payment
+     * Confirm QR code payment - Public endpoint (no auth required)
+     * Body: { order_id: int }
+     * @param requestBody
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static confirmQrPaymentApiV1PaymentsQrConfirmPost(
+        requestBody: Record<string, any>,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/payments/qr/confirm',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 }

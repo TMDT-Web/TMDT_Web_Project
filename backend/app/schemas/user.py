@@ -73,7 +73,15 @@ class UserRegister(UserCreate):
 
 
 class UserUpdate(BaseModel):
-    """User update schema"""
+    """User update schema - regular users can only update their personal info"""
+    full_name: Optional[str] = Field(None, min_length=2, max_length=255)
+    phone: Optional[str] = Field(None, max_length=20)
+    avatar_url: Optional[str] = None
+    address_id: Optional[int] = None
+
+
+class AdminUserUpdate(BaseModel):
+    """Admin user update schema - includes all fields admins can modify"""
     full_name: Optional[str] = Field(None, min_length=2, max_length=255)
     phone: Optional[str] = Field(None, max_length=20)
     avatar_url: Optional[str] = None

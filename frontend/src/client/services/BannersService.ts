@@ -25,16 +25,15 @@ export class BannersService {
     /**
      * Get Banners
      * Get all banners with pagination (admin only)
+     * @param skip
+     * @param limit
      * @returns BannerListResponse Successful Response
      * @throws ApiError
      */
-    public static getBannersApiV1BannersGet({
-        skip,
-        limit = 100,
-    }: {
+    public static getBannersApiV1BannersGet(
         skip?: number,
-        limit?: number,
-    }): CancelablePromise<BannerListResponse> {
+        limit: number = 100,
+    ): CancelablePromise<BannerListResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/banners',
@@ -50,14 +49,13 @@ export class BannersService {
     /**
      * Create Banner
      * Create new banner (admin only)
+     * @param requestBody
      * @returns BannerResponse Successful Response
      * @throws ApiError
      */
-    public static createBannerApiV1BannersPost({
-        requestBody,
-    }: {
+    public static createBannerApiV1BannersPost(
         requestBody: BannerCreate,
-    }): CancelablePromise<BannerResponse> {
+    ): CancelablePromise<BannerResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/banners',
@@ -71,14 +69,13 @@ export class BannersService {
     /**
      * Get Banner
      * Get banner by ID (admin only)
+     * @param bannerId
      * @returns BannerResponse Successful Response
      * @throws ApiError
      */
-    public static getBannerApiV1BannersBannerIdGet({
-        bannerId,
-    }: {
+    public static getBannerApiV1BannersBannerIdGet(
         bannerId: number,
-    }): CancelablePromise<BannerResponse> {
+    ): CancelablePromise<BannerResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/banners/{banner_id}',
@@ -93,16 +90,15 @@ export class BannersService {
     /**
      * Update Banner
      * Update banner (admin only)
+     * @param bannerId
+     * @param requestBody
      * @returns BannerResponse Successful Response
      * @throws ApiError
      */
-    public static updateBannerApiV1BannersBannerIdPut({
-        bannerId,
-        requestBody,
-    }: {
+    public static updateBannerApiV1BannersBannerIdPut(
         bannerId: number,
         requestBody: BannerUpdate,
-    }): CancelablePromise<BannerResponse> {
+    ): CancelablePromise<BannerResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/banners/{banner_id}',
@@ -119,14 +115,13 @@ export class BannersService {
     /**
      * Delete Banner
      * Delete banner (admin only)
+     * @param bannerId
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static deleteBannerApiV1BannersBannerIdDelete({
-        bannerId,
-    }: {
+    public static deleteBannerApiV1BannersBannerIdDelete(
         bannerId: number,
-    }): CancelablePromise<any> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/banners/{banner_id}',

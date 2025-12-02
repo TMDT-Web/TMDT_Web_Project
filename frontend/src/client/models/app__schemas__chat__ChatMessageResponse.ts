@@ -6,7 +6,7 @@ import type { MessageSender } from './MessageSender';
 /**
  * Chat message response
  */
-export type ChatMessageResponse = {
+export type app__schemas__chat__ChatMessageResponse = {
     message: string;
     id: number;
     created_at: string;

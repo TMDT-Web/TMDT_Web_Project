@@ -19,16 +19,22 @@ export default function AdminLayout() {
   const { user, logout } = useAuth()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
-  const menuItems: MenuItem[] = [
+  const allMenuItems: MenuItem[] = [
     { path: '/admin', icon: '📊', label: 'Dashboard', exact: true },
     { path: '/admin/products', icon: '📦', label: 'Sản phẩm' },
     { path: '/admin/categories', icon: '📁', label: 'Danh mục' },
     { path: '/admin/collections', icon: '🎨', label: 'Bộ sưu tập' },
     { path: '/admin/banners', icon: '🖼️', label: 'Banner Trang Chủ' },
     { path: '/admin/orders', icon: '🛒', label: 'Đơn hàng' },
+    { path: '/admin/stock-receipts', icon: '📝', label: 'Phiếu nhập' },
     { path: '/admin/users', icon: '👥', label: 'Người dùng' },
     { path: '/admin/chat', icon: '💬', label: 'Chat Support' }
   ]
+
+  // Filter menu items based on user role
+  const menuItems = user?.role === 'staff' 
+    ? allMenuItems.filter(item => item.path !== '/admin/users' && item.path !== '/admin/chat')
+    : allMenuItems
 
   const isActive = (path: string, exact = false) => {
     if (exact) {

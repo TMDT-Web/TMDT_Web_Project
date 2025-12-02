@@ -15,12 +15,12 @@ export default function Dashboard() {
 
   const { data: usersData } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => UsersService.getUsersApiV1UsersGet({})
+    queryFn: () => UsersService.getUsersApiV1UsersGet(0, 1000)
   })
 
   const { data: productsData } = useQuery({
     queryKey: ['allProducts'],
-    queryFn: () => ProductsService.getProductsApiV1ProductsGet({ skip: 0, limit: 1000 })
+    queryFn: () => ProductsService.getProductsApiV1ProductsGet(0, 1000)
   })
 
   const orders = ordersData?.orders || []

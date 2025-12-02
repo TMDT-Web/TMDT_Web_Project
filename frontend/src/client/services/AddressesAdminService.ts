@@ -9,14 +9,13 @@ import { request as __request } from '../core/request';
 export class AddressesAdminService {
     /**
      * Admin Get Addresses
+     * @param userId
      * @returns AddressResponse Successful Response
      * @throws ApiError
      */
-    public static adminGetAddressesApiV1AddressesAdminUserIdGet({
-        userId,
-    }: {
+    public static adminGetAddressesApiV1AddressesAdminUserIdGet(
         userId: number,
-    }): CancelablePromise<Array<AddressResponse>> {
+    ): CancelablePromise<Array<AddressResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/addresses/admin/{user_id}',

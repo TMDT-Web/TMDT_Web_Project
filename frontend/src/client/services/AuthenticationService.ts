@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { Body_login_api_v1_auth_login_post } from '../models/Body_login_api_v1_auth_login_post';
+import type { GoogleAuthURL } from '../models/GoogleAuthURL';
 import type { RefreshTokenRequest } from '../models/RefreshTokenRequest';
 import type { RegisterRequest } from '../models/RegisterRequest';
 import type { Token } from '../models/Token';
@@ -95,6 +96,48 @@ export class AuthenticationService {
             url: '/api/v1/auth/refresh-token',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Google Login
+     * Initiate Google OAuth login flow
+     *
+     * Returns the Google authorization URL and state for CSRF protection.
+     * Frontend should redirect user to this URL.
+     * @returns GoogleAuthURL Successful Response
+     * @throws ApiError
+     */
+    public static googleLoginApiV1AuthGoogleLoginGet(): CancelablePromise<GoogleAuthURL> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/auth/google/login',
+        });
+    }
+    /**
+     * Google Callback
+     * Handle Google OAuth callback
+     *
+     * Exchanges authorization code for tokens, verifies user, and issues JWT.
+     * Redirects to frontend with tokens.
+     * @param code Authorization code from Google
+     * @param state CSRF state token
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static googleCallbackApiV1AuthGoogleCallbackGet(
+        code: string,
+        state: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/auth/google/callback',
+            query: {
+                'code': code,
+                'state': state,
+            },
             errors: {
                 422: `Validation Error`,
             },

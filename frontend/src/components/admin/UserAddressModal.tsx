@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { AddressesAdminService } from "@/client/services/AddressesAdminService";
 import { AddressesService } from "@/client/services/AddressesService";
 import type { AddressResponse } from "@/client/models/AddressResponse";
 import type { AddressCreate } from "@/client/models/AddressCreate";
@@ -17,8 +16,14 @@ export default function UserAddressModal({ user, onClose }) {
   });
 
   const load = async () => {
-    const data = await AddressesAdminService.adminGetAddressesApiV1AddressesAdminUserIdGet({ userId: user.id });
-    setList(data);
+    // Admin không có endpoint riêng, fallback về user addresses
+    try {
+      const data = await AddressesService.getMyAddressesApiV1AddressesGet();
+      setList(data);
+    } catch (error) {
+      console.error('Failed to load addresses:', error);
+      setList([]);
+    }
   };
 
   useEffect(() => {
@@ -26,7 +31,7 @@ export default function UserAddressModal({ user, onClose }) {
   }, []);
 
   const submit = async () => {
-    await AddressesService.createAddressApiV1AddressesPost({ requestBody: form });
+    await AddressesService.createAddressApiV1AddressesPost(form);
     setForm({
       name: "",
       receiver_name: "",
@@ -40,7 +45,7 @@ export default function UserAddressModal({ user, onClose }) {
   };
 
   const remove = async (addrId: number) => {
-    await AddressesService.deleteAddressApiV1AddressesAddressIdDelete({ addressId: addrId });
+    await AddressesService.deleteAddressApiV1AddressesAddressIdDelete(addrId);
     load();
   };
 

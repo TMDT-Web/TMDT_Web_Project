@@ -3,15 +3,17 @@
  */
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { ChatService } from '@/client'
+import type { app__schemas__chat__ChatSessionResponse } from '@/client'
 import { useSocket } from '@/context/SocketContext'
 import { useAuth } from '@/context/AuthContext'
 import { useConfirm } from '@/components/ConfirmModal'
 
 interface ChatSession {
   session_id: string
-  user_id?: number | null
-  username?: string | null
+  user_id: number
+  username?: string
   vip_tier?: string
   status: string
   created_at: string
@@ -27,6 +29,7 @@ interface Message {
 
 export default function ChatSupport() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const { confirm } = useConfirm()
   const {
     isConnected,
@@ -43,6 +46,13 @@ export default function ChatSupport() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Block access for staff role
+  useEffect(() => {
+    if (user?.role === 'staff') {
+      navigate('/admin', { replace: true })
+    }
+  }, [user, navigate])
+
   // Fetch all chat sessions (admin only)
   const { data: sessionsData, refetch: refetchSessions } = useQuery({
     queryKey: ['admin-chat-sessions'],
@@ -50,7 +60,18 @@ export default function ChatSupport() {
     refetchInterval: 10000,
   })
 
-  const chatSessions: ChatSession[] = sessionsData?.sessions || []
+  const mapSession = (s: app__schemas__chat__ChatSessionResponse): ChatSession => ({
+    session_id: s.session_id,
+    user_id: s.user_id ?? 0,
+    username: s.username ?? '',
+    vip_tier: s.vip_tier ?? 'member',
+    status: s.status,
+    created_at: s.created_at,
+    updated_at: s.updated_at,
+  })
+
+  const rawSessions: app__schemas__chat__ChatSessionResponse[] = sessionsData?.sessions ?? []
+  const chatSessions: ChatSession[] = rawSessions.map(mapSession)
 
   // 🔥 FILTER SESSIONS
   const filteredSessions = chatSessions.filter((s) => {
@@ -108,7 +129,7 @@ export default function ChatSupport() {
       cancelText: 'Hủy'
     })
     if (!confirmed) return
-    await ChatService.closeSessionApiV1ChatSessionsSessionIdClosePost({ sessionId })
+    await ChatService.closeSessionApiV1ChatSessionsSessionIdClosePost(sessionId)
     refetchSessions()
     if (selectedSession === sessionId) {
       setSelectedSession(null)

@@ -41,7 +41,8 @@ function onTokenRefreshed(token: string) {
  * Attempt to refresh the access token
  */
 async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  // Hỗ trợ cả 'refresh_token' và 'refreshToken'
+  const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || localStorage.getItem('refreshToken');
   
   if (!refreshToken) {
     return null;
@@ -82,25 +83,26 @@ export function setupApiClient() {
 
   // Configure token retrieval - must be async to match OpenAPI type
   OpenAPI.TOKEN = async () => {
-    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    if (token) {
-      console.log('✅ Token found in localStorage, length:', token.length);
-    } else {
-      console.warn('⚠️ No token found in localStorage');
+    // Hỗ trợ cả 'token' và 'accessToken'
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || localStorage.getItem('accessToken');
+    // Only log in development and avoid spamming console when not authenticated
+    if (import.meta.env.DEV) {
+      if (token) {
+        console.log('✅ Token loaded');
+      }
     }
     return token || undefined;
   };
 
   // Setup axios interceptors for the generated client
   // Note: The generated client uses axios internally
-  const axiosInstance = axios.create({
-    baseURL: OpenAPI.BASE,
-  });
+  // Use global axios so generated client picks up interceptors
+  const axiosInstance = axios;
 
   // Request interceptor - inject JWT token
   axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || localStorage.getItem('accessToken');
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -168,22 +170,25 @@ export function setupApiClient() {
  * Get the current access token
  */
 export function getAccessToken(): string | null {
-  return localStorage.getItem('token');
+  return localStorage.getItem('token') || localStorage.getItem('accessToken');
 }
 
 /**
  * Get the current refresh token
  */
 export function getRefreshToken(): string | null {
-  return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || localStorage.getItem('refreshToken');
 }
 
 /**
  * Set authentication tokens
  */
 export function setTokens(accessToken: string, refreshToken: string) {
+  // Lưu cả hai khóa để tương thích với mã hiện có
   localStorage.setItem('token', accessToken);
+  localStorage.setItem('accessToken', accessToken);
   localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+  localStorage.setItem('refreshToken', refreshToken);
 }
 
 /**
@@ -191,7 +196,9 @@ export function setTokens(accessToken: string, refreshToken: string) {
  */
 export function clearTokens() {
   localStorage.removeItem('token');
+  localStorage.removeItem('accessToken');
   localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  localStorage.removeItem('refreshToken');
 }
 
 /**

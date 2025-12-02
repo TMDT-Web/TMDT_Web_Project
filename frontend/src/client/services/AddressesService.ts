@@ -24,14 +24,13 @@ export class AddressesService {
     /**
      * Create Address
      * Create new address
+     * @param requestBody
      * @returns AddressResponse Successful Response
      * @throws ApiError
      */
-    public static createAddressApiV1AddressesPost({
-        requestBody,
-    }: {
+    public static createAddressApiV1AddressesPost(
         requestBody: AddressCreate,
-    }): CancelablePromise<AddressResponse> {
+    ): CancelablePromise<AddressResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/addresses',
@@ -45,14 +44,13 @@ export class AddressesService {
     /**
      * Get Address
      * Get specific address
+     * @param addressId
      * @returns AddressResponse Successful Response
      * @throws ApiError
      */
-    public static getAddressApiV1AddressesAddressIdGet({
-        addressId,
-    }: {
+    public static getAddressApiV1AddressesAddressIdGet(
         addressId: number,
-    }): CancelablePromise<AddressResponse> {
+    ): CancelablePromise<AddressResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/addresses/{address_id}',
@@ -67,16 +65,15 @@ export class AddressesService {
     /**
      * Update Address
      * Update address
+     * @param addressId
+     * @param requestBody
      * @returns AddressResponse Successful Response
      * @throws ApiError
      */
-    public static updateAddressApiV1AddressesAddressIdPut({
-        addressId,
-        requestBody,
-    }: {
+    public static updateAddressApiV1AddressesAddressIdPut(
         addressId: number,
         requestBody: AddressUpdate,
-    }): CancelablePromise<AddressResponse> {
+    ): CancelablePromise<AddressResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/addresses/{address_id}',
@@ -93,14 +90,13 @@ export class AddressesService {
     /**
      * Delete Address
      * Delete address
+     * @param addressId
      * @returns void
      * @throws ApiError
      */
-    public static deleteAddressApiV1AddressesAddressIdDelete({
-        addressId,
-    }: {
+    public static deleteAddressApiV1AddressesAddressIdDelete(
         addressId: number,
-    }): CancelablePromise<void> {
+    ): CancelablePromise<void> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/addresses/{address_id}',
@@ -115,14 +111,13 @@ export class AddressesService {
     /**
      * Set Default Address
      * Set address as default
+     * @param addressId
      * @returns AddressResponse Successful Response
      * @throws ApiError
      */
-    public static setDefaultAddressApiV1AddressesAddressIdSetDefaultPost({
-        addressId,
-    }: {
+    public static setDefaultAddressApiV1AddressesAddressIdSetDefaultPost(
         addressId: number,
-    }): CancelablePromise<AddressResponse> {
+    ): CancelablePromise<AddressResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/addresses/{address_id}/set-default',
