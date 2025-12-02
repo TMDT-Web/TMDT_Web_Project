@@ -5,12 +5,16 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { orderService } from '@/services/order.service'
 import { Link } from 'react-router-dom'
+import { useToast } from '@/components/Toast'
+import { useConfirm } from '@/components/ConfirmModal'
 import type { Order } from '@/types/models'
 
 export default function Orders() {
   const [page, setPage] = useState(1)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const size = 10
+  const toast = useToast()
+  const { confirm } = useConfirm()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['myOrders', page, size],
@@ -257,11 +261,18 @@ export default function Orders() {
                   <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end gap-3">
                     {order.status === 'pending' && (
                       <button
-                        onClick={() => {
-                          if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
+                        onClick={async () => {
+                          const confirmed = await confirm({
+                            title: 'Hủy đơn hàng',
+                            message: 'Bạn có chắc muốn hủy đơn hàng này?',
+                            type: 'danger',
+                            confirmText: 'Hủy đơn',
+                            cancelText: 'Quay lại'
+                          })
+                          if (confirmed) {
                             orderService.cancelOrder(order.id)
                               .then(() => window.location.reload())
-                              .catch(err => alert('Không thể hủy đơn hàng: ' + err.message))
+                              .catch(err => toast.error('Không thể hủy đơn hàng: ' + err.message))
                           }
                         }}
                         className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"

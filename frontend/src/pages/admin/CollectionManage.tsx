@@ -4,8 +4,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CollectionsService, ProductsService, UploadService } from '@/client'
+import { useToast } from '@/components/Toast'
+import { useConfirm } from '@/components/ConfirmModal'
 
 export default function CollectionManage() {
+  const toast = useToast()
+  const { confirm } = useConfirm()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCollection, setEditingCollection] = useState<any>(null)
   const [formData, setFormData] = useState({
@@ -134,25 +138,32 @@ export default function CollectionManage() {
 
       refetch()
       setIsModalOpen(false)
+      toast.success(editingCollection ? 'Cập nhật bộ sưu tập thành công!' : 'Thêm bộ sưu tập thành công!')
     } catch (error: any) {
       console.error('Error saving collection:', error)
-      alert(`Lỗi: ${error.body?.detail || error.message || 'Không thể lưu bộ sưu tập'}`)
+      toast.error(`Lỗi: ${error.body?.detail || error.message || 'Không thể lưu bộ sưu tập'}`)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa bộ sưu tập này?')) {
-      return
-    }
+    const confirmed = await confirm({
+      title: 'Xóa bộ sưu tập',
+      message: 'Bạn có chắc chắn muốn xóa bộ sưu tập này?',
+      type: 'danger',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy'
+    })
+    if (!confirmed) return
 
     try {
       await CollectionsService.deleteCollectionApiV1CollectionsCollectionIdDelete({ collectionId: id })
       refetch()
+      toast.success('Xóa bộ sưu tập thành công!')
     } catch (error: any) {
       console.error('Error deleting collection:', error)
-      alert(`Lỗi: ${error.body?.detail || error.message || 'Không thể xóa bộ sưu tập'}`)
+      toast.error(`Lỗi: ${error.body?.detail || error.message || 'Không thể xóa bộ sưu tập'}`)
     }
   }
 

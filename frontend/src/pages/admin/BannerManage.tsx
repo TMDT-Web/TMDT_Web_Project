@@ -6,6 +6,8 @@ import { useQuery } from '@tanstack/react-query'
 import { UploadService } from '@/client'
 import { Image, Link as LinkIcon } from 'lucide-react'
 import { formatImageUrl } from '@/utils/format'
+import { useToast } from '@/components/Toast'
+import { useConfirm } from '@/components/ConfirmModal'
 
 // Note: API client will be regenerated after backend is running
 // For now, we'll create placeholder types
@@ -31,6 +33,8 @@ interface BannerFormData {
 }
 
 export default function BannerManage() {
+  const toast = useToast()
+  const { confirm } = useConfirm()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null)
   const [formData, setFormData] = useState<BannerFormData>({
@@ -93,12 +97,12 @@ export default function BannerManage() {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Vui lòng chọn file ảnh (JPG, PNG, WebP)')
+        toast.warning('Vui lòng chọn file ảnh (JPG, PNG, WebP)')
         return
       }
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Kích thước ảnh không được vượt quá 5MB')
+        toast.warning('Kích thước ảnh không được vượt quá 5MB')
         return
       }
       setImageFile(file)
@@ -124,7 +128,7 @@ export default function BannerManage() {
 
       // Validate required fields
       if (!imageUrl && !editingBanner) {
-        alert('Vui lòng chọn ảnh banner')
+        toast.warning('Vui lòng chọn ảnh banner')
         setIsSubmitting(false)
         return
       }
@@ -158,18 +162,24 @@ export default function BannerManage() {
 
       refetch()
       setIsModalOpen(false)
+      toast.success(editingBanner ? 'Cập nhật banner thành công!' : 'Thêm banner thành công!')
     } catch (error: any) {
       console.error('Error saving banner:', error)
-      alert(`Lỗi: ${error.message || 'Không thể lưu banner'}`)
+      toast.error(`Lỗi: ${error.message || 'Không thể lưu banner'}`)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa banner này?')) {
-      return
-    }
+    const confirmed = await confirm({
+      title: 'Xóa banner',
+      message: 'Bạn có chắc chắn muốn xóa banner này?',
+      type: 'danger',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy'
+    })
+    if (!confirmed) return
 
     try {
       const token = localStorage.getItem('token')
@@ -180,9 +190,10 @@ export default function BannerManage() {
         }
       })
       refetch()
+      toast.success('Xóa banner thành công!')
     } catch (error: any) {
       console.error('Error deleting banner:', error)
-      alert(`Lỗi: ${error.message || 'Không thể xóa banner'}`)
+      toast.error(`Lỗi: ${error.message || 'Không thể xóa banner'}`)
     }
   }
 

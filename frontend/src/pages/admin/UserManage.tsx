@@ -5,6 +5,7 @@ import { UsersService } from "@/client/services/UsersService";
 import { AddressesService } from "@/client/services/AddressesService";
 import { AddressesAdminService } from "@/client/services/AddressesAdminService";
 import addressData from "@/utils/vietnam-address.json";
+import { useToast } from "@/components/Toast";
 
 import type { UserResponse } from "@/client/models/UserResponse";
 import type { UserUpdate } from "@/client/models/UserUpdate";
@@ -14,6 +15,7 @@ import { UserRole } from "@/client/models/UserRole";
 export default function UserManage() {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
@@ -131,7 +133,7 @@ export default function UserManage() {
 
   const saveNewAddress = async () => {
     if (!editing || !newAddressForm.street || !newAddressForm.city_code || !newAddressForm.district_code || !newAddressForm.ward_code) {
-      alert('Vui lòng nhập đầy đủ thông tin địa chỉ');
+      toast.warning('Vui lòng nhập đầy đủ thông tin địa chỉ');
       return;
     }
 
@@ -168,9 +170,10 @@ export default function UserManage() {
         ward_name: '',
         street: '',
       });
+      toast.success('Thêm địa chỉ mới thành công!');
     } catch (err) {
       console.error("Create address failed:", err);
-      alert('Không thể thêm địa chỉ mới');
+      toast.error('Không thể thêm địa chỉ mới');
     }
   };
 

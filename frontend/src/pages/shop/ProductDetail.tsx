@@ -8,11 +8,13 @@ import { ProductsService } from '@/client'
 import type { ProductResponse } from '@/client'
 import { useCart } from '@/context/CartContext'
 import { formatImageUrl } from '@/utils/format'
+import { useToast } from '@/components/Toast'
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   const { addItem } = useCart()
+  const toast = useToast()
   
   const [product, setProduct] = useState<ProductResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -88,7 +90,7 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!product) return
     addItem(product, quantity)
-    alert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`)
+    toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`)
   }
 
   const handleBuyNow = () => {

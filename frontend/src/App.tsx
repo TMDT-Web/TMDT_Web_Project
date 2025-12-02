@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { SocketProvider } from './context/SocketContext'
+import { ToastProvider } from './components/Toast'
+import { ConfirmProvider } from './components/ConfirmModal'
 
 // Layouts
 import MainLayout from './layouts/MainLayout'
@@ -56,11 +58,13 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CartProvider>
-          <SocketProvider>
-            <BrowserRouter>
-              <Routes>
+      <ToastProvider>
+        <ConfirmProvider>
+          <AuthProvider>
+            <CartProvider>
+              <SocketProvider>
+                <BrowserRouter>
+                  <Routes>
                 {/* Shop Routes */}
                 <Route element={<MainLayout />}>
                   <Route path="/" element={<Home />} />
@@ -105,6 +109,8 @@ function App() {
           </SocketProvider>
         </CartProvider>
       </AuthProvider>
+        </ConfirmProvider>
+      </ToastProvider>
     </QueryClientProvider>
   )
 }

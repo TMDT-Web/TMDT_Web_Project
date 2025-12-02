@@ -4,6 +4,7 @@
  */
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { useToast } from '@/components/Toast'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -13,6 +14,7 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalProps) {
   const { login, register } = useAuth()
+  const toast = useToast()
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(defaultTab)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -86,7 +88,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
   const handleOAuthLogin = (provider: 'google' | 'facebook') => {
     // TODO: Implement OAuth flow
     console.log(`OAuth login with ${provider}`)
-    alert(`Chức năng đăng nhập bằng ${provider === 'google' ? 'Google' : 'Facebook'} đang được phát triển`)
+    toast.info(`Chức năng đăng nhập bằng ${provider === 'google' ? 'Google' : 'Facebook'} đang được phát triển`)
   }
 
   if (!isOpen) return null

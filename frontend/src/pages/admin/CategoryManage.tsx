@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ProductsService, UploadService } from '@/client'
 import { formatImageUrl } from '@/utils/format'
+import { useToast } from '@/components/Toast'
+import { useConfirm } from '@/components/ConfirmModal'
 
 interface CategoryFormData {
   name: string
@@ -14,6 +16,8 @@ interface CategoryFormData {
 }
 
 export default function CategoryManage() {
+  const toast = useToast()
+  const { confirm } = useConfirm()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<any>(null)
   const [formData, setFormData] = useState<CategoryFormData>({
@@ -105,25 +109,32 @@ export default function CategoryManage() {
 
       refetch()
       setIsModalOpen(false)
+      toast.success(editingCategory ? 'Cập nhật danh mục thành công!' : 'Thêm danh mục thành công!')
     } catch (error: any) {
       console.error('Error saving category:', error)
-      alert(`Lỗi: ${error.body?.detail || error.message || 'Không thể lưu danh mục'}`)
+      toast.error(`Lỗi: ${error.body?.detail || error.message || 'Không thể lưu danh mục'}`)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
-      return
-    }
+    const confirmed = await confirm({
+      title: 'Xóa danh mục',
+      message: 'Bạn có chắc chắn muốn xóa danh mục này?',
+      type: 'danger',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy'
+    })
+    if (!confirmed) return
 
     try {
       await ProductsService.deleteCategoryApiV1ProductsCategoriesCategoryIdDelete({ categoryId: id })
       refetch()
+      toast.success('Xóa danh mục thành công!')
     } catch (error: any) {
       console.error('Error deleting category:', error)
-      alert(`Lỗi: ${error.body?.detail || error.message || 'Không thể xóa danh mục'}`)
+      toast.error(`Lỗi: ${error.body?.detail || error.message || 'Không thể xóa danh mục'}`)
     }
   }
 

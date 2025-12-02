@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ChatService } from '@/client'
 import { useSocket } from '@/context/SocketContext'
 import { useAuth } from '@/context/AuthContext'
+import { useConfirm } from '@/components/ConfirmModal'
 
 interface ChatSession {
   session_id: string
@@ -26,6 +27,7 @@ interface Message {
 
 export default function ChatSupport() {
   const { user } = useAuth()
+  const { confirm } = useConfirm()
   const {
     isConnected,
     sessionId: activeSessionId,
@@ -98,7 +100,14 @@ export default function ChatSupport() {
   }
 
   const handleCloseSession = async (sessionId: string) => {
-    if (!confirm('Đóng cuộc trò chuyện này?')) return
+    const confirmed = await confirm({
+      title: 'Đóng cuộc trò chuyện',
+      message: 'Bạn có chắc muốn đóng cuộc trò chuyện này?',
+      type: 'warning',
+      confirmText: 'Đóng',
+      cancelText: 'Hủy'
+    })
+    if (!confirmed) return
     await ChatService.closeSessionApiV1ChatSessionsSessionIdClosePost({ sessionId })
     refetchSessions()
     if (selectedSession === sessionId) {

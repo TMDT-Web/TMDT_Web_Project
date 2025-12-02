@@ -10,12 +10,14 @@ import { userService } from '@/services/user.service'
 import { OrderStatus, OrderPaymentStatus } from '@/types'
 import AddressSelector from '@/components/AddressSelector'
 import OrderDetailsModal from '@/components/OrderDetailsModal'
+import { useToast } from '@/components/Toast'
 import type { AddressResponse } from '@/client/models/AddressResponse'
 import type { OrderResponse } from '@/client/models/OrderResponse'
 
 export default function Profile() {
   const { user, logout, updateUser, isLoading: authLoading } = useAuth()
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'password'>('info')
 
   const [formData, setFormData] = useState({
@@ -92,11 +94,11 @@ export default function Profile() {
       updateUser(updatedUser as any)
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ['my-addresses'] })
-      alert('Cập nhật thông tin thành công!')
+      toast.success('Cập nhật thông tin thành công!')
     },
     onError: (error: any) => {
       console.error('Profile update error:', error)
-      alert('Cập nhật thông tin thất bại. Vui lòng thử lại!')
+      toast.error('Cập nhật thông tin thất bại. Vui lòng thử lại!')
     }
   })
 
@@ -106,12 +108,12 @@ export default function Profile() {
       return await userService.changePassword(data)
     },
     onSuccess: () => {
-      alert('Đổi mật khẩu thành công!')
+      toast.success('Đổi mật khẩu thành công!')
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' })
     },
     onError: (error: any) => {
       console.error('Change password error:', error)
-      alert(error.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại!')
+      toast.error(error.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại!')
     }
   })
 
@@ -167,7 +169,7 @@ export default function Profile() {
 
     // Validate address fields
     if (!formData.address.city || !formData.address.district || !formData.address.address_line) {
-      alert('Vui lòng điền đầy đủ thông tin địa chỉ!')
+      toast.warning('Vui lòng điền đầy đủ thông tin địa chỉ!')
       return
     }
 
@@ -180,13 +182,13 @@ export default function Profile() {
 
     // Validate password confirmation
     if (passwordData.new_password !== passwordData.confirm_password) {
-      alert('Mật khẩu xác nhận không khớp!')
+      toast.warning('Mật khẩu xác nhận không khớp!')
       return
     }
 
     // Validate password length
     if (passwordData.new_password.length < 8) {
-      alert('Mật khẩu mới phải có ít nhất 8 ký tự!')
+      toast.warning('Mật khẩu mới phải có ít nhất 8 ký tự!')
       return
     }
 

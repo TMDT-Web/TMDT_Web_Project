@@ -7,8 +7,12 @@ import { ProductsService } from '@/client'
 import ProductForm from '@/components/admin/ProductForm'
 import type { ProductResponse } from '@/client'
 import { formatImageUrl } from '@/utils/format'
+import { useToast } from '@/components/Toast'
+import { useConfirm } from '@/components/ConfirmModal'
 
 export default function ProductManage() {
+  const toast = useToast()
+  const { confirm } = useConfirm()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -46,14 +50,22 @@ export default function ProductManage() {
   }
 
   const handleDelete = async (productId: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return
+    const confirmed = await confirm({
+      title: 'Xóa sản phẩm',
+      message: 'Bạn có chắc chắn muốn xóa sản phẩm này?',
+      type: 'danger',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy'
+    })
+    if (!confirmed) return
 
     try {
       await ProductsService.deleteProductApiV1ProductsProductIdDelete({ productId })
       refetchProducts()
+      toast.success('Xóa sản phẩm thành công!')
     } catch (error) {
       console.error('Failed to delete product:', error)
-      alert('Không thể xóa sản phẩm')
+      toast.error('Không thể xóa sản phẩm')
     }
   }
 

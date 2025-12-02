@@ -2,8 +2,10 @@ import { useState } from "react";
 import { AddressesService } from "@/client/services/AddressesService";
 import { AddressCreate } from "@/client/models/AddressCreate";
 import addressData from "@/utils/vietnam-address.json";
+import { useToast } from "@/components/Toast";
 
 export default function AddressModal({ onClose, onSuccess }) {
+  const toast = useToast();
   const [receiverName, setReceiverName] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
   const [street, setStreet] = useState("");
@@ -41,11 +43,12 @@ export default function AddressModal({ onClose, onSuccess }) {
 
     try {
       await AddressesService.createAddressApiV1AddressesPost({ requestBody: payload });
+      toast.success('Thêm địa chỉ thành công!');
       onSuccess();
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Không thể thêm địa chỉ!");
+      toast.error("Không thể thêm địa chỉ!");
     }
   };
 

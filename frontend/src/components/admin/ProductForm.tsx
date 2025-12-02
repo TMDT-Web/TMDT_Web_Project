@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { ProductsService, UploadService } from '@/client'
 import type { ProductResponse, CategoryResponse } from '@/client'
 import { formatImageUrl } from '@/utils/format'
+import { useToast } from '@/components/Toast'
 
 interface ProductFormProps {
   isOpen: boolean
@@ -21,6 +22,7 @@ interface SpecPair {
 }
 
 export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct, categories }: ProductFormProps) {
+  const toast = useToast()
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -313,6 +315,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct
       }
 
       setUploadProgress('Success!')
+      toast.success(editingProduct ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm thành công!')
       setTimeout(() => {
         onSuccess()
         onClose()
@@ -320,7 +323,7 @@ export default function ProductForm({ isOpen, onClose, onSuccess, editingProduct
       }, 500)
     } catch (error: any) {
       console.error('Error saving product:', error)
-      alert(`Lỗi: ${error.body?.detail || error.message || 'Không thể lưu sản phẩm'}`)
+      toast.error(`Lỗi: ${error.body?.detail || error.message || 'Không thể lưu sản phẩm'}`)
     } finally {
       setIsSubmitting(false)
       setUploadProgress('')

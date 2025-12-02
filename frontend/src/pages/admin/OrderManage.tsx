@@ -4,8 +4,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { orderService } from '@/services/order.service'
+import { useToast } from '@/components/Toast'
 
 export default function OrderManage() {
+  const toast = useToast()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
@@ -38,13 +40,13 @@ export default function OrderManage() {
     mutationFn: ({ id, status, notes }: { id: number; status: string; notes?: string }) =>
       orderService.updateOrderStatus(id, status, notes),
     onSuccess: () => {
-      alert('Cập nhật trạng thái đơn hàng thành công!')
+      toast.success('Cập nhật trạng thái đơn hàng thành công!')
       queryClient.invalidateQueries({ queryKey: ['adminOrders'] })
     },
     onError: (error: any) => {
       console.error('Update error:', error)
       const errorMsg = error.response?.data?.detail || error.message || 'Có lỗi xảy ra'
-      alert(`Lỗi: ${typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg)}`)
+      toast.error(`Lỗi: ${typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg)}`)
     }
   })
 
@@ -128,7 +130,7 @@ export default function OrderManage() {
       // Check if status changed to cancelled and validate cancel reason
       if (newStatus === 'cancelled' && newStatus !== selectedOrder.status) {
         if (!cancelReason.trim()) {
-          alert('Vui lòng nhập lý do hủy đơn hàng')
+          toast.warning('Vui lòng nhập lý do hủy đơn hàng')
           return
         }
       }
@@ -157,13 +159,13 @@ export default function OrderManage() {
       // Call update API
       await orderService.updateOrder(selectedOrder.id, updateData)
       
-      alert('Cập nhật thông tin thành công!')
+      toast.success('Cập nhật thông tin thành công!')
       queryClient.invalidateQueries({ queryKey: ['adminOrders'] })
       setSelectedOrder(null)
       setEditMode(false)
       setCancelReason('')
     } catch (error) {
-      alert('Lỗi khi cập nhật thông tin')
+      toast.error('Lỗi khi cập nhật thông tin')
     }
   }
 

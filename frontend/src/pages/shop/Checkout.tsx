@@ -7,6 +7,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/Toast";
 
 import { orderService } from "@/services/order.service";
 import { paymentService } from "@/services/payment.service";
@@ -20,6 +21,7 @@ export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
 
   /** SHIPPING INFO */
   const [shippingName, setShippingName] = useState(user?.full_name || "");
@@ -101,10 +103,8 @@ export default function Checkout() {
 
       // Handle different payment methods
       if (data.payment_method === PaymentGateway.COD) {
-        alert(
-          `Đặt hàng thành công!\nMã đơn hàng: #${data.id}\nTổng tiền: ${data.total_amount.toLocaleString(
-            "vi-VN"
-          )}₫\n\nPhương thức: Thanh toán khi nhận hàng`
+        toast.success(
+          `Đặt hàng thành công! Mã đơn hàng: #${data.id}. Tổng tiền: ${data.total_amount.toLocaleString("vi-VN")}₫`
         );
         navigate(`/orders`);
       } else if (data.payment_method === PaymentGateway.MOMO) {
@@ -133,12 +133,12 @@ export default function Checkout() {
       }
 
       if (error?.response?.status === 401) {
-        alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
+        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
         navigate("/login");
         return;
       }
 
-      alert(message);
+      toast.error(message);
     },
   });
 
@@ -156,7 +156,7 @@ export default function Checkout() {
 
     // Validate structured address
     if (!shippingAddress.city || !shippingAddress.district || !shippingAddress.address_line) {
-      alert("Vui lòng điền đầy đủ thông tin địa chỉ giao hàng!");
+      toast.warning("Vui lòng điền đầy đủ thông tin địa chỉ giao hàng!");
       return;
     }
 

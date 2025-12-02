@@ -8,10 +8,12 @@ import { CollectionsService, CartService } from '@/client'
 import type { CollectionWithProductsResponse, ProductResponse } from '@/client'
 import { formatImageUrl, formatPrice } from '@/utils/format'
 import { useAuth } from '@/context/AuthContext'
+import { useToast } from '@/components/Toast'
 
 export default function CollectionDetail() {
   const { id } = useParams<{ id: string }>()
   const { isAuthenticated } = useAuth()
+  const toast = useToast()
   const [collection, setCollection] = useState<CollectionWithProductsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -48,12 +50,12 @@ export default function CollectionDetail() {
   // Thêm tất cả sản phẩm trong collection vào giỏ hàng
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để thêm vào giỏ hàng')
+      toast.warning('Vui lòng đăng nhập để thêm vào giỏ hàng')
       return
     }
 
     if (!collection?.products || collection.products.length === 0) {
-      alert('Bộ sưu tập không có sản phẩm')
+      toast.warning('Bộ sưu tập không có sản phẩm')
       return
     }
 
@@ -71,10 +73,11 @@ export default function CollectionDetail() {
       }
 
       setAddedToCart(true)
+      toast.success('Đã thêm tất cả sản phẩm vào giỏ hàng!')
       setTimeout(() => setAddedToCart(false), 3000)
     } catch (err) {
       console.error('Error adding to cart:', err)
-      alert('Có lỗi xảy ra khi thêm vào giỏ hàng')
+      toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng')
     } finally {
       setAddingToCart(false)
     }
