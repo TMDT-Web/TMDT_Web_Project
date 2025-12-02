@@ -75,6 +75,13 @@ export default function UserManage() {
     }
   };
 
+  // Helper function to update a user in state without reloading
+  const updateUserInState = (userId: number, updates: Partial<UserResponse>) => {
+    setUsers(prevUsers => 
+      prevUsers.map(u => u.id === userId ? { ...u, ...updates } : u)
+    );
+  };
+
   useEffect(() => {
     // Don't load users while auth is still loading
     if (authLoading) return;
@@ -130,11 +137,14 @@ export default function UserManage() {
     if (!editing) return;
 
     try {
-      await UsersService.updateUserApiV1UsersUserIdPut(editing.id, editForm);
+      const updated = await UsersService.updateUserApiV1UsersUserIdPut(editing.id, editForm);
+      updateUserInState(editing.id, updated);
       setEditing(null);
-      loadUsers();
+      setAddresses([]);
+      setAddressesError(null);
     } catch (err) {
       console.error("Update failed:", err);
+      alert('❌ Không thể cập nhật thông tin user');
     }
   };
 
@@ -307,39 +317,70 @@ export default function UserManage() {
                       {u.role === UserRole.CUSTOMER && (
                         <>
                           <button
-                            className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium transition-all duration-200 hover:shadow-md"
+                            className={`inline-flex items-center px-4 py-2 rounded-lg text-white text-sm font-medium transition-all duration-200 ${
+                              u.vip_tier === 'diamond' 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-yellow-500 hover:bg-yellow-600 hover:shadow-md'
+                            }`}
+                            disabled={u.vip_tier === 'diamond'}
                             onClick={async () => {
-                              await UsersService.upgradeUserVipApiV1UsersUserIdUpgradeVipPut(u.id);
-                              setVipNotification({ 
-                                show: true, 
-                                message: `Nâng VIP thành công cho ${u.full_name}!`,
-                                userName: u.full_name 
-                              });
-                              setTimeout(() => {
-                                setVipNotification({ show: false, message: '', userName: '' });
-                              }, 3000);
-                              loadUsers();
+                              try {
+                                const response = await UsersService.upgradeUserVipApiV1UsersUserIdUpgradeVipPut(u.id);
+                                updateUserInState(u.id, { vip_tier: response.vip_tier as any });
+                                setVipNotification({ 
+                                  show: true, 
+                                  message: `✅ ${response.message || 'Nâng VIP thành công'} cho ${u.full_name}!`,
+                                  userName: u.full_name 
+                                });
+                                setTimeout(() => {
+                                  setVipNotification({ show: false, message: '', userName: '' });
+                                }, 3000);
+                              } catch (error: any) {
+                                alert(`❌ Lỗi: ${error.body?.detail || 'Không thể nâng VIP'}`);
+                              }
                             }}
+                            title={u.vip_tier === 'diamond' ? 'Đã đạt cấp VIP tối đa' : 'Nâng lên cấp VIP tiếp theo'}
                           >
-                            Nâng VIP
+                            {u.vip_tier === 'diamond' ? '💎 Max VIP' : '⬆️ Nâng VIP'}
                           </button>
                           <button
-                            className="inline-flex items-center px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-all duration-200 hover:shadow-md"
+                            className={`inline-flex items-center px-4 py-2 rounded-lg text-white text-sm font-medium transition-all duration-200 ${
+                              u.vip_tier === 'member' 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-orange-500 hover:bg-orange-600 hover:shadow-md'
+                            }`}
+                            disabled={u.vip_tier === 'member'}
                             onClick={async () => {
-                              // Downgrade endpoint may not exist; skip or implement when available
-                              // await UsersService.downgradeUserVipApiV1UsersUserIdDowngradeVipPut(u.id);
-                              setVipNotification({ 
-                                show: true, 
-                                message: `Hạ VIP thành công cho ${u.full_name}!`,
-                                userName: u.full_name 
-                              });
-                              setTimeout(() => {
-                                setVipNotification({ show: false, message: '', userName: '' });
-                              }, 3000);
-                              loadUsers();
+                              try {
+                                const token = localStorage.getItem('token');
+                                const response = await fetch(`http://localhost:8000/api/v1/users/${u.id}/downgrade-vip`, {
+                                  method: 'PUT',
+                                  headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                  }
+                                });
+                                if (!response.ok) {
+                                  const error = await response.json();
+                                  throw new Error(error.detail || 'Không thể hạ VIP');
+                                }
+                                const data = await response.json();
+                                updateUserInState(u.id, { vip_tier: data.vip_tier });
+                                setVipNotification({ 
+                                  show: true, 
+                                  message: `✅ ${data.message || 'Hạ VIP thành công'} cho ${u.full_name}!`,
+                                  userName: u.full_name 
+                                });
+                                setTimeout(() => {
+                                  setVipNotification({ show: false, message: '', userName: '' });
+                                }, 3000);
+                              } catch (error: any) {
+                                alert(`❌ Lỗi: ${error.message || 'Không thể hạ VIP'}`);
+                              }
                             }}
+                            title={u.vip_tier === 'member' ? 'Đã ở cấp VIP thấp nhất' : 'Hạ xuống cấp VIP trước đó'}
                           >
-                            Hạ VIP
+                            {u.vip_tier === 'member' ? '🆕 Min VIP' : '⬇️ Hạ VIP'}
                           </button>
                         </>
                       )}
@@ -347,7 +388,7 @@ export default function UserManage() {
                       <button
                         onClick={async () => {
                           await UsersService.updateUserStatusApiV1UsersUserIdStatusPut(u.id, !u.is_active);
-                          loadUsers();
+                          updateUserInState(u.id, { is_active: !u.is_active });
                         }}
                         className={`inline-flex items-center px-4 py-2 rounded-lg text-white text-sm font-medium transition-all duration-200 hover:shadow-md ${
                           u.is_active

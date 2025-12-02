@@ -5,7 +5,7 @@ from app.api.api_v1.endpoints import (
     chat, chatbot, upload, addresses, collections,
     cart, dashboard, banners,
     users_admin, addresses_admin, contact, notifications,
-    stock_receipts
+    stock_receipts, coupons
 )
 
 api_router = APIRouter()
@@ -32,3 +32,4 @@ api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboar
 api_router.include_router(banners.router, prefix="/banners", tags=["Banners"])
 api_router.include_router(contact.router, prefix="/contact", tags=["Contact"])
 api_router.include_router(stock_receipts.router, prefix="/stock-receipts", tags=["Stock Receipts"])
+api_router.include_router(coupons.router, prefix="/coupons", tags=["Coupons"])

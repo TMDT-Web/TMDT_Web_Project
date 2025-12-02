@@ -8,7 +8,10 @@ import base64
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.models.order import Order, OrderStatus
+from app.models.user import User
 from app.core.config import settings
+from app.services.email_service import send_order_confirmation_email
+from app.services.coupon_service import create_promotional_coupon
 
 
 def generate_qr_code(order_id: int, base_url: str | None = None) -> str:
@@ -63,6 +66,8 @@ def confirm_qr_payment(order_id: int, db: Session) -> Dict[str, Any]:
     Returns:
         Response dict with success status
     """
+    from app.models.user import User
+    
     # Fetch order
     order = db.query(Order).filter(Order.id == order_id).first()
     
@@ -87,6 +92,37 @@ def confirm_qr_payment(order_id: int, db: Session) -> Dict[str, Any]:
     
     db.commit()
     db.refresh(order)
+    
+    # Check if order qualifies for promotional coupon (> 8 million VND)
+    coupon_code = None
+    if order.total_amount > 8000000:
+        try:
+            coupon = create_promotional_coupon(
+                db=db,
+                user_id=order.user_id,
+                source_order_id=order.id,
+                discount_value=300000,  # 300k VND
+                valid_days=30
+            )
+            coupon_code = coupon.code
+            print(f"✓ Created promotional coupon {coupon_code} for order #{order_id}")
+        except Exception as e:
+            print(f"Failed to create promotional coupon: {e}")
+    
+    # Send confirmation email
+    try:
+        user = db.query(User).filter(User.id == order.user_id).first()
+        if user and user.email:
+            send_order_confirmation_email(
+                to_email=user.email,
+                user_name=user.full_name or "Quý khách",
+                order_id=order.id,
+                total_amount=order.total_amount,
+                payment_method="QR Payment",
+                coupon_code=coupon_code
+            )
+    except Exception as e:
+        print(f"Failed to send confirmation email: {e}")
     
     return {
         "success": True,

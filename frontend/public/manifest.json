@@ -1,0 +1,13 @@
+{
+  "name": "LuxeFurniture - Premium Furniture Store",
+  "short_name": "LuxeFurniture",
+  "description": "Nội thất cao cấp phong cách Scandinavian",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1E40AF",
+  "orientation": "portrait-primary",
+  "icons": [],
+  "categories": ["shopping", "lifestyle"],
+  "shortcuts": []
+}

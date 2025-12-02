@@ -55,6 +55,8 @@ class ChatService:
     @staticmethod
     def create_session(db: Session, user_id: int) -> ChatSession:
         import uuid
+        from sqlalchemy.exc import IntegrityError
+        
         new_id = str(uuid.uuid4())
 
         new_session = ChatSession(
@@ -64,9 +66,20 @@ class ChatService:
             admin_id=None
         )
         db.add(new_session)
-        db.commit()
-        db.refresh(new_session)
-        return new_session
+        
+        try:
+            db.commit()
+            db.refresh(new_session)
+            return new_session
+        except IntegrityError:
+            # Race condition: another request already created a session
+            db.rollback()
+            # Return the existing active session
+            existing = ChatService.get_existing_session_for_user(db, user_id)
+            if existing:
+                return existing
+            # If somehow still not found, raise the error
+            raise
 
     @staticmethod
     def get_session(db: Session, session_uuid: str) -> ChatSession:

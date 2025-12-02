@@ -14,11 +14,19 @@ class OrderItemBase(BaseModel):
     product_id: int
     quantity: int = Field(..., gt=0)
     variant: Optional[str] = None  # Màu sắc, kích thước variant
+    collection_id: Optional[int] = None  # Track if item is part of a collection
 
 
 class OrderItemCreate(OrderItemBase):
     """Order item create schema"""
     pass
+
+
+class OrderCollectionCreate(BaseModel):
+    """Collection purchase in order"""
+    collection_id: int
+    product_ids: List[int]  # Products in this collection purchase
+    sale_price: float  # Collection's discounted price
 
 
 class OrderItemResponse(TimestampSchema):
@@ -43,7 +51,9 @@ class OrderBase(BaseModel):
 class OrderCreate(OrderBase):
     """Order create schema"""
     items: List[OrderItemCreate]
+    collections: Optional[List[OrderCollectionCreate]] = []  # Collections being purchased
     deposit_amount: Optional[float] = 0  # Số tiền cọc (nếu có)
+    coupon_code: Optional[str] = None  # Mã giảm giá (nếu có)
 
 
 class OrderUpdate(BaseModel):

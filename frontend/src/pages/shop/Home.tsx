@@ -96,12 +96,18 @@ export default function Home() {
                       {product.name}
                     </h3>
                     <div className="flex items-center gap-3">
-                      <span className="text-xl font-bold text-gray-900">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
-                      </span>
-                      {product.sale_price && product.sale_price < product.price && (
-                        <span className="text-sm text-gray-500 line-through">
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.sale_price)}
+                      {product.sale_price && product.sale_price < product.price ? (
+                        <>
+                          <span className="text-xl font-bold text-red-600">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.sale_price)}
+                          </span>
+                          <span className="text-sm text-gray-500 line-through">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-xl font-bold text-gray-900">
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
                         </span>
                       )}
                     </div>

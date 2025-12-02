@@ -104,6 +104,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
               name: item.product.name,
               slug: item.product.slug,
               price: item.product.price,
+              sale_price: item.product.sale_price,  // ⚡ Add sale_price
               thumbnail_url: item.product.thumbnail_url,
               stock: item.product.stock,
               // Add other fields as needed
@@ -454,8 +455,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           }
         }
         
-        // Individual product pricing
-        price += (item.product.price || 0) * item.quantity
+        // Individual product pricing - use sale_price if available
+        const productPrice = (item.product.sale_price && item.product.sale_price < item.product.price) 
+          ? item.product.sale_price 
+          : item.product.price
+        price += (productPrice || 0) * item.quantity
       }
     }
     

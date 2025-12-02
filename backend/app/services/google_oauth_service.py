@@ -45,8 +45,8 @@ class GoogleOAuthService:
         redis = cls._get_redis()
         value = str(uuid.uuid4())
         if redis:
-            # Expire after 5 minutes
-            redis.setex(f"oauth_state:{state}", 300, value)
+            # Expire after 15 minutes
+            redis.setex(f"oauth_state:{state}", 900, value)
         else:
             cls._state_store[state] = value
 

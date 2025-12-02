@@ -15,6 +15,7 @@ from app.core.exceptions import NotFoundException, BadRequestException
 from app.services.loyalty_service import LoyaltyService
 from app.services.notification_service import NotificationService
 from app.services.chat_service import ChatService
+from app.services.coupon_service import validate_and_apply_coupon, mark_coupon_as_used
 
 
 class OrderService:
@@ -34,7 +35,40 @@ class OrderService:
             # Calculate order totals
             subtotal: float = 0
             order_items_data: List[dict] = []
+            collection_products_map: dict = {}  # Track which products belong to collections
         
+            # First, process collections if any
+            if data.collections:
+                for coll_data in data.collections:
+                    # Validate collection exists
+                    from app.models.product import Collection
+                    collection = db.query(Collection)\
+                        .filter(Collection.id == coll_data.collection_id)\
+                        .first()
+                    
+                    if not collection:
+                        raise NotFoundException(f"Collection {coll_data.collection_id} not found")
+                    
+                    # Calculate original price (sum of all products)
+                    original_price = 0
+                    for prod_id in coll_data.product_ids:
+                        product = db.query(Product)\
+                            .filter(Product.id == prod_id)\
+                            .with_for_update()\
+                            .first()
+                        
+                        if not product:
+                            raise NotFoundException(f"Product {prod_id} not found")
+                        
+                        original_price += product.sale_price if product.sale_price else product.price
+                        
+                        # Mark this product as part of collection
+                        collection_products_map[prod_id] = coll_data.collection_id
+                    
+                    # Use collection's sale_price instead of sum of individual prices
+                    subtotal += coll_data.sale_price
+            
+            # Then process individual items
             for item_data in data.items:
                 # CRITICAL: Use pessimistic locking to prevent race conditions
                 # Lock the product row until transaction completes
@@ -56,10 +90,19 @@ class OrderService:
                         f"Available: {product.stock}, Requested: {item_data.quantity}"
                     )
             
-                # Use sale_price if available, otherwise use regular price
-                actual_price: float = product.sale_price if product.sale_price else product.price
-                item_subtotal: float = actual_price * item_data.quantity
-                subtotal += item_subtotal
+                # Check if this product is part of a collection
+                is_in_collection = item_data.product_id in collection_products_map
+                
+                if is_in_collection:
+                    # Product is part of collection - price already counted in collection total
+                    # But still create order item with price 0 to track the product
+                    actual_price: float = 0
+                    item_subtotal: float = 0
+                else:
+                    # Regular individual product - use normal pricing
+                    actual_price = product.sale_price if product.sale_price else product.price
+                    item_subtotal = actual_price * item_data.quantity
+                    subtotal += item_subtotal
                 
                 # CRITICAL: Deduct stock immediately within transaction (with lock held)
                 product.stock -= item_data.quantity
@@ -67,7 +110,7 @@ class OrderService:
                 order_items_data.append({
                     "product_id": product.id,
                     "product_name": product.name,
-                    "price_at_purchase": actual_price,
+                    "price_at_purchase": actual_price if not is_in_collection else (product.sale_price or product.price),
                     "quantity": item_data.quantity,
                     "variant": item_data.variant
                 })
@@ -79,6 +122,22 @@ class OrderService:
             user = db.query(User).filter(User.id == user_id).first()
             vip_discount_percent = LoyaltyService.get_discount_percentage(user.vip_tier)
             discount_amount: float = subtotal * (vip_discount_percent / 100)
+            
+            # Apply coupon discount if provided
+            coupon_obj = None
+            if data.coupon_code:
+                coupon_result = validate_and_apply_coupon(
+                    db=db,
+                    coupon_code=data.coupon_code,
+                    user_id=user_id,
+                    order_amount=subtotal + shipping_fee  # Apply coupon after VIP discount
+                )
+                
+                if not coupon_result["valid"]:
+                    raise BadRequestException(coupon_result["message"])
+                
+                discount_amount += coupon_result["discount"]
+                coupon_obj = coupon_result.get("coupon")
             
             total_amount: float = subtotal + shipping_fee - discount_amount
             
@@ -123,6 +182,10 @@ class OrderService:
             
             db.commit()
             db.refresh(order)
+            
+            # Mark coupon as used if applied
+            if coupon_obj:
+                mark_coupon_as_used(db, coupon_obj, order.id)
             
             # Send order confirmation notification
             OrderService._send_order_created_notification(db, order, user)

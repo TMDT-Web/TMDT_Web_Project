@@ -88,15 +88,20 @@ export default function ChatSupport() {
 
   useEffect(() => {
     if (activeSessionId && activeSessionId === selectedSession) {
-      const formatted: Message[] = socketMessages.map((msg) => ({
-        id: msg.id,
-        sender: msg.sender as 'user' | 'admin',
-        text: msg.message,
-        time: new Date(msg.created_at).toLocaleTimeString('vi-VN', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      }))
+      const formatted: Message[] = socketMessages.map((msg) => {
+        // Map 'system' sender to 'admin' for display on admin side
+        const displaySender: 'user' | 'admin' = msg.sender === 'system' ? 'admin' : msg.sender as 'user' | 'admin'
+        
+        return {
+          id: msg.id,
+          sender: displaySender,
+          text: msg.message,
+          time: new Date(msg.created_at).toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        }
+      })
 
       setMessages(formatted)
     }
