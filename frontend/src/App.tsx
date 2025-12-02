@@ -30,6 +30,7 @@ import Contact from './pages/shop/Contact'
 // Auth Pages
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import GoogleCallback from './pages/auth/GoogleCallback'
 
 // Admin Pages
 import Dashboard from './pages/admin/Dashboard'
@@ -40,6 +41,7 @@ import ChatSupport from './pages/admin/ChatSupport'
 import CategoryManage from './pages/admin/CategoryManage'
 import CollectionManage from './pages/admin/CollectionManage'
 import BannerManage from './pages/admin/BannerManage'
+import StockReceiptManage from './pages/admin/StockReceiptManage'
 
 // Error Pages
 import NotFound from './pages/error/NotFound'
@@ -84,6 +86,7 @@ function App() {
                 <Route element={<AuthLayout />}>
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/auth/google/callback" element={<GoogleCallback />} />
                 </Route>
 
                 {/* Admin Routes */}
@@ -98,6 +101,7 @@ function App() {
                   <Route path="collections" element={<CollectionManage />} />
                   <Route path="banners" element={<BannerManage />} />
                   <Route path="orders" element={<OrderManage />} />
+                  <Route path="stock-receipts" element={<StockReceiptManage />} />
                   <Route path="users" element={<UserManage />} />
                   <Route path="chat" element={<ChatSupport />} />
                 </Route>

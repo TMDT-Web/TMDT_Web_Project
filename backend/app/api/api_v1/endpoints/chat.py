@@ -67,26 +67,58 @@ async def websocket_endpoint(
                 raw_sender_id = msg.get("sender_id")
                 sender_id = raw_sender_id if isinstance(raw_sender_id, int) and raw_sender_id > 0 else None
 
-                # Lưu DB
-                saved = ChatService.save_message(
-                    db=db,
-                    session_id=session_id,
-                    sender=sender_type,
-                    sender_id=sender_id,
-                    message=content
-                )
-
-                response = {
-                    "id": saved.id,
-                    "session_id": session_id,
-                    "sender": saved.sender.value,
-                    "sender_id": saved.sender_id,
-                    "message": saved.message,
-                    "created_at": saved.created_at.isoformat()
-                }
-
-                # Gửi vào 1 phòng duy nhất (không duplicate)
-                await connection_manager.send_message(json.dumps(response), session_id)
+                # Nếu là user, dùng auto-reply. Nếu là admin, không auto-reply
+                if sender_type == MessageSender.USER:
+                    # User message - có thể có bot auto-reply
+                    saved, bot_msg = ChatService.save_message_with_auto_reply(
+                        db=db,
+                        session_id=session_id,
+                        sender=sender_type,
+                        sender_id=sender_id,
+                        message=content
+                    )
+                    
+                    # Gửi user message
+                    response = {
+                        "id": saved.id,
+                        "session_id": session_id,
+                        "sender": saved.sender.value,
+                        "sender_id": saved.sender_id,
+                        "message": saved.message,
+                        "created_at": saved.created_at.isoformat()
+                    }
+                    await connection_manager.send_message(json.dumps(response), session_id)
+                    
+                    # Nếu có bot reply, gửi luôn
+                    if bot_msg:
+                        bot_response = {
+                            "id": bot_msg.id,
+                            "session_id": session_id,
+                            "sender": bot_msg.sender.value,
+                            "sender_id": bot_msg.sender_id,
+                            "message": bot_msg.message,
+                            "created_at": bot_msg.created_at.isoformat()
+                        }
+                        await connection_manager.send_message(json.dumps(bot_response), session_id)
+                else:
+                    # Admin/System message - không auto-reply
+                    saved = ChatService.save_message(
+                        db=db,
+                        session_id=session_id,
+                        sender=sender_type,
+                        sender_id=sender_id,
+                        message=content
+                    )
+                    
+                    response = {
+                        "id": saved.id,
+                        "session_id": session_id,
+                        "sender": saved.sender.value,
+                        "sender_id": saved.sender_id,
+                        "message": saved.message,
+                        "created_at": saved.created_at.isoformat()
+                    }
+                    await connection_manager.send_message(json.dumps(response), session_id)
 
             except WebSocketDisconnect:
                 logger.info(f"Client disconnected: {session_id}")

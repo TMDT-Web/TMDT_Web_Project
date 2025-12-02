@@ -7,6 +7,7 @@ from datetime import datetime
 
 from app.models.chat import ChatSession, ChatMessage, ChatStatus, MessageSender
 from app.models.user import User
+from app.services.chatbot_service import ChatbotService
 
 class ConnectionManager:
     def __init__(self):
@@ -100,6 +101,98 @@ class ChatService:
         db.commit()
         db.refresh(new_msg)
         return new_msg
+    
+    @staticmethod
+    def save_message_with_auto_reply(
+        db: Session,
+        session_id: str,
+        sender: MessageSender,
+        sender_id: Optional[int],
+        message: str
+    ) -> tuple[ChatMessage, Optional[ChatMessage]]:
+        """
+        Save user message and auto-reply if it matches FAQ
+        Returns: (user_message, bot_message or None)
+        """
+        session = ChatService.get_session(db, session_id)
+
+        # Save user message
+        user_msg = ChatMessage(
+            session_id=session.id,
+            sender=sender,
+            sender_id=sender_id,
+            message=message,
+            is_read=False
+        )
+        db.add(user_msg)
+        db.commit()
+        db.refresh(user_msg)
+        
+        # If user message, try to get bot response
+        bot_msg = None
+        if sender == MessageSender.USER:
+            bot_response = ChatbotService.get_bot_response(message)
+            
+            # Only auto-reply if it's not the default "I don't understand" message
+            if "Xin lỗi, tôi chưa hiểu rõ" not in bot_response:
+                bot_msg = ChatMessage(
+                    session_id=session.id,
+                    sender=MessageSender.SYSTEM,
+                    message=bot_response,
+                    is_read=False
+                )
+                db.add(bot_msg)
+                db.commit()
+                db.refresh(bot_msg)
+        
+        return user_msg, bot_msg
+    
+    @staticmethod
+    def send_notification_to_user_chat(
+        db: Session,
+        user_id: int,
+        message: str
+    ) -> Optional[ChatMessage]:
+        """
+        Send a system notification message to user's active chat session
+        Creates a new session if user doesn't have one
+        Returns the created message or None if failed
+        """
+        try:
+            # Get or create chat session for user
+            session = ChatService.get_existing_session_for_user(db, user_id)
+            
+            if not session:
+                # Create new session for user
+                import uuid
+                session = ChatSession(
+                    session_id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    status=ChatStatus.ACTIVE
+                )
+                db.add(session)
+                db.commit()
+                db.refresh(session)
+            
+            # Save system message
+            system_msg = ChatMessage(
+                session_id=session.id,
+                sender=MessageSender.SYSTEM,
+                sender_id=None,
+                message=message,
+                is_read=False
+            )
+            db.add(system_msg)
+            db.commit()
+            db.refresh(system_msg)
+            
+            print(f"[DEBUG] Sent chat notification to user {user_id}: {message[:50]}...")
+            return system_msg
+            
+        except Exception as e:
+            print(f"[ERROR] Failed to send chat notification to user {user_id}: {str(e)}")
+            db.rollback()
+            return None
 
     @staticmethod
     def get_all_sessions(db: Session) -> List[ChatSession]:

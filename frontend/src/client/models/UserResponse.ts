@@ -1,20 +1,25 @@
+/* generated using openapi-typescript-codegen -- do not edit */
+/* istanbul ignore file */
+/* tslint:disable */
 /* eslint-disable */
-
-import type { VipTier } from "./VipTier";
-import type { UserRole } from "./UserRole";
-
+import type { UserRole } from './UserRole';
+import type { VipTier } from './VipTier';
+/**
+ * User response schema
+ */
 export type UserResponse = {
-  id: number;
-  email: string;
-  full_name: string;
-  phone?: string;
-  avatar_url?: string;
-  role: UserRole;
-  is_active: boolean;
-  is_verified: boolean;
-  loyalty_points: number;
-  vip_tier: VipTier;
-  default_address_id?: number;
-  created_at: string;
-  updated_at: string;
+    email: string;
+    full_name: string;
+    phone?: (string | null);
+    avatar_url?: (string | null);
+    id: number;
+    created_at: string;
+    updated_at: string;
+    role: UserRole;
+    is_active: boolean;
+    is_verified: boolean;
+    loyalty_points: number;
+    vip_tier: VipTier;
+    last_login?: (string | null);
 };
+

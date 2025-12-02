@@ -2,17 +2,31 @@
  * Header Component - Scandinavian Minimal Design
  */
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
 import AuthModal from './AuthModal'
 
-export default function Header() {
+interface HeaderProps {
+  externalAuthModalState?: { isOpen: boolean; tab: 'login' | 'register' }
+  onAuthModalClose?: () => void
+}
+
+export default function Header({ externalAuthModalState, onAuthModalClose }: HeaderProps) {
   const { user, logout } = useAuth()
   const { items, totalItems } = useCart()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login')
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+
+  // Handle external auth modal state from MainLayout
+  useEffect(() => {
+    if (externalAuthModalState?.isOpen) {
+      setIsAuthModalOpen(true)
+      setAuthModalTab(externalAuthModalState.tab)
+    }
+  }, [externalAuthModalState])
 
   return (
     <header className="bg-white border-b border-[rgb(var(--color-border))]">
@@ -50,33 +64,59 @@ export default function Header() {
 
             {/* User Account */}
             {user ? (
-              <div className="relative group">
-                <button className="text-[rgb(var(--color-text-dark))] hover:text-[rgb(var(--color-wood))] transition flex items-center gap-2">
+              <div className="relative">
+                <button 
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="text-[rgb(var(--color-text-dark))] hover:text-[rgb(var(--color-wood))] transition flex items-center gap-2"
+                >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   <span className="text-sm hidden lg:inline">{user.full_name}</span>
                 </button>
                 {/* Dropdown */}
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    Tài khoản
-                  </Link>
-                  <Link to="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    Đơn hàng
-                  </Link>
-                  {user.role === 'admin' && (
-                    <Link to="/admin" className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-50">
-                      Quản trị
-                    </Link>
-                  )}
-                  <button
-                    onClick={logout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 border-t border-gray-100"
-                  >
-                    Đăng xuất
-                  </button>
-                </div>
+                {isUserMenuOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsUserMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                      <Link 
+                        to="/profile" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Tài khoản
+                      </Link>
+                      <Link 
+                        to="/orders" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Đơn hàng
+                      </Link>
+                      {(user.role === 'admin' || user.role === 'staff') && (
+                        <Link 
+                          to="/admin" 
+                          className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-50"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Quản trị
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => {
+                          setIsUserMenuOpen(false)
+                          logout()
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 border-t border-gray-100"
+                      >
+                        Đăng xuất
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <button
@@ -150,7 +190,10 @@ export default function Header() {
       {/* Auth Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        onClose={() => {
+          setIsAuthModalOpen(false)
+          onAuthModalClose?.()
+        }}
         defaultTab={authModalTab}
       />
     </header>

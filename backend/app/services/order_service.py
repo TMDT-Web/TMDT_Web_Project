@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 import uuid
+import asyncio
 
 from app.models.order import Order, OrderItem, OrderStatus, PaymentMethod
 from app.models.product import Product
@@ -12,6 +13,8 @@ from app.models.user import User
 from app.schemas.order import OrderCreate, OrderUpdate
 from app.core.exceptions import NotFoundException, BadRequestException
 from app.services.loyalty_service import LoyaltyService
+from app.services.notification_service import NotificationService
+from app.services.chat_service import ChatService
 
 
 class OrderService:
@@ -71,7 +74,12 @@ class OrderService:
             
             # Calculate shipping fee (can be dynamic based on location)
             shipping_fee: float = 50000.0  # 50k VND flat rate
-            discount_amount: float = 0.0
+            
+            # Apply VIP discount based on user's tier
+            user = db.query(User).filter(User.id == user_id).first()
+            vip_discount_percent = LoyaltyService.get_discount_percentage(user.vip_tier)
+            discount_amount: float = subtotal * (vip_discount_percent / 100)
+            
             total_amount: float = subtotal + shipping_fee - discount_amount
             
             # Calculate deposit and remaining
@@ -115,6 +123,9 @@ class OrderService:
             
             db.commit()
             db.refresh(order)
+            
+            # Send order confirmation notification
+            OrderService._send_order_created_notification(db, order, user)
             
             return order
             
@@ -169,6 +180,16 @@ class OrderService:
             for field, value in update_data.items():
                 setattr(order, field, value)
             
+            # If order marked as COMPLETED, ensure it is considered PAID
+            # and financials are reconciled
+            if (old_status != OrderStatus.COMPLETED and 
+                order.status == OrderStatus.COMPLETED):
+                order.is_paid = True
+                # Mark all dues as cleared
+                order.remaining_amount = 0
+                # For consistency, set deposit to total when completed
+                order.deposit_amount = order.total_amount
+
             # CRITICAL: Restore stock if order is cancelled or refunded
             # Use pessimistic locking to prevent race conditions
             if (old_status not in [OrderStatus.CANCELLED, OrderStatus.REFUNDED] and 
@@ -193,6 +214,14 @@ class OrderService:
             
             db.commit()
             db.refresh(order)
+            
+            # Send notifications for status changes
+            if old_status != order.status:
+                print(f"[DEBUG] Order status changed from {old_status} to {order.status}, sending notification...")
+                OrderService._send_order_status_notification(db, order, old_status)
+            else:
+                print(f"[DEBUG] Order status unchanged: {order.status}")
+            
             return order
             
         except NotFoundException:
@@ -201,3 +230,270 @@ class OrderService:
         except Exception as e:
             db.rollback()
             raise BadRequestException(f"Failed to update order: {str(e)}")
+    
+    @staticmethod
+    def _send_order_created_notification(db: Session, order: Order, user: User) -> None:
+        """Send confirmation email when order is created"""
+        try:
+            # Get user email
+            user_email = user.email
+            if not user_email:
+                return
+            
+            # Build order items summary
+            items_html = "<ul>"
+            for item in order.items:
+                items_html += f"<li>{item.product_name} x{item.quantity} - {item.price_at_purchase:,.0f} VND</li>"
+            items_html += "</ul>"
+            
+            # Create email content
+            subject = f"Xác nhận đơn hàng #{order.id} - Luxe Furniture"
+            body = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h2>Cảm ơn bạn đã đặt hàng tại Luxe Furniture!</h2>
+                <p>Chào <strong>{order.full_name}</strong>,</p>
+                <p>Đơn hàng <strong>#{order.id}</strong> của bạn đã được tiếp nhận thành công.</p>
+                
+                <h3>Thông tin đơn hàng:</h3>
+                <p><strong>Sản phẩm:</strong></p>
+                {items_html}
+                
+                <p><strong>Tổng tiền hàng:</strong> {order.subtotal:,.0f} VND</p>
+                <p><strong>Phí vận chuyển:</strong> {order.shipping_fee:,.0f} VND</p>
+                <p><strong>Giảm giá:</strong> {order.discount_amount:,.0f} VND</p>
+                <p><strong>Tổng cộng:</strong> {order.total_amount:,.0f} VND</p>
+                
+                <h3>Thông tin giao hàng:</h3>
+                <p><strong>Người nhận:</strong> {order.full_name}</p>
+                <p><strong>Số điện thoại:</strong> {order.phone_number}</p>
+                <p><strong>Địa chỉ:</strong> {order.shipping_address}</p>
+                
+                <p><strong>Phương thức thanh toán:</strong> {order.payment_method.value}</p>
+                {f'<p><strong>Đã cọc:</strong> {order.deposit_amount:,.0f} VND</p>' if order.deposit_amount > 0 else ''}
+                {f'<p><strong>Còn lại:</strong> {order.remaining_amount:,.0f} VND</p>' if order.remaining_amount > 0 else ''}
+                
+                <p style="margin-top: 20px;">Chúng tôi sẽ liên hệ với bạn sớm nhất để xác nhận đơn hàng.</p>
+                <p>Mọi thắc mắc vui lòng liên hệ: <a href="mailto:support@luxefurniture.com">support@luxefurniture.com</a></p>
+                
+                <p style="margin-top: 30px; color: #666;">Trân trọng,<br>Đội ngũ Luxe Furniture</p>
+            </body>
+            </html>
+            """
+            
+            # Send email via NotificationService
+            NotificationService.create_notification(
+                db=db,
+                user_id=order.user_id,
+                event_type="ORDER_CREATED",
+                title=subject,
+                message=f"Đơn hàng #{order.id} đã được tạo thành công. Tổng: {order.total_amount:,.0f} VND",
+                data={
+                    "order_id": order.id,
+                    "total_amount": float(order.total_amount)
+                },
+                category="order_updates",
+                channels=["email"],
+                email_subject=subject,
+                email_body=body,
+                email_to=user_email
+            )
+            
+            # Send notification via chat 24/7
+            items_text = "\n".join([f"• {item.product_name} x{item.quantity}" for item in order.items])
+            chat_message = f"""🎉 Đơn hàng đã được tạo thành công!
+
+Cảm ơn bạn đã đặt hàng tại Luxe Furniture!
+
+📦 Mã đơn hàng: #{order.id}
+🛍️ Sản phẩm:
+{items_text}
+
+💰 Tổng cộng: {order.total_amount:,.0f} VND
+📍 Địa chỉ: {order.shipping_address}
+
+Chúng tôi sẽ liên hệ với bạn sớm nhất để xác nhận đơn hàng."""
+            
+            ChatService.send_notification_to_user_chat(
+                db=db,
+                user_id=order.user_id,
+                message=chat_message
+            )
+            
+        except Exception as e:
+            # Don't fail order creation if notification fails
+            print(f"Failed to send order creation notification: {str(e)}")
+    
+    @staticmethod
+    def _send_order_status_notification(db: Session, order: Order, old_status: OrderStatus) -> None:
+        """Send notification email when order status changes"""
+        print(f"[DEBUG] _send_order_status_notification called for order {order.id}, order.user_id={order.user_id}")
+        try:
+            # IMPORTANT: Always get email from the order's user, not the logged-in admin
+            user = db.query(User).filter(User.id == order.user_id).first()
+            if not user or not user.email:
+                print(f"[DEBUG] User not found or no email: user_id={order.user_id}")
+                return
+            
+            user_email = user.email
+            print(f"[DEBUG] Sending notification to order owner: {user_email} (user_id={user.id})")
+            
+            # Map status to notification content
+            notifications = {
+                OrderStatus.CONFIRMED: {
+                    "title": "Đơn hàng đã được xác nhận",
+                    "message": f"Đơn hàng #{order.id} của bạn đã được xác nhận và đang được xử lý.",
+                    "event_type": "ORDER_CONFIRMED"
+                },
+                OrderStatus.PROCESSING: {
+                    "title": "Đơn hàng đang xử lý",
+                    "message": f"Đơn hàng #{order.id} đang được đóng gói và chuẩn bị giao hàng.",
+                    "event_type": "ORDER_PROCESSING"
+                },
+                OrderStatus.SHIPPING: {
+                    "title": "Đơn hàng đang giao",
+                    "message": f"Đơn hàng #{order.id} đã được giao cho đơn vị vận chuyển.",
+                    "event_type": "ORDER_SHIPPING"
+                },
+                OrderStatus.COMPLETED: {
+                    "title": "Đơn hàng hoàn thành",
+                    "message": f"Đơn hàng #{order.id} đã hoàn thành. Cảm ơn bạn đã mua hàng!",
+                    "event_type": "ORDER_COMPLETED"
+                },
+                OrderStatus.CANCELLED: {
+                    "title": "Đơn hàng đã hủy",
+                    "message": f"Đơn hàng #{order.id} đã bị hủy. Nếu đã thanh toán, chúng tôi sẽ hoàn tiền.",
+                    "event_type": "ORDER_CANCELLED"
+                },
+                OrderStatus.REFUNDED: {
+                    "title": "Đơn hàng đã hoàn tiền",
+                    "message": f"Đơn hàng #{order.id} đã được hoàn tiền.",
+                    "event_type": "ORDER_REFUNDED"
+                }
+            }
+            
+            if order.status not in notifications:
+                return
+            
+            notif_data = notifications[order.status]
+            
+            # Create HTML email body with contact information
+            email_body = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h2>{notif_data['title']}</h2>
+                <p>Chào <strong>{order.full_name}</strong>,</p>
+                <p>{notif_data['message']}</p>
+                
+                <h3>Thông tin đơn hàng:</h3>
+                <p><strong>Mã đơn hàng:</strong> #{order.id}</p>
+                <p><strong>Người nhận:</strong> {order.full_name}</p>
+                <p><strong>Email:</strong> {user_email}</p>
+                <p><strong>Số điện thoại:</strong> {order.phone_number}</p>
+                <p><strong>Địa chỉ giao hàng:</strong> {order.shipping_address}</p>
+                <p><strong>Tổng giá trị:</strong> {order.total_amount:,.0f} VND</p>
+                <p><strong>Trạng thái:</strong> {order.status if isinstance(order.status, str) else order.status.value}</p>
+                
+                <p style="margin-top: 20px;">Bạn có thể xem chi tiết đơn hàng tại: <a href="http://localhost:3000/orders">Đơn hàng của tôi</a></p>
+                
+                <p style="margin-top: 30px; color: #666;">Trân trọng,<br>Đội ngũ Luxe Furniture</p>
+            </body>
+            </html>
+            """
+            
+            # Send notification to order owner's email
+            print(f"[DEBUG] Calling NotificationService.create_notification with email_to={user_email}")
+            NotificationService.create_notification(
+                db=db,
+                user_id=order.user_id,
+                event_type=notif_data["event_type"],
+                title=notif_data["title"],
+                message=notif_data["message"],
+                data={
+                    "order_id": order.id,
+                    "total_amount": float(order.total_amount),
+                    "old_status": old_status if isinstance(old_status, str) else (old_status.value if old_status else None),
+                    "new_status": order.status if isinstance(order.status, str) else order.status.value
+                },
+                category="order_updates",
+                channels=["email"],
+                email_subject=notif_data["title"],
+                email_body=email_body,
+                email_to=user_email
+            )
+            
+            # Send notification via chat 24/7
+            chat_message = f"""🔔 {notif_data['title']}
+
+{notif_data['message']}
+
+📦 Mã đơn hàng: #{order.id}
+💰 Tổng giá trị: {order.total_amount:,.0f} VND
+📍 Trạng thái: {order.status if isinstance(order.status, str) else order.status.value}
+
+Bạn có thể xem chi tiết đơn hàng tại: http://localhost:3000/orders"""
+            
+            ChatService.send_notification_to_user_chat(
+                db=db,
+                user_id=order.user_id,
+                message=chat_message
+            )
+            
+        except Exception as e:
+            # Don't fail order update if notification fails
+            print(f"Failed to send order status notification: {str(e)}")
+    
+    @staticmethod
+    async def _send_order_notification(db: Session, order: Order, old_status: OrderStatus) -> None:
+        """Send notification for order status change"""
+        # Map status to notification content
+        notifications = {
+            OrderStatus.CONFIRMED: {
+                "title": "Đơn hàng đã được xác nhận",
+                "message": f"Đơn hàng #{order.id} của bạn đã được xác nhận và đang được xử lý. Tổng giá trị: {order.total_amount:,.0f} VND",
+                "event_type": "ORDER_CONFIRMED"
+            },
+            OrderStatus.PROCESSING: {
+                "title": "Đơn hàng đang xử lý",
+                "message": f"Đơn hàng #{order.id} đang được đóng gói và chuẩn bị giao hàng.",
+                "event_type": "ORDER_PROCESSING"
+            },
+            OrderStatus.SHIPPING: {
+                "title": "Đơn hàng đang giao",
+                "message": f"Đơn hàng #{order.id} đã được giao cho đơn vị vận chuyển. Vui lòng kiểm tra điện thoại để nhận hàng.",
+                "event_type": "ORDER_SHIPPING"
+            },
+            OrderStatus.COMPLETED: {
+                "title": "Đơn hàng hoàn thành",
+                "message": f"Đơn hàng #{order.id} đã hoàn thành. Cảm ơn bạn đã mua hàng tại Luxe Furniture!",
+                "event_type": "ORDER_COMPLETED"
+            },
+            OrderStatus.CANCELLED: {
+                "title": "Đơn hàng đã hủy",
+                "message": f"Đơn hàng #{order.id} đã bị hủy. Nếu bạn đã thanh toán, chúng tôi sẽ hoàn tiền trong 3-5 ngày làm việc.",
+                "event_type": "ORDER_CANCELLED"
+            },
+            OrderStatus.REFUNDED: {
+                "title": "Đơn hàng đã hoàn tiền",
+                "message": f"Đơn hàng #{order.id} đã được hoàn tiền. Số tiền sẽ được chuyển về tài khoản của bạn.",
+                "event_type": "ORDER_REFUNDED"
+            }
+        }
+        
+        if order.status in notifications:
+            notif_data = notifications[order.status]
+            await NotificationService.send_notification(
+                db=db,
+                user_id=order.user_id,
+                event_type=notif_data["event_type"],
+                title=notif_data["title"],
+                message=notif_data["message"],
+                data={
+                    "order_id": order.id,
+                    "order_id": order.id,
+                    "total_amount": order.total_amount,
+                    "old_status": old_status.value if old_status else None,
+                    "new_status": order.status.value
+                },
+                category="order_updates"
+            )

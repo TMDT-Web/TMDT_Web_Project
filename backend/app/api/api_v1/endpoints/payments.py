@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.services.payment_service import PaymentService
 from app.services.order_service import OrderService
 from app.models.order import OrderStatus
@@ -51,7 +52,7 @@ async def create_payment(
             order_id=order.id,
             amount=order.total_amount,
             order_info=f"Payment for order #{order.id}",
-            return_url=f"http://localhost:3000/payment/return?provider=momo",
+            return_url=f"{settings.FRONTEND_BASE_URL}/payment/return?provider=momo",
             notify_url=f"http://localhost:8000/api/v1/payments/momo/notify"
         )
         # Normalize MoMo response to unified shape
@@ -79,7 +80,7 @@ async def create_payment(
             order_id=order.id,
             amount=order.total_amount,
             order_desc=f"Payment for order #{order.id}",
-            return_url=f"http://localhost:3000/payment/return?provider=vnpay",
+            return_url=f"{settings.FRONTEND_BASE_URL}/payment/return?provider=vnpay",
             ip_addr=request.client.host
         )
         return {"payment_url": payment_url}
@@ -130,7 +131,7 @@ async def create_momo_payment(
         order_id=order.id,
         amount=order.total_amount,
         order_info=f"Payment for order #{order.id}",
-        return_url=f"http://localhost:3000/payment/return",
+        return_url=f"{settings.FRONTEND_BASE_URL}/payment/return",
         notify_url=f"http://localhost:8000/api/v1/payments/momo/notify"
     )
     
@@ -204,7 +205,7 @@ def create_vnpay_payment(
         order_id=order.id,
         amount=order.total_amount,
         order_desc=f"Payment for order #{order.id}",
-        return_url=f"http://localhost:3000/payment/return",
+        return_url=f"{settings.FRONTEND_BASE_URL}/payment/return",
         ip_addr=request.client.host
     )
     

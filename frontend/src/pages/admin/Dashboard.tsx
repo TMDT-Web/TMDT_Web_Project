@@ -15,7 +15,7 @@ export default function Dashboard() {
 
   const { data: usersData } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => UsersService.getAll()
+    queryFn: () => UsersService.getUsersApiV1UsersGet(0, 1000)
   })
 
   const { data: productsData } = useQuery({

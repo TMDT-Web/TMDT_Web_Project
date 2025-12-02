@@ -11,7 +11,7 @@ interface AuthContextType {
   user: UserResponse | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (data: LoginData) => Promise<void>
+  login: (data: LoginData | UserResponse, token?: string) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => void
   updateUser: (user: UserResponse) => void
@@ -49,9 +49,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth()
   }, [])
 
-  const login = async (data: LoginData) => {
+  const login = async (data: LoginData | UserResponse, token?: string) => {
+    // If data is already a UserResponse (Google login), just set it
+    if ('id' in data && token) {
+      // Google login flow
+      storage.set(STORAGE_KEYS.USER, data)
+      setUser(data)
+      return
+    }
+
+    // Normal login flow
     // ✅ authService.login now saves token to 'token' key automatically
-    const tokens = await authService.login(data)
+    const tokens = await authService.login(data as LoginData)
 
     // Note: token is already saved by authService.login to 'token' key
     // We only need to save refresh_token and get user info

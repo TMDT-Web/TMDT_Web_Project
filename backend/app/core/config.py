@@ -68,6 +68,27 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = "admin@luxefurniture.com"
     ADMIN_PASSWORD: str = "Admin@123456"
     
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
+    
+    # Notification Providers
+    # SendGrid
+    SENDGRID_API_KEY: str = ""
+    SENDGRID_FROM_EMAIL: str = "noreply@luxefurniture.com"
+    SENDGRID_FROM_NAME: str = "Luxe Furniture"
+    
+    # Twilio
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""
+    
+    # Web Push (VAPID)
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_ADMIN_EMAIL: str = "admin@luxefurniture.com"
+    
     model_config = SettingsConfigDict(
         env_file='.env',
         case_sensitive=True,

@@ -148,7 +148,14 @@ export default function Checkout() {
   }
 
   const shippingFee = totalPrice >= 500000 ? 0 : 30000;
-  const finalTotal = totalPrice + shippingFee;
+  
+  // Calculate VIP discount
+  const vipDiscountPercent = user?.vip_tier === 'diamond' ? 15 :
+                             user?.vip_tier === 'gold' ? 10 :
+                             user?.vip_tier === 'silver' ? 5 : 0;
+  const vipDiscount = totalPrice * (vipDiscountPercent / 100);
+  
+  const finalTotal = totalPrice + shippingFee - vipDiscount;
 
   /** HANDLE SUBMIT */
   const handleSubmit = (e: React.FormEvent) => {
@@ -448,6 +455,15 @@ export default function Checkout() {
                       )}
                     </span>
                   </div>
+
+                  {vipDiscountPercent > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Giảm giá VIP:</span>
+                      <span className="font-medium text-green-600">
+                        -{vipDiscount.toLocaleString("vi-VN")}₫ ({vipDiscountPercent}%)
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex justify-between text-lg pt-3 border-t">
                     <span className="font-bold">Tổng cộng:</span>

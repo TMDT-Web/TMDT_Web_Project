@@ -10,13 +10,15 @@ import { userService } from '@/services/user.service'
 import { OrderStatus, OrderPaymentStatus } from '@/types'
 import AddressSelector from '@/components/AddressSelector'
 import OrderDetailsModal from '@/components/OrderDetailsModal'
+import NotificationSettings from '@/components/NotificationSettings'
 import type { AddressResponse } from '@/client/models/AddressResponse'
 import type { OrderResponse } from '@/client/models/OrderResponse'
+import type { LoyaltyInfo } from '@/client/models/LoyaltyInfo'
 
 export default function Profile() {
   const { user, logout, updateUser, isLoading: authLoading } = useAuth()
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'password'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'password' | 'loyalty' | 'notifications'>('info')
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -54,6 +56,13 @@ export default function Profile() {
   })
 
   const orders = ordersData?.orders || []
+
+  // Fetch loyalty info - MUST be called before any conditional returns
+  const { data: loyaltyData } = useQuery<LoyaltyInfo>({
+    queryKey: ['my-loyalty'],
+    queryFn: userService.getLoyaltyInfo,
+    enabled: !!user && activeTab === 'loyalty'
+  })
 
   // Update profile mutation - MUST be called before any conditional returns
   const updateProfileMutation = useMutation({
@@ -267,7 +276,7 @@ export default function Profile() {
                       ? 'bg-gradient-to-r from-gray-300 to-gray-500 text-white shadow-md'
                       : 'bg-gray-100 text-gray-600 border border-gray-200'
                   }`}>
-                    {user.vip_tier === 'diamond' ? '💎 Diamond VIP' : user.vip_tier === 'gold' ? '🥇 Gold VIP' : user.vip_tier === 'silver' ? '🥈 Silver VIP' : '⭐ Member'}
+                    {user.vip_tier === 'diamond' ? 'Diamond VIP' : user.vip_tier === 'gold' ? 'Gold VIP' : user.vip_tier === 'silver' ? 'Silver VIP' : 'Member'}
                   </span>
                 </div>
               </div>
@@ -284,6 +293,18 @@ export default function Profile() {
                   className={`w-full text-left px-4 py-3 rounded-lg transition ${activeTab === 'orders' ? 'bg-[rgb(var(--color-wood))] text-white' : 'hover:bg-gray-100'}`}
                 >
                   Đơn hàng của tôi
+                </button>
+                <button
+                  onClick={() => setActiveTab('loyalty')}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition ${activeTab === 'loyalty' ? 'bg-[rgb(var(--color-wood))] text-white' : 'hover:bg-gray-100'}`}
+                >
+                  Chương trình Loyalty
+                </button>
+                <button
+                  onClick={() => setActiveTab('notifications')}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition ${activeTab === 'notifications' ? 'bg-[rgb(var(--color-wood))] text-white' : 'hover:bg-gray-100'}`}
+                >
+                  Cài đặt thông báo
                 </button>
                 <button
                   onClick={() => setActiveTab('password')}
@@ -327,10 +348,10 @@ export default function Profile() {
                         user.vip_tier === 'silver' ? 'text-gray-600' :
                         'text-gray-500'
                       }`}>
-                        {user.vip_tier === 'diamond' ? '💎 Diamond VIP' : 
-                         user.vip_tier === 'gold' ? '🥇 Gold VIP' : 
-                         user.vip_tier === 'silver' ? '🥈 Silver VIP' : 
-                         '⭐ Member'}
+                        {user.vip_tier === 'diamond' ? 'Diamond VIP' : 
+                         user.vip_tier === 'gold' ? 'Gold VIP' : 
+                         user.vip_tier === 'silver' ? 'Silver VIP' : 
+                         'Member'}
                       </p>
                     </div>
                     <div className="text-right">
@@ -417,6 +438,11 @@ export default function Profile() {
                             <p className="text-sm text-gray-600 mt-1">
                               {order.is_paid ? 'Đã thanh toán' : 'Chưa thanh toán'}
                             </p>
+                            {order.note && (
+                              <p className="text-sm text-gray-600 mt-1 truncate max-w-[280px]">
+                                Ghi chú: {order.note}
+                              </p>
+                            )}
                           </div>
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' : order.status === 'shipping' ? 'bg-purple-100 text-purple-800' : order.status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                             {order.status}
@@ -438,6 +464,230 @@ export default function Profile() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Loyalty Tab */}
+            {activeTab === 'loyalty' && (
+              <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm">
+                <h2 className="font-bold text-2xl mb-6">Chương trình Loyalty</h2>
+                
+                {loyaltyData && (
+                  <div className="space-y-6">
+                    {/* Current Tier Card */}
+                    <div className={`p-6 rounded-xl ${
+                      loyaltyData.current_tier === 'diamond'
+                        ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white'
+                        : loyaltyData.current_tier === 'gold'
+                        ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white'
+                        : loyaltyData.current_tier === 'silver'
+                        ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white'
+                        : 'bg-gradient-to-br from-gray-200 to-gray-300 text-gray-800'
+                    }`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <p className="text-sm opacity-90 mb-1">Hạng hiện tại</p>
+                          <h3 className="text-3xl font-bold">
+                            {loyaltyData.current_tier === 'diamond' ? 'Diamond' : 
+                             loyaltyData.current_tier === 'gold' ? 'Gold' : 
+                             loyaltyData.current_tier === 'silver' ? 'Silver' : 
+                             'Member'}
+                          </h3>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm opacity-90 mb-1">Chiết khấu</p>
+                          <p className="text-3xl font-bold">{loyaltyData.tier_discount}%</p>
+                        </div>
+                      </div>
+                      <div className="border-t border-white/20 pt-4">
+                        <p className="text-sm opacity-90 mb-1">Điểm tích lũy</p>
+                        <p className="text-2xl font-bold">{loyaltyData.current_points} điểm</p>
+                      </div>
+                    </div>
+
+                    {/* Progress to Next Tier */}
+                    {loyaltyData.next_tier && (
+                      <div className="bg-gray-50 p-6 rounded-xl">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-lg">Hạng tiếp theo</h4>
+                          <span className="text-lg font-bold">
+                            {loyaltyData.next_tier === 'diamond' ? 'Diamond' : 
+                             loyaltyData.next_tier === 'gold' ? 'Gold' : 
+                             loyaltyData.next_tier === 'silver' ? 'Silver' : 
+                             loyaltyData.next_tier}
+                          </span>
+                        </div>
+                        <div className="mb-2">
+                          <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-[rgb(var(--color-wood))] to-[rgb(var(--color-moss))]"
+                              style={{ 
+                                width: `${Math.min(100, (loyaltyData.current_points / (loyaltyData.current_points + loyaltyData.points_to_next_tier)) * 100)}%` 
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          Còn <span className="font-bold text-[rgb(var(--color-wood))]">{loyaltyData.points_to_next_tier} điểm</span> để lên hạng
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Tier Benefits */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="border border-gray-200 rounded-xl p-4">
+                        <h4 className="font-semibold mb-2">Cách tích điểm</h4>
+                        <p className="text-sm text-gray-600">Mỗi 1 triệu VND chi tiêu = 100 điểm</p>
+                      </div>
+                      <div className="border border-gray-200 rounded-xl p-4">
+                        <h4 className="font-semibold mb-2">Quyền lợi</h4>
+                        <p className="text-sm text-gray-600">Chiết khấu {loyaltyData.tier_discount}% cho mọi đơn hàng</p>
+                      </div>
+                    </div>
+
+                    {/* Tier Thresholds */}
+                    <div className="bg-gray-50 p-6 rounded-xl">
+                      <h4 className="font-semibold mb-4">Các hạng thành viên</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between pb-3 border-b">
+                          <span className="font-medium">Member</span>
+                          <span className="text-sm text-gray-600">0 - 999 điểm (0%)</span>
+                        </div>
+                        <div className="flex items-center justify-between pb-3 border-b">
+                          <span className="font-medium">Silver</span>
+                          <span className="text-sm text-gray-600">1,000 - 4,999 điểm (5%)</span>
+                        </div>
+                        <div className="flex items-center justify-between pb-3 border-b">
+                          <span className="font-medium">Gold</span>
+                          <span className="text-sm text-gray-600">5,000 - 9,999 điểm (10%)</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">Diamond</span>
+                          <span className="text-sm text-gray-600">10,000+ điểm (15%)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Loyalty Tab */}
+            {activeTab === 'loyalty' && (
+              <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm">
+                <h2 className="font-bold text-2xl mb-6">Chương trình Loyalty</h2>
+                
+                {loyaltyData && (
+                  <div className="space-y-6">
+                    {/* Current Tier Card */}
+                    <div className={`p-6 rounded-xl border-2 ${
+                      loyaltyData.current_tier === 'diamond'
+                        ? 'bg-gradient-to-br from-cyan-50 to-blue-100 border-cyan-300'
+                        : loyaltyData.current_tier === 'gold'
+                        ? 'bg-gradient-to-br from-yellow-50 to-amber-100 border-yellow-300'
+                        : loyaltyData.current_tier === 'silver'
+                        ? 'bg-gradient-to-br from-gray-50 to-slate-100 border-gray-300'
+                        : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Hạng hiện tại</p>
+                          <p className={`text-3xl font-bold ${
+                            loyaltyData.current_tier === 'diamond' ? 'text-cyan-600' :
+                            loyaltyData.current_tier === 'gold' ? 'text-yellow-600' :
+                            loyaltyData.current_tier === 'silver' ? 'text-gray-600' :
+                            'text-gray-500'
+                          }`}>
+                            {loyaltyData.current_tier === 'diamond' ? 'Diamond VIP' : 
+                             loyaltyData.current_tier === 'gold' ? 'Gold VIP' : 
+                             loyaltyData.current_tier === 'silver' ? 'Silver VIP' : 
+                             'Member'}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-2">
+                            Ưu đãi giảm giá: <span className="font-bold text-[rgb(var(--color-wood))]">{loyaltyData.tier_discount}%</span>
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600 mb-1">Điểm tích lũy</p>
+                          <p className="text-4xl font-bold text-[rgb(var(--color-wood))]">{loyaltyData.current_points}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Progress to next tier */}
+                      {loyaltyData.next_tier && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm text-gray-600">
+                              Tiến trình lên hạng{' '}
+                              <span className={`font-bold ${
+                                loyaltyData.next_tier === 'diamond' ? 'text-cyan-600' :
+                                loyaltyData.next_tier === 'gold' ? 'text-yellow-600' :
+                                loyaltyData.next_tier === 'silver' ? 'text-gray-600' :
+                                'text-gray-500'
+                              }`}>
+                                {loyaltyData.next_tier === 'diamond' ? 'Diamond' : 
+                                 loyaltyData.next_tier === 'gold' ? 'Gold' : 
+                                 loyaltyData.next_tier === 'silver' ? 'Silver' : 
+                                 'Member'}
+                              </span>
+                            </p>
+                            <p className="text-sm font-medium">
+                              Còn <span className="text-[rgb(var(--color-wood))]">{loyaltyData.points_to_next_tier}</span> điểm
+                            </p>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div
+                              className="bg-gradient-to-r from-[rgb(var(--color-wood))] to-[rgb(var(--color-moss))] h-3 rounded-full transition-all"
+                              style={{ width: `${(loyaltyData.current_points / (loyaltyData.current_points + (loyaltyData.points_to_next_tier || 0))) * 100}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tier Benefits */}
+                    <div className="bg-gray-50 p-6 rounded-xl">
+                      <h3 className="font-bold text-lg mb-4">Quyền lợi theo hạng thành viên</h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="bg-white p-4 rounded-lg border border-gray-200">
+                          <p className="font-medium mb-2">⭐ Member (0-999 điểm)</p>
+                          <p className="text-sm text-gray-600">Giảm giá: <span className="font-bold text-[rgb(var(--color-wood))]">{loyaltyData.tier_discount}%</span></p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-gray-300">
+                          <p className="font-medium mb-2">🥈 Silver (1,000-4,999 điểm)</p>
+                          <p className="text-sm text-gray-600">Giảm giá: <span className="font-bold">5%</span></p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-yellow-300">
+                          <p className="font-medium mb-2">🥇 Gold (5,000-9,999 điểm)</p>
+                          <p className="text-sm text-gray-600">Giảm giá: <span className="font-bold">10%</span></p>
+                        </div>
+                        <div className="bg-white p-4 rounded-lg border border-cyan-300">
+                          <p className="font-medium mb-2">💎 Diamond (10,000+ điểm)</p>
+                          <p className="text-sm text-gray-600">Giảm giá: <span className="font-bold">15%</span></p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* How to earn points */}
+                    <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
+                      <h3 className="font-bold text-lg mb-3">Cách tích điểm</h3>
+                      <ul className="space-y-2 text-sm text-gray-700">
+                        <li className="flex items-start">
+                          <span className="text-[rgb(var(--color-wood))] mr-2">✓</span>
+                          <span>Hoàn thành đơn hàng: <span className="font-bold">100 điểm / 1 triệu VNĐ</span></span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-[rgb(var(--color-wood))] mr-2">✓</span>
+                          <span>Điểm được cộng tự động khi đơn hàng hoàn thành</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="text-[rgb(var(--color-wood))] mr-2">✓</span>
+                          <span>Hạng VIP tự động nâng cấp khi đạt đủ điểm</span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 )}
               </div>
@@ -485,6 +735,13 @@ export default function Profile() {
                     Đổi mật khẩu
                   </button>
                 </form>
+              </div>
+            )}
+
+            {/* Notification Settings Tab */}
+            {activeTab === 'notifications' && (
+              <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm">
+                <NotificationSettings />
               </div>
             )}
           </div>

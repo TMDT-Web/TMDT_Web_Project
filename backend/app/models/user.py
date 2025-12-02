@@ -20,6 +20,10 @@ class User(Base):
     phone = Column(String(20), nullable=True, index=True)  # CRITICAL: Shipper needs to call
     avatar_url = Column(String(500), nullable=True)
     
+    # ============ GOOGLE OAUTH ============
+    google_id = Column(String(255), unique=True, nullable=True, index=True)
+    email_verified = Column(Boolean, default=False, nullable=False)
+    
     # ============ PHÂN QUYỀN & TRẠNG THÁI ============
     role = Column(SQLEnum(UserRole), default=UserRole.CUSTOMER, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
@@ -55,6 +59,22 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
         uselist=False
+    )
+    notification_preferences = relationship(
+        "UserNotificationPreference",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        uselist=False
+    )
+    notifications = relationship(
+        "Notification",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    push_subscriptions = relationship(
+        "PushSubscription",
+        back_populates="user",
+        cascade="all, delete-orphan"
     )
     
     def __repr__(self):

@@ -2,12 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { ChatSessionResponse } from './ChatSessionResponse';
+import type { app__schemas__chat__ChatSessionResponse } from './app__schemas__chat__ChatSessionResponse';
 /**
  * Chat session list response
  */
 export type ChatSessionListResponse = {
-    sessions: Array<ChatSessionResponse>;
+    sessions: Array<app__schemas__chat__ChatSessionResponse>;
     total: number;
 };
 

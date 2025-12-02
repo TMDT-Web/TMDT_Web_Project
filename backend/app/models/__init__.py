@@ -11,6 +11,7 @@ from app.models.cart import Cart, CartItem
 from app.models.chat import ChatSession, ChatMessage
 from app.models.address import Address
 from app.models.banner import Banner
+from app.models.notification import UserNotificationPreference, Notification, PushSubscription
 
 __all__ = [
     "Base",
@@ -30,4 +31,7 @@ __all__ = [
     "ChatMessage",
     "Address",
     "Banner",
+    "UserNotificationPreference",
+    "Notification",
+    "PushSubscription",
 ]

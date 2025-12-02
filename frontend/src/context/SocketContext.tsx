@@ -228,6 +228,24 @@ export function SocketProvider({ children }: SocketProviderProps) {
       }}
     >
       {children}
+      {/* Import ChatWidget dynamically to show on all pages */}
+      {typeof window !== 'undefined' && (
+        <ChatWidgetWrapper />
+      )}
     </SocketContext.Provider>
   );
+}
+
+// Lazy load ChatWidget to avoid circular dependencies
+function ChatWidgetWrapper() {
+  const [ChatWidget, setChatWidget] = useState<any>(null);
+  
+  useEffect(() => {
+    import('../components/ChatWidget').then((module) => {
+      setChatWidget(() => module.default);
+    });
+  }, []);
+  
+  if (!ChatWidget) return null;
+  return <ChatWidget />;
 }

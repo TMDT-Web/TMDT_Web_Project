@@ -60,6 +60,15 @@ async def get_current_admin_user(
     return current_user
 
 
+async def get_current_admin_or_staff_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """Get current admin or staff user (requires admin or staff role)"""
+    if current_user.role not in ['admin', 'staff']:
+        raise ForbiddenException("Admin or staff access required")
+    return current_user
+
+
 # Optional user dependency (doesn't require authentication)
 async def get_current_user_optional(
     token: Optional[str] = Depends(oauth2_scheme),

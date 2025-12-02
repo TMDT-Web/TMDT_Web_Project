@@ -3,8 +3,6 @@
  */
 import { UsersService } from '@/client/services/UsersService'
 import { AddressesService } from '@/client/services/AddressesService'
-import { OpenAPI } from '@/client/core/OpenAPI'
-import { request as __request } from '@/client/core/request'
 import type { UserUpdate } from '@/client/models/UserUpdate'
 import type { AddressCreate } from '@/client/models/AddressCreate'
 import type { AddressUpdate } from '@/client/models/AddressUpdate'
@@ -15,31 +13,14 @@ export const userService = {
      * Update current user profile
      */
     updateProfile: async (data: UserUpdate) => {
-        return await __request(OpenAPI, {
-            method: 'PUT',
-            url: '/api/v1/users/me',
-            body: data,
-            mediaType: 'application/json',
-            errors: {
-                422: 'Validation Error'
-            }
-        })
+        return await UsersService.updateMyProfileApiV1UsersMePut(data)
     },
 
     /**
      * Change password
      */
     changePassword: async (data: { current_password: string, new_password: string }) => {
-        return await __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/users/me/change-password',
-            body: data,
-            mediaType: 'application/json',
-            errors: {
-                400: 'Bad Request - Current password is incorrect',
-                422: 'Validation Error'
-            }
-        })
+        return await UsersService.changePasswordApiV1UsersMeChangePasswordPost(data)
     },
 
     /**
@@ -68,5 +49,12 @@ export const userService = {
      */
     deleteAddress: async (addressId: number): Promise<void> => {
         return await AddressesService.deleteAddressApiV1AddressesAddressIdDelete(addressId)
+    },
+
+    /**
+     * Get loyalty information
+     */
+    getLoyaltyInfo: async () => {
+        return await UsersService.getMyLoyaltyApiV1UsersMeLoyaltyGet()
     }
 }

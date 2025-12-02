@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_db
-from app.schemas.user import UserResponse, UserUpdate, UserListResponse, PasswordChange
+from app.schemas.user import UserResponse, UserUpdate, AdminUserUpdate, UserListResponse, PasswordChange, LoyaltyInfo
 from app.api.deps import get_current_user, get_current_admin_user
 from app.models.user import User
 from app.core.exceptions import NotFoundException
 from app.core.security import verify_password, get_password_hash
+from app.services.loyalty_service import LoyaltyService
 
 router = APIRouter()
 
@@ -23,6 +24,14 @@ def get_my_profile(
     return current_user
 
 
+@router.get("/me/loyalty", response_model=LoyaltyInfo)
+def get_my_loyalty(
+    current_user: User = Depends(get_current_user)
+):
+    """Get current user's loyalty information"""
+    return LoyaltyService.get_loyalty_info(current_user)
+
+
 @router.put("/me", response_model=UserResponse)
 def update_my_profile(
     data: UserUpdate,
@@ -30,9 +39,13 @@ def update_my_profile(
     db: Session = Depends(get_db)
 ):
     """Update current user profile"""
+    # Whitelist of fields users can update themselves
+    allowed_fields = {'full_name', 'phone', 'avatar_url', 'address_id'}
+    
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        setattr(current_user, field, value)
+        if field in allowed_fields:
+            setattr(current_user, field, value)
 
     db.commit()
     db.refresh(current_user)
@@ -103,7 +116,7 @@ def get_user(
 @router.put("/{user_id}", response_model=UserResponse)
 def update_user(
     user_id: int,
-    data: UserUpdate,
+    data: AdminUserUpdate,
     admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):

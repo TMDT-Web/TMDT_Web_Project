@@ -124,4 +124,25 @@ export class OrdersService {
             },
         });
     }
+    /**
+     * Cancel Order
+     * Cancel order (user can only cancel their own pending orders)
+     * @param orderId
+     * @returns OrderResponse Successful Response
+     * @throws ApiError
+     */
+    public static cancelOrderApiV1OrdersOrderIdCancelPost(
+        orderId: number,
+    ): CancelablePromise<OrderResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/orders/{order_id}/cancel',
+            path: {
+                'order_id': orderId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
 }
