@@ -1,7 +1,7 @@
 // frontend/app/context/AuthContext.tsx
 import * as React from "react";
 import { api } from "~/lib/api";
-import { lsGet, lsSet, lsRemove } from "~/lib/safeLocalStorage";
+import { lsGet, lsRemove, lsSet } from "~/lib/safeLocalStorage";
 
 // ===== Types phản ánh tối thiểu từ backend =====
 type RoleRead = { id: number; name: string };
@@ -19,6 +19,9 @@ type AuthState = {
   isAuthenticated: boolean;
   accessToken?: string | null;
   refreshToken?: string | null;
+  // Impersonation: root có thể mạo danh role khác
+  impersonatedRole?: string | null; // role đang mạo danh
+  originalRoles?: string[]; // lưu roles gốc khi impersonate
 };
 
 type LoginInput = { email: string; password: string };
@@ -50,6 +53,12 @@ type AuthContextType = {
   // guards
   hasRole: (...roles: string[]) => boolean;
   hasAnyRole: (...roles: string[]) => boolean;
+
+  // Impersonation (chỉ root)
+  isRoot: boolean; // true nếu user gốc có role root
+  isImpersonating: boolean; // true nếu đang mạo danh
+  impersonateRole: (role: string) => void; // bắt đầu mạo danh
+  stopImpersonation: () => void; // dừng mạo danh
 };
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -80,12 +89,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<AuthState>(() => {
     const accessToken = lsGet(LS.access);
     const refreshToken = lsGet(LS.refresh);
+    const impersonatedRole = lsGet("impersonated_role");
+    const originalRoles = lsGet("original_roles");
     return {
       user: null,
       roles: [],
       isAuthenticated: Boolean(accessToken),
       accessToken,
       refreshToken,
+      impersonatedRole: impersonatedRole || null,
+      originalRoles: originalRoles ? JSON.parse(originalRoles) : undefined,
     };
   });
 
@@ -163,6 +176,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = React.useCallback(() => {
     lsRemove(LS.access);
     lsRemove(LS.refresh);
+    lsRemove("impersonated_role");
+    lsRemove("original_roles");
     setAuthHeader(null);
     setState({
       user: null,
@@ -170,50 +185,121 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: false,
       accessToken: null,
       refreshToken: null,
+      impersonatedRole: null,
+      originalRoles: undefined,
     });
   }, []);
+
+  // Kiểm tra xem user GỐC có role root không
+  const isRoot = React.useMemo(() => {
+    const original = state.originalRoles || state.roles;
+    return original.includes("root");
+  }, [state.originalRoles, state.roles]);
+
+  // Kiểm tra xem đang mạo danh không
+  const isImpersonating = Boolean(state.impersonatedRole);
 
   const hasRole = React.useCallback(
     (...roles: string[]) => {
       if (!state.isAuthenticated) return false;
       if (!roles || roles.length === 0) return true;
       const need = roles.map((r) => String(r || "").toLowerCase());
+
+      // Nếu đang impersonate, dùng role mạo danh
+      if (state.impersonatedRole) {
+        return need.includes(state.impersonatedRole.toLowerCase());
+      }
+
       return state.roles.some((r) => need.includes(r));
     },
-    [state.isAuthenticated, state.roles]
+    [state.isAuthenticated, state.roles, state.impersonatedRole]
   );
 
   // Hàm hiển thị tên vai trò (ưu tiên danh sách truyền vào)
   const displayRole = React.useCallback(
     (r?: Array<string | { name?: string }>): string => {
+      // Nếu đang impersonate, hiển thị role mạo danh
+      if (state.impersonatedRole && !r) {
+        return state.impersonatedRole;
+      }
+
       const source =
         r ??
         (state.user?.roles as Array<string | { name?: string }> | undefined) ??
         [];
       const names = source
-        .map((x) => (typeof x === "string" ? x : x?.name ?? ""))
-        .map((x) => x.trim())
+        .map((x) => (typeof x === "string" ? x : (x?.name ?? "")))
+        .map((x) => x.trim().toLowerCase())
         .filter(Boolean);
-      // Tùy biến quy tắc hiển thị nếu cần
-      return names[0]?.toLowerCase() || (state.roles[0] ?? "guest");
+
+      // Ưu tiên hiển thị theo thứ tự: root > admin > manager > staff > customer
+      const priority = ["root", "admin", "manager", "staff", "customer"];
+      for (const role of priority) {
+        if (names.includes(role)) {
+          return role;
+        }
+      }
+
+      // Nếu không có role nào trong priority, lấy role đầu tiên
+      return names[0] || (state.roles[0] ?? "guest");
     },
-    [state.user?.roles, state.roles]
+    [state.user?.roles, state.roles, state.impersonatedRole]
   );
 
-  const displayRoleText = React.useMemo(
-    () => (state.roles.length ? state.roles.join(", ") : "guest"),
-    [state.roles]
+  const displayRoleText = React.useMemo(() => {
+    if (state.impersonatedRole) {
+      return `${state.impersonatedRole} (Mạo danh)`;
+    }
+    return state.roles.length ? state.roles.join(", ") : "guest";
+  }, [state.roles, state.impersonatedRole]);
+
+  // Bắt đầu mạo danh (chỉ root)
+  const impersonateRole = React.useCallback(
+    (role: string) => {
+      const original = state.originalRoles || state.roles;
+      if (!original.includes("root")) {
+        console.warn("Chỉ root mới có thể mạo danh");
+        return;
+      }
+
+      const roleLower = role.toLowerCase();
+      lsSet("impersonated_role", roleLower);
+      lsSet("original_roles", JSON.stringify(original));
+
+      setState((s) => ({
+        ...s,
+        impersonatedRole: roleLower,
+        originalRoles: original,
+      }));
+    },
+    [state.roles, state.originalRoles]
   );
+
+  // Dừng mạo danh
+  const stopImpersonation = React.useCallback(() => {
+    lsRemove("impersonated_role");
+    lsRemove("original_roles");
+
+    setState((s) => ({
+      ...s,
+      impersonatedRole: null,
+      originalRoles: undefined,
+    }));
+  }, []);
 
   const ctx: AuthContextType = {
     state,
     user: state.user,
-    displayRole,      // dùng như hàm: displayRole(...)
-    displayRoleText,  // chuỗi gộp sẵn cho code cũ
+    displayRole, // dùng như hàm: displayRole(...)
+    displayRoleText, // chuỗi gộp sẵn cho code cũ
     login,
     logout,
     hasRole,
     hasAnyRole: hasRole,
+    isRoot,
+    isImpersonating,
+    impersonateRole,
+    stopImpersonation,
   };
 
   return <AuthContext.Provider value={ctx}>{children}</AuthContext.Provider>;

@@ -1,3 +1,4 @@
+import { StrictMode, useEffect, useState } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -6,12 +7,12 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import { StrictMode } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { AuthProvider } from "./context/AuthContext";
 import "./app.css";
+import { AuthProvider } from "./context/AuthContext";
+import "./lib/suppressHydrationWarning";
 
 // Không phụ thuộc +types/*
 export const links = () => [
@@ -28,6 +29,12 @@ export const links = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
   return (
     <html lang="vi" className="h-full">
       <head>
@@ -37,8 +44,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-          {children}
-          <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+        <div>{children}</div>
+        {isHydrated && (
+          <ToastContainer
+            position="top-right"
+            autoClose={2000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+        )}
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -64,7 +83,8 @@ export function ErrorBoundary({ error }: { error: unknown }) {
 
   if (isRouteErrorResponse(error as any)) {
     const err = error as any;
-    title = err.status === 404 ? "Không tìm thấy trang (404)" : `Lỗi ${err.status}`;
+    title =
+      err.status === 404 ? "Không tìm thấy trang (404)" : `Lỗi ${err.status}`;
     details =
       err.status === 404
         ? "Trang bạn yêu cầu không tồn tại."

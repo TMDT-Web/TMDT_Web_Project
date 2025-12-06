@@ -52,7 +52,7 @@ class Product(Base):
     sku: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    price: Mapped[int] = mapped_column(Integer, nullable=False)
     stock_quantity: Mapped[int] = mapped_column(Integer, default=0)
     specifications: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default=dict)
     main_image: Mapped[Optional[str]] = mapped_column(String(255))

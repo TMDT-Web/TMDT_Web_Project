@@ -12,6 +12,7 @@ from . import router
 
 
 @router.patch("/{product_id}", response_model=schemas.ProductRead)
+@router.put("/{product_id}", response_model=schemas.ProductRead)
 def update_product(
     product_id: int,
     payload: schemas.ProductUpdate,

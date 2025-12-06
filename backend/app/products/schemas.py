@@ -50,12 +50,13 @@ class ProductBase(OrmBaseModel):
     sku: str = Field(max_length=50)
     name: str = Field(max_length=255)
     description: Optional[str] = None
-    price: Decimal
+    price: int = Field(ge=0)
     stock_quantity: int = 0
     specifications: Optional[dict] = None
     main_image: Optional[str] = None
     category_id: Optional[int] = None
     tag_ids: List[int] = []
+    images: Optional[List[str]] = None
 
 
 class ProductCreate(ProductBase):
@@ -63,15 +64,17 @@ class ProductCreate(ProductBase):
 
 
 class ProductUpdate(OrmBaseModel):
+    sku: Optional[str] = Field(None, max_length=50)
     name: Optional[str] = None
     description: Optional[str] = None
-    price: Optional[Decimal] = None
+    price: Optional[int] = Field(None, ge=0)
     stock_quantity: Optional[int] = None
     specifications: Optional[dict] = None
     main_image: Optional[str] = None
     category_id: Optional[int] = None
     tag_ids: Optional[List[int]] = None
     is_active: Optional[bool] = None
+    images: Optional[List[str]] = None
 
 
 class ProductRead(ProductBase):
@@ -86,11 +89,17 @@ class ProductRead(ProductBase):
 
 class ProductListItem(OrmBaseModel):
     id: int
+    sku: Optional[str] = None
     name: str
-    price: Decimal
+    description: Optional[str] = None
+    price: int
     main_image: Optional[str] = None
     stock_quantity: int
+    specifications: Optional[dict] = None
+    category_id: Optional[int] = None
+    category: Optional[CategoryRead] = None
     is_active: bool
+    images: List[ProductImageRead] = []
 
 
 class ProductListResponse(OrmBaseModel):
@@ -103,8 +112,8 @@ class ProductListResponse(OrmBaseModel):
 class ProductSearchQuery(OrmBaseModel):
     q: Optional[str] = None
     category_id: Optional[int] = None
-    min_price: Optional[Decimal] = None
-    max_price: Optional[Decimal] = None
+    min_price: Optional[int] = None
+    max_price: Optional[int] = None
     tag_ids: Optional[List[int]] = None
     page: int = 1
     size: int = 20
