@@ -18,7 +18,7 @@ import { formatImageUrl } from "@/utils/format";
 import { userService } from "@/services/user.service";
 
 export default function Checkout() {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, collections, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -40,6 +40,11 @@ export default function Checkout() {
 
   /** BANK SELECTION */
   const [selectedBank, setSelectedBank] = useState("vietcombank");
+  
+  /** COUPON */
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{code: string, discount: number} | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
   
   const banks = [
     { id: "vietcombank", name: "Vietcombank", logo: "vietcombank.png" },
@@ -155,7 +160,55 @@ export default function Checkout() {
                              user?.vip_tier === 'silver' ? 5 : 0;
   const vipDiscount = totalPrice * (vipDiscountPercent / 100);
   
-  const finalTotal = totalPrice + shippingFee - vipDiscount;
+  // Calculate coupon discount
+  const couponDiscount = appliedCoupon?.discount || 0;
+  
+  const finalTotal = totalPrice + shippingFee - vipDiscount - couponDiscount;
+
+  /** VALIDATE COUPON */
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.warning("Vui lòng nhập mã khuyến mãi!");
+      return;
+    }
+
+    setValidatingCoupon(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/coupons/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          order_amount: totalPrice + shippingFee
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.valid) {
+        setAppliedCoupon({ code: data.code, discount: data.discount });
+        toast.success(`Áp dụng mã thành công! Giảm ${data.discount.toLocaleString('vi-VN')}₫`);
+      } else {
+        toast.error(data.message || "Mã khuyến mãi không hợp lệ");
+        setAppliedCoupon(null);
+      }
+    } catch (error) {
+      console.error('Coupon validation error:', error);
+      toast.error("Không thể xác thực mã khuyến mãi");
+      setAppliedCoupon(null);
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    toast.info("Đã xóa mã khuyến mãi");
+  };
 
   /** HANDLE SUBMIT */
   const handleSubmit = (e: React.FormEvent) => {
@@ -184,8 +237,16 @@ export default function Checkout() {
         product_id: item.product.id,
         quantity: item.quantity,
         ...(item.variant && { variant: item.variant }),
+        ...(item.collectionId && { collection_id: item.collectionId }),
+      })),
+      // Add collections data for proper pricing
+      collections: collections.map(coll => ({
+        collection_id: coll.id,
+        product_ids: coll.productIds,
+        sale_price: coll.salePrice
       })),
       note: notes.trim() || undefined,
+      coupon_code: appliedCoupon?.code || undefined,
     };
 
     createOrderMutation.mutate(payload);
@@ -461,6 +522,63 @@ export default function Checkout() {
                       <span className="text-gray-600">Giảm giá VIP:</span>
                       <span className="font-medium text-green-600">
                         -{vipDiscount.toLocaleString("vi-VN")}₫ ({vipDiscountPercent}%)
+                      </span>
+                    </div>
+                  )}
+
+                  {/* COUPON INPUT */}
+                  <div className="pt-3 border-t">
+                    <label className="block text-sm font-medium mb-2">
+                      Mã khuyến mãi
+                    </label>
+                    {appliedCoupon ? (
+                      <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🎁</span>
+                            <div>
+                              <p className="font-bold text-purple-700">{appliedCoupon.code}</p>
+                              <p className="text-xs text-purple-600">
+                                Giảm {appliedCoupon.discount.toLocaleString("vi-VN")}₫
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          className="text-red-600 hover:text-red-700 text-sm font-medium"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          placeholder="Nhập mã giảm giá"
+                          className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                          disabled={validatingCoupon}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyCoupon}
+                          disabled={validatingCoupon || !couponCode.trim()}
+                          className="px-4 py-2 bg-[rgb(var(--color-wood))] text-white rounded-lg hover:opacity-90 disabled:opacity-50 text-sm font-medium whitespace-nowrap"
+                        >
+                          {validatingCoupon ? "Đang kiểm tra..." : "Áp dụng"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Giảm giá coupon:</span>
+                      <span className="font-medium text-purple-600">
+                        -{couponDiscount.toLocaleString("vi-VN")}₫
                       </span>
                     </div>
                   )}

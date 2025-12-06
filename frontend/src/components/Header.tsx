@@ -6,6 +6,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
 import AuthModal from './AuthModal'
+import { CollectionsService } from '@/client'
+import type { CollectionResponse } from '@/client'
+import { Bell } from 'lucide-react'
 
 interface HeaderProps {
   externalAuthModalState?: { isOpen: boolean; tab: 'login' | 'register' }
@@ -23,6 +26,10 @@ export default function Header({ externalAuthModalState, onAuthModalClose }: Hea
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
+  const [isCollectionsOpen, setIsCollectionsOpen] = useState(false)
+  const [collections, setCollections] = useState<CollectionResponse[]>([])
+  const collectionsRef = useRef<HTMLDivElement>(null)
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false)
 
   // Handle external auth modal state from MainLayout
   useEffect(() => {
@@ -31,6 +38,41 @@ export default function Header({ externalAuthModalState, onAuthModalClose }: Hea
       setAuthModalTab(externalAuthModalState.tab)
     }
   }, [externalAuthModalState])
+
+  // Check notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && user) {
+      const permission = Notification.permission
+      setShowNotificationPrompt(permission === 'default')
+    }
+  }, [user])
+
+  // Fetch collections
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const response = await CollectionsService.getCollectionsApiV1CollectionsGet({
+          limit: 10,
+          isActive: true
+        })
+        setCollections(response.collections)
+      } catch (error) {
+        console.error('Failed to fetch collections:', error)
+      }
+    }
+    fetchCollections()
+  }, [])
+
+  // Close collections dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (collectionsRef.current && !collectionsRef.current.contains(event.target as Node)) {
+        setIsCollectionsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
     <header className="bg-white border-b border-[rgb(var(--color-border))]">
@@ -46,9 +88,56 @@ export default function Header({ externalAuthModalState, onAuthModalClose }: Hea
             <Link to="/products" className="text-sm hover:text-[rgb(var(--color-wood))] transition">
               Sản phẩm
             </Link>
-            <Link to="/collections" className="text-sm hover:text-[rgb(var(--color-wood))] transition">
-              Bộ sưu tập
-            </Link>
+            
+            {/* Collections Dropdown */}
+            <div ref={collectionsRef} className="relative">
+              <button
+                onClick={() => setIsCollectionsOpen(!isCollectionsOpen)}
+                className="text-sm hover:text-[rgb(var(--color-wood))] transition flex items-center gap-1"
+              >
+                Bộ sưu tập
+                <svg 
+                  className={`w-4 h-4 transition-transform ${isCollectionsOpen ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {isCollectionsOpen && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-[rgb(var(--color-border))] rounded-lg shadow-lg z-50">
+                  <div className="py-2">
+                    <Link
+                      to="/collections"
+                      onClick={() => setIsCollectionsOpen(false)}
+                      className="block px-4 py-2 text-sm hover:bg-gray-50 transition font-medium text-[rgb(var(--color-wood))]"
+                    >
+                      Tất cả bộ sưu tập
+                    </Link>
+                    <div className="border-t border-[rgb(var(--color-border))] my-1"></div>
+                    {collections.length > 0 ? (
+                      collections.map((collection) => (
+                        <Link
+                          key={collection.id}
+                          to={`/collections/${collection.id}`}
+                          onClick={() => setIsCollectionsOpen(false)}
+                          className="block px-4 py-2 text-sm hover:bg-gray-50 transition"
+                        >
+                          {collection.name}
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-sm text-gray-500">
+                        Chưa có bộ sưu tập
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Link to="/about" className="text-sm hover:text-[rgb(var(--color-wood))] transition">
               Giới thiệu
             </Link>
@@ -143,6 +232,13 @@ export default function Header({ externalAuthModalState, onAuthModalClose }: Hea
                       >
                         Đơn hàng
                       </Link>
+                      <Link 
+                        to="/coupons" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Mã khuyến mãi
+                      </Link>
                       {(user.role === 'admin' || user.role === 'staff') && (
                         <Link 
                           to="/admin" 
@@ -208,9 +304,52 @@ export default function Header({ externalAuthModalState, onAuthModalClose }: Hea
               <Link to="/products" className="block py-2 text-sm hover:text-[rgb(var(--color-wood))] transition">
                 Sản phẩm
               </Link>
-              <Link to="/collections" className="block py-2 text-sm hover:text-[rgb(var(--color-wood))] transition">
-                Bộ sưu tập
-              </Link>
+              
+              {/* Collections Dropdown - Mobile */}
+              <div>
+                <button
+                  onClick={() => setIsCollectionsOpen(!isCollectionsOpen)}
+                  className="w-full text-left py-2 text-sm hover:text-[rgb(var(--color-wood))] transition flex items-center justify-between"
+                >
+                  Bộ sưu tập
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${isCollectionsOpen ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isCollectionsOpen && (
+                  <div className="ml-4 mt-2 space-y-2">
+                    <Link
+                      to="/collections"
+                      onClick={() => {
+                        setIsCollectionsOpen(false)
+                        setIsMenuOpen(false)
+                      }}
+                      className="block py-1 text-sm text-[rgb(var(--color-wood))] hover:text-[rgb(var(--color-wood-dark))] transition"
+                    >
+                      Tất cả bộ sưu tập
+                    </Link>
+                    {collections.map((collection) => (
+                      <Link
+                        key={collection.id}
+                        to={`/collections/${collection.id}`}
+                        onClick={() => {
+                          setIsCollectionsOpen(false)
+                          setIsMenuOpen(false)
+                        }}
+                        className="block py-1 text-sm hover:text-[rgb(var(--color-wood))] transition"
+                      >
+                        {collection.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Link to="/about" className="block py-2 text-sm hover:text-[rgb(var(--color-wood))] transition">
                 Giới thiệu
               </Link>

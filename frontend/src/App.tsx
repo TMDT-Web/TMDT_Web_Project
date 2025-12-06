@@ -26,6 +26,12 @@ import Collections from './pages/shop/Collections'
 import CollectionDetail from './pages/shop/CollectionDetail'
 import About from './pages/shop/About'
 import Contact from './pages/shop/Contact'
+import PaymentCallback from './pages/shop/PaymentCallback'
+import MyCouponsPage from './pages/user/MyCouponsPage'
+
+// Payment Pages
+import QRPayment from './pages/payment/QRPayment'
+import QRConfirm from './pages/payment/QRConfirm'
 
 // Auth Pages
 import Login from './pages/auth/Login'
@@ -78,8 +84,12 @@ function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/checkout/callback" element={<PaymentCallback />} />
+                  <Route path="/payment/qr" element={<QRPayment />} />
+                  <Route path="/payment/qr-confirm" element={<QRConfirm />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/coupons" element={<MyCouponsPage />} />
                 </Route>
 
                 {/* Auth Routes */}

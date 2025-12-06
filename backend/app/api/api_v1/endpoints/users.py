@@ -192,18 +192,59 @@ def upgrade_user_vip(
     admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
-    """Upgrade user to VIP (admin only)"""
+    """Upgrade user to next VIP tier (admin only)"""
     from app.models.enums import VipTier
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise NotFoundException("User not found")
 
-    # Upgrade to silver tier
-    user.vip_tier = VipTier.SILVER
+    # Upgrade to next tier
+    if user.vip_tier == VipTier.MEMBER:
+        user.vip_tier = VipTier.SILVER
+    elif user.vip_tier == VipTier.SILVER:
+        user.vip_tier = VipTier.GOLD
+    elif user.vip_tier == VipTier.GOLD:
+        user.vip_tier = VipTier.DIAMOND
+    else:
+        # Already at max tier
+        return {"message": "User is already at maximum VIP tier", "vip_tier": user.vip_tier}
+    
     db.commit()
     db.refresh(user)
-    return {"message": "User upgraded to VIP", "vip_tier": user.vip_tier}
+    return {"message": f"User upgraded to {user.vip_tier.value.upper()}", "vip_tier": user.vip_tier}
+
+
+# ============================
+#      ADMIN — DOWNGRADE USER VIP
+# ============================
+@router.put("/{user_id}/downgrade-vip")
+def downgrade_user_vip(
+    user_id: int,
+    admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Downgrade user to previous VIP tier (admin only)"""
+    from app.models.enums import VipTier
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise NotFoundException("User not found")
+
+    # Downgrade to previous tier
+    if user.vip_tier == VipTier.DIAMOND:
+        user.vip_tier = VipTier.GOLD
+    elif user.vip_tier == VipTier.GOLD:
+        user.vip_tier = VipTier.SILVER
+    elif user.vip_tier == VipTier.SILVER:
+        user.vip_tier = VipTier.MEMBER
+    else:
+        # Already at lowest tier
+        return {"message": "User is already at minimum VIP tier", "vip_tier": user.vip_tier}
+    
+    db.commit()
+    db.refresh(user)
+    return {"message": f"User downgraded to {user.vip_tier.value.upper()}", "vip_tier": user.vip_tier}
 
 
 # ============================

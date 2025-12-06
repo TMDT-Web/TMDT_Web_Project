@@ -12,7 +12,7 @@ import { useAuth } from "./AuthContext";
 
 interface ChatMessage {
   id?: number;
-  sender: "user" | "admin";
+  sender: "user" | "admin" | "system";
   sender_id?: number;
   message: string;
   created_at?: string;

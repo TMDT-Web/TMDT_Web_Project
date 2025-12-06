@@ -4,11 +4,13 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '@/context/CartContext'
 import { formatImageUrl } from '@/utils/format'
-import { Package } from 'lucide-react'
+import { Package, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState } from 'react'
 
 export default function Cart() {
   const { items, collections, updateQuantity, removeItem, removeCollection, totalItems, totalPrice, clearCart } = useCart()
   const navigate = useNavigate()
+  const [expandedCollections, setExpandedCollections] = useState<Set<number>>(new Set())
 
   // Group items by collection
   const getCollectionItems = (collectionId: number) => {
@@ -26,6 +28,19 @@ export default function Cart() {
   // Calculate original total (without collection discounts) for comparison
   const originalTotal = items.reduce((sum, item) => sum + (item.product.price || 0) * item.quantity, 0)
   const savings = originalTotal - totalPrice
+
+  // Toggle collection expansion
+  const toggleCollection = (collectionId: number) => {
+    setExpandedCollections(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(collectionId)) {
+        newSet.delete(collectionId)
+      } else {
+        newSet.add(collectionId)
+      }
+      return newSet
+    })
+  }
 
   if (items.length === 0) {
     return (
@@ -55,56 +70,72 @@ export default function Cart() {
             {collections.map((collection) => {
               const collectionItems = getCollectionItems(collection.id)
               if (collectionItems.length === 0) return null
+              const isExpanded = expandedCollections.has(collection.id)
               
               return (
                 <div key={`collection-${collection.id}`} className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-6 shadow-sm border-2 border-amber-200">
                   {/* Collection Header */}
-                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-amber-200">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3 flex-1">
                       <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
                         <Package className="w-5 h-5 text-white" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-bold text-lg text-amber-800">Bộ sưu tập: {collection.name}</h3>
                         <p className="text-sm text-amber-600">{collectionItems.length} sản phẩm</p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right mr-4">
                       <p className="text-sm text-gray-500 line-through">{collection.originalPrice.toLocaleString('vi-VN')}₫</p>
                       <p className="text-xl font-bold text-amber-700">{collection.salePrice.toLocaleString('vi-VN')}₫</p>
                       <p className="text-xs text-green-600 font-medium">Tiết kiệm {(collection.originalPrice - collection.salePrice).toLocaleString('vi-VN')}₫</p>
                     </div>
+                    <button
+                      onClick={() => toggleCollection(collection.id)}
+                      className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-amber-100 transition"
+                      aria-label={isExpanded ? "Thu gọn" : "Mở rộng"}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-amber-700" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-amber-700" />
+                      )}
+                    </button>
                   </div>
                   
-                  {/* Collection Products */}
-                  <div className="space-y-3">
-                    {collectionItems.map((item) => (
-                      <div key={item.product.id} className="flex gap-4 bg-white/50 rounded-lg p-3">
-                        <Link to={`/products/${item.product.slug}`} className="flex-shrink-0">
-                          <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
-                            <img
-                              src={formatImageUrl(item.product.thumbnail_url) || 'https://via.placeholder.com/100'}
-                              alt={item.product.name}
-                              className="w-full h-full object-cover"
-                            />
+                  {/* Collection Products - Collapsible */}
+                  {isExpanded && (
+                    <>
+                      <div className="space-y-3 mb-4 pb-4 border-b border-amber-200">
+                        {collectionItems.map((item) => (
+                          <div key={item.product.id} className="flex gap-4 bg-white/50 rounded-lg p-3">
+                            <Link to={`/products/${item.product.slug}`} className="flex-shrink-0">
+                              <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                                <img
+                                  src={formatImageUrl(item.product.thumbnail_url) || 'https://via.placeholder.com/100'}
+                                  alt={item.product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </Link>
+                            <div className="flex-1 min-w-0">
+                              <Link to={`/products/${item.product.slug}`} className="font-medium hover:text-amber-700 block truncate">
+                                {item.product.name}
+                              </Link>
+                              <p className="text-sm text-gray-500">Số lượng: {item.quantity}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-gray-400 line-through">{item.product.price.toLocaleString('vi-VN')}₫</p>
+                              <p className="text-xs text-amber-600">Đã bao gồm trong giá combo</p>
+                            </div>
                           </div>
-                        </Link>
-                        <div className="flex-1 min-w-0">
-                          <Link to={`/products/${item.product.slug}`} className="font-medium hover:text-amber-700 block truncate">
-                            {item.product.name}
-                          </Link>
-                          <p className="text-sm text-gray-500">Số lượng: {item.quantity}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm text-gray-400 line-through">{item.product.price.toLocaleString('vi-VN')}₫</p>
-                          <p className="text-xs text-amber-600">Đã bao gồm trong giá combo</p>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  )}
                   
                   {/* Remove Collection Button */}
-                  <div className="mt-4 pt-4 border-t border-amber-200 flex justify-end">
+                  <div className="flex justify-end">
                     <button
                       onClick={() => removeCollection(collection.id)}
                       className="text-red-600 hover:text-red-700 text-sm font-medium"
