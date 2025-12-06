@@ -6,10 +6,13 @@ import {
 } from "@react-router/dev/routes";
 
 const userRoutes = [
-  layout("./components/layout.tsx", [
-    index("./routes/home.tsx"),
-    route("/products/:id", "./routes/products.$id.tsx"),
-  ]),
+    layout('./components/layout.tsx', [
+        index('./routes/home.tsx'),
+        route("/products/:id", "./routes/products.$id.tsx")
+    ]),
+    route('/auth/login', './pages/login.tsx'),
+    route('/auth/register', './pages/register.tsx'),
+    route('*', './pages/NotFound.tsx')
 ];
 
 // const adminRoutes = [
