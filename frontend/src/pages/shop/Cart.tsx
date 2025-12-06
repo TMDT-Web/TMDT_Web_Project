@@ -130,7 +130,7 @@ export default function Cart() {
                           src={formatImageUrl(item.product.thumbnail_url) || 'https://via.placeholder.com/200'}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
-                        />
+                        />KO
                       </div>
                     </Link>
 
@@ -139,7 +139,7 @@ export default function Cart() {
                         {item.product.name}
                       </Link>
                       <p className="text-[rgb(var(--color-wood))] font-bold text-xl mb-4">
-                        {item.product.price.toLocaleString('vi-VN')}₫
+                        {item.product.sale_price}₫
                       </p>
 
                       <div className="flex items-center justify-between">
@@ -173,7 +173,7 @@ export default function Cart() {
                     <div className="text-right">
                       <p className="text-sm text-gray-600 mb-2">Tạm tính</p>
                       <p className="font-bold text-xl">
-                        {(item.product.price * item.quantity).toLocaleString('vi-VN')}₫
+                        {(item.product.sale_price * item.quantity).toLocaleString('vi-VN')}₫
                       </p>
                     </div>
                   </div>

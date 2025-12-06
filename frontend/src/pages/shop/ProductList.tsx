@@ -119,6 +119,7 @@ export default function ProductList() {
               <p className="text-gray-600">
                 Hiển thị {products.length} / {total} sản phẩm
               </p>
+
             </div>
 
             {/* Products Grid */}
@@ -162,11 +163,11 @@ export default function ProductList() {
                         <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
                         <div className="flex items-center gap-2">
                           <span className="text-lg font-bold text-gray-900">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.sale_price)}
                           </span>
                           {product.sale_price && product.sale_price < product.price && (
                             <span className="text-sm text-gray-500 line-through">
-                              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.sale_price)}
+                              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
                             </span>
                           )}
                         </div>

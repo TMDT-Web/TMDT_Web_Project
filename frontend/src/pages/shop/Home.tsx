@@ -47,6 +47,34 @@ export default function Home() {
       {/* Hero Section - Dynamic Banner Slider */}
       <BannerSlider />
 
+            {/* Categories Section - Only show if categories exist */}
+      {categories.length > 0 && (
+        <section className="bg-white py-16">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Danh mục sản phẩm</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {categories.map((category) => (
+                <Link
+                  key={category.id}
+                  to={`/products?category=${category.slug}`}
+                  className="flex flex-col items-center p-6 border-2 border-gray-200 rounded-lg hover:border-gray-900 hover:shadow-lg transition"
+                >
+                  {category.image_url && (
+                    <img
+                      src={formatImageUrl(category.image_url)}
+                      alt={category.name}
+                      className="w-16 h-16 mb-3 object-cover rounded-full"
+                    />
+                  )}
+                  <p className="font-semibold text-gray-900 text-center">{category.name}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+
       {/* Featured Products */}
       <section className="py-16">
         <div className="container mx-auto px-4">
@@ -122,32 +150,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categories Section - Only show if categories exist */}
-      {categories.length > 0 && (
-        <section className="bg-white py-16">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Danh mục sản phẩm</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  to={`/products?category=${category.slug}`}
-                  className="flex flex-col items-center p-6 border-2 border-gray-200 rounded-lg hover:border-gray-900 hover:shadow-lg transition"
-                >
-                  {category.image_url && (
-                    <img
-                      src={formatImageUrl(category.image_url)}
-                      alt={category.name}
-                      className="w-16 h-16 mb-3 object-cover rounded-full"
-                    />
-                  )}
-                  <p className="font-semibold text-gray-900 text-center">{category.name}</p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   )
 }

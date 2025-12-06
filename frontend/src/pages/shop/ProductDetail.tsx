@@ -145,8 +145,8 @@ export default function ProductDetail() {
             <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.name}</h1>
             <div className="bg-[rgb(var(--color-bg-light))] rounded-xl p-6 mb-6">
               <div className="flex items-baseline gap-4 mb-2">
-                <span className="text-4xl font-bold text-[rgb(var(--color-wood))]">{product.price.toLocaleString('vi-VN')}₫</span>
-                {product.sale_price && product.sale_price < product.price && <span className="text-xl text-gray-400 line-through">{product.sale_price.toLocaleString('vi-VN')}₫</span>}
+                <span className="text-4xl font-bold text-[rgb(var(--color-wood))]">{product.sale_price.toLocaleString('vi-VN')}₫</span>
+                {product.sale_price && product.sale_price < product.price && <span className="text-xl text-gray-400 line-through">{product.price.toLocaleString('vi-VN')}₫</span>}
               </div>
               {discount > 0 && <span className="text-red-600 font-medium">Tiết kiệm {(product.price - (product.sale_price || 0)).toLocaleString('vi-VN')}₫</span>}
             </div>
