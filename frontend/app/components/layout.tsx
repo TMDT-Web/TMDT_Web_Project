@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
+import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const location = useLocation();
-
+  const { user, logout, hasRole } = useAuth();
   // Ẩn carousel khi vào trang chi tiết sản phẩm
   const hideCarousel = location.pathname.startsWith("/products/");
 

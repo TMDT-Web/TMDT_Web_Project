@@ -38,6 +38,10 @@ interface ProductDetailProps {
 export default function ProductDetail({ product }: ProductDetailProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  // Keep a string-backed input value so the user can clear the field while
+  // editing. We sync it with `quantity` when a valid number is entered or
+  // when +/- buttons are used.
+  const [inputValue, setInputValue] = useState(String(quantity));
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
     null
@@ -50,6 +54,8 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const handleQuantityChange = (value: number) => {
     const newQuantity = Math.max(1, Math.min(value, product.stock));
     setQuantity(newQuantity);
+    // keep inputValue in sync so the visible input matches the internal value
+    setInputValue(String(newQuantity));
   };
 
   const handlePrevImage = () => {
@@ -365,9 +371,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       disabled={!variant.available}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${
                         selectedVariantId === variant.id
-                          ? "border-blue-600 bg-blue-50 shadow-lg scale-[1.02]"
+                          ? "border-black bg-blue-50 shadow-lg scale-[1.02] rounded-none"
                           : variant.available
-                            ? "border-gray-200 hover:border-blue-300 hover:shadow-md bg-white"
+                            ? "border-gray-200 hover:border-black hover:rounded-none hover:shadow-md bg-white"
                             : "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
                       }`}
                     >
@@ -488,14 +494,37 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     −
                   </button>
                   <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) =>
-                      handleQuantityChange(parseInt(e.target.value) || 1)
-                    }
+                    type="text"
+                    inputMode="numeric"
+                    pattern="\d*"
+                    value={inputValue}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      // chỉ hiển thị chữ số
+                      const digits = raw.replace(/\D/g, "");
+                      setInputValue(digits);
+
+                      // nếu không có chữ số thì không tác động lên `quantity`
+                      if (digits === "") return;
+
+                      const parsed = parseInt(digits, 10);
+                      if (!Number.isNaN(parsed)) {
+                        handleQuantityChange(parsed);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (inputValue === "" || Number.isNaN(Number(inputValue))) {
+                        handleQuantityChange(1);
+                      } else {
+                        const digits = String(inputValue).replace(/\D/g, "");
+                        if (digits === "") {
+                          handleQuantityChange(1);
+                        } else {
+                          handleQuantityChange(parseInt(digits, 10));
+                        }
+                      }
+                    }}
                     className="w-20 text-center font-semibold text-lg focus:outline-none"
-                    min="1"
-                    max={product.stock}
                   />
                   <button
                     onClick={() => handleQuantityChange(quantity + 1)}
@@ -515,14 +544,14 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             <div className="flex gap-4 mb-8">
               <button
                 disabled={product.stock === 0}
-                className="flex-1 bg-blue-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
                 <span className="text-2xl">🛒</span>
                 Thêm vào giỏ hàng
               </button>
               <button
                 disabled={product.stock === 0}
-                className="flex-1 bg-orange-500 text-white py-4 rounded-lg font-bold text-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="btn-secondary flex-1 text-center"
               >
                 Mua ngay
               </button>
@@ -582,7 +611,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         {/* Product Description */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mt-8">
           <h2 className="text-2xl font-bold mb-4">Mô tả sản phẩm</h2>
-          <div className="prose max-w-none text-gray-700 leading-relaxed">
+          <div className="prose max-w-none text-gray-700 leading-relaxed text-justify">
             {product.description}
           </div>
         </div>

@@ -1,92 +1,180 @@
+# app/users/schemas.py
 from __future__ import annotations
-
-from datetime import datetime
 from typing import List, Optional
+from datetime import datetime
+from pydantic import BaseModel, EmailStr
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+class RolePermissionsRead(BaseModel):
+    role_id: int
+    permission_ids: List[int]
 
-from app.schemas.base import OrmBaseModel
+class RolePermissionsUpdate(BaseModel):
+    permission_ids: List[int] = []
 
-
-class RoleBase(OrmBaseModel):
-    name: str = Field(max_length=50)
+# =========================
+# Role Schemas
+# =========================
+class RoleRead(BaseModel):
+    id: int
+    name: str
     description: Optional[str] = None
-
-
-class RoleCreate(RoleBase):
     is_system: bool = False
 
+    class Config:
+        from_attributes = True  # Pydantic v2
 
-class RoleRead(RoleBase):
+
+# Dùng bởi routes/create_role.py
+class RoleCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    is_system: Optional[bool] = False
+
+
+class RoleUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_system: Optional[bool] = None
+
+
+# =========================
+# Permission Schemas
+# =========================
+class PermissionRead(BaseModel):
     id: int
-    is_system: bool
+    code: str
+    name: str
+    description: Optional[str] = None
+    is_system: bool = True
+
+    class Config:
+        from_attributes = True
 
 
-class UserBase(OrmBaseModel):
+# =========================
+# User Schemas
+# =========================
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+
+
+class UserRead(BaseModel):
+    id: int
     email: EmailStr
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
+    is_active: bool = True
+    roles: List[RoleRead] = []
+
+    class Config:
+        from_attributes = True
 
 
-class UserCreate(UserBase):
-    password: str = Field(min_length=8, max_length=72)
-
-    @field_validator("password")
-    @classmethod
-    def validate_password_bytes(cls, v: str) -> str:
-        if len(v.encode("utf-8")) > 72:
-            raise ValueError("Password must be at most 72 bytes when encoded as UTF-8.")
-        return v
-
-
-class UserUpdate(OrmBaseModel):
+class UserUpdate(BaseModel):
+    # cập nhật linh hoạt: gửi field nào sửa field đó
+    email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
     is_active: Optional[bool] = None
+
+    # để tương thích logic cũ (nếu route tận dụng)
     role_ids: Optional[List[int]] = None
 
-
-class UserRead(UserBase):
-    id: int
-    is_active: bool
-    google_id: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    roles: List[RoleRead] = []
+    # một số route có thể cho phép đổi mật khẩu chung endpoint
+    password: Optional[str] = None
 
 
-class UserAddressCreate(OrmBaseModel):
-    label: Optional[str] = "Default"
-    recipient_name: str
-    recipient_phone: str
-    address_line: str
-    ward: Optional[str] = None
-    district: Optional[str] = None
-    city: Optional[str] = None
-    country: str = "Vietnam"
-    is_default: bool = False
+class PasswordChange(BaseModel):
+    password: str
 
 
-class UserAddressRead(UserAddressCreate):
-    id: int
-    created_at: datetime
-
-
+# =========================
+# Auth / Token Schemas
+# =========================
 class TokenPair(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
 
 
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
+class LoginResponse(BaseModel):
+    user: UserRead
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
 
 
-class GoogleAuthInitResponse(BaseModel):
-    authorization_url: str
-    state: str
+# =========================
+# Role Assignment Schemas
+# =========================
+class RoleAssignRequest(BaseModel):
+    user_id: int
+    role_ids: List[int]
 
 
-class GoogleAuthCallbackResponse(TokenPair):
-    is_new_user: bool
+class AdminUserRoleUpdate(BaseModel):
+    role_ids: List[int]
+
+
+# =========================
+# User Address Schemas (phục vụ create_address.py và các route địa chỉ)
+# =========================
+class UserAddressCreate(BaseModel):
+    receiver_name: str
+    phone_number: str
+    province: str
+    district: str
+    ward: str
+    address_line: str
+    is_default: Optional[bool] = False
+
+
+class UserAddressUpdate(BaseModel):
+    receiver_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    province: Optional[str] = None
+    district: Optional[str] = None
+    ward: Optional[str] = None
+    address_line: Optional[str] = None
+    is_default: Optional[bool] = None
+
+
+class UserAddressRead(BaseModel):
+    id: int
+    user_id: int
+    receiver_name: str
+    phone_number: str
+    province: str
+    district: str
+    ward: str
+    address_line: str
+    is_default: bool = False
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class PermissionRead(BaseModel):
+    id: int
+    code: str
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+    class Config:
+        from_attributes = True  # Pydantic v2, thay thế orm_mode
+
+# Gói permission_ids phục vụ GET/PUT /users/{id}/permissions
+class UserPermissionIds(BaseModel):
+    permission_ids: List[int]
+
+# (Nếu bạn chưa có 2 schema dưới cho role <-> permissions, giữ lại.)
+class RolePermissionsRead(BaseModel):
+    role_id: int
+    permission_ids: List[int]
+
+class RolePermissionsUpdate(BaseModel):
+    permission_ids: List[int]

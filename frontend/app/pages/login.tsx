@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
+import { login, saveTokens } from "../lib/auth";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const usernameRef = useRef<HTMLInputElement | null>(null);
   const passwordRef = useRef<HTMLInputElement | null>(null);
   const submitRef = useRef<HTMLButtonElement | null>(null);
@@ -47,12 +50,12 @@ export default function Login() {
     nextRef?.current?.focus();
   };
 
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
 
     // validate empty fields and show toast errors
     if (!username.trim()) {
-      toast.error("Tên tài khoản không được trống.");
+      toast.error("Email không được trống.");
       usernameRef.current?.focus();
       return;
     }
@@ -62,8 +65,27 @@ export default function Login() {
       return;
     }
 
-    // placeholder for real login action
-    toast.success(`Đang thử đăng nhập...`);
+    setIsLoading(true);
+    try {
+      const tokens = await login({
+        email: username,
+        password: password,
+      });
+      
+      saveTokens(tokens);
+      toast.success("Đăng nhập thành công!");
+      
+      // Redirect to home page or previous page
+      const from = (location.state as any)?.from || "/";
+      setTimeout(() => {
+        navigate(from);
+      }, 500);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error(error.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Set page title while on login page
@@ -94,17 +116,18 @@ export default function Login() {
         <form noValidate onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-gray-100 text-sm font-semibold mb-2">
-              Tên tài khoản
+              Email
             </label>
             <input
-              type="text"
-              placeholder="Tên tài khoản"
+              type="email"
+              placeholder="email@example.com"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               ref={usernameRef}
               onKeyDown={(e) => handleForwardTab(e, passwordRef)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -160,9 +183,10 @@ export default function Login() {
                 usernameRef.current?.focus();
               }
             }}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold text-lg shadow-md hover:shadow-lg"
+            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-semibold text-lg shadow-md hover:shadow-lg disabled:bg-indigo-400 disabled:cursor-not-allowed"
+            disabled={isLoading}
           >
-            Đăng nhập
+            {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
 

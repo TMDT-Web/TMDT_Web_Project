@@ -9,6 +9,13 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# --- Bootstrap PYTHONPATH để 'from app ...' luôn chạy được khi gọi alembic từ CLI
+# Thư mục hiện tại là: backend/alembic/ -> đẩy ../ (backend) vào sys.path
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
+# ---- Import app settings/metadata
 from app.core.config import settings
 from app.models.base import Base
 
@@ -39,6 +46,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,  # theo dõi thay đổi kiểu dữ liệu cột
     )
 
     with context.begin_transaction():

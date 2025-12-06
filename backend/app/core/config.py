@@ -7,6 +7,7 @@ from typing import List, Any, Union
 import os
 
 
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     

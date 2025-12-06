@@ -6,7 +6,22 @@ from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from app.core.config import settings
+from app.core import config
+
+# ----- OAuth2 password flow (Swagger "Authorize") -----
+# trùng đúng đường dẫn login của bạn: /api/auth/login
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{config.settings.api_prefix}/auth/login",
+    auto_error=False,   # để mình tự raise lỗi có thông điệp rõ ràng
+)
+
+# ----- JWT config -----
+ALGORITHM: str = "HS256"
+SECRET_KEY: str = config.settings.jwt_secret_key  # ENV: JWT_SECRET_KEY
+
+# TTL (đọc từ .env nếu có, fallback mặc định)
+ACCESS_EXPIRES_MIN: int = getattr(config.settings, "access_token_expire_minutes", 60)
+REFRESH_EXPIRES_DAYS: int = getattr(config.settings, "refresh_token_expire_days", 7)
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
