@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from typing import List, Optional
 
-from app.models.product import Product, Category, Collection
+from app.models.product import Product, Category
+from app.models.collection import Collection
 from app.schemas.product import ProductCreate, ProductUpdate, CategoryCreate, CategoryUpdate
 from app.core.exceptions import NotFoundException, BadRequestException
 

@@ -176,7 +176,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       // Clear local cart after sync
       storage.remove(STORAGE_KEYS.CART)
-      
+
       // Reload from server
       await loadCart()
     } catch (error) {
@@ -192,6 +192,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       try {
         setIsLoading(true)
         // ✅ Use generated CartService - server will handle merging
+        // Pass is_collection flag explicitly to prevent ID collision
         await CartService.addToCartApiV1CartAddPost({
           requestBody: {
             product_id: product.id,
@@ -210,8 +211,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } else {
       // Local cart update
       setItems((prev) => {
-        const existingItem = prev.find((item) => item.product.id === product.id)
-        
+        // Check if item exists (matching ID AND isCollection flag)
+        const existingItem = prev.find((item) =>
+          item.product.id === product.id &&
+          !!item.product.isCollection === !!product.isCollection
+        )
+
         if (existingItem) {
           return prev.map((item) =>
             item.product.id === product.id
@@ -224,7 +229,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       })
     }
   }
-
   /**
    * Add entire collection to cart
    */
@@ -328,8 +332,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true)
         // Find the cart item ID
         const cartData = await CartService.getCartApiV1CartGet()
-        const itemToRemove = cartData.items.find(item => item.product_id === productId)
-        
+        // Check both product_id and collection_id
+        const itemToRemove = (cartData.items as any[]).find(item =>
+          item.product_id === productId || item.collection_id === productId
+        )
+
         if (itemToRemove) {
           // ✅ Use generated CartService
           await CartService.removeFromCartApiV1CartItemIdDelete({ itemId: itemToRemove.id })
@@ -361,8 +368,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true)
         // Find the cart item ID
         const cartData = await CartService.getCartApiV1CartGet()
-        const itemToUpdate = cartData.items.find(item => item.product_id === productId)
-        
+        // Check both product_id and collection_id
+        const itemToUpdate = (cartData.items as any[]).find(item =>
+          item.product_id === productId || item.collection_id === productId
+        )
+
         if (itemToUpdate) {
           // ✅ Use generated CartService
           await CartService.updateCartItemApiV1CartItemIdPut({

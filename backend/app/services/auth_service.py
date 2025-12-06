@@ -136,3 +136,32 @@ class AuthService:
             refresh_token=new_refresh_token,
             token_type="bearer"
         )
+    
+    @staticmethod
+    def change_password(db: Session, user: User, current_password: str, new_password: str, confirm_password: str) -> None:
+        """
+        Change user password
+        
+        Args:
+            db: Database session
+            user: Current user
+            current_password: Current password for verification
+            new_password: New password to set
+            confirm_password: Confirmation of new password
+        
+        Raises:
+            UnauthorizedException: If current password is incorrect
+            ConflictException: If new password confirmation doesn't match
+        """
+        # Verify current password
+        if not verify_password(current_password, user.hashed_password):
+            raise UnauthorizedException("Current password is incorrect")
+        
+        # Verify password confirmation
+        if new_password != confirm_password:
+            raise ConflictException("New password and confirmation do not match")
+        
+        # Hash and update password
+        user.hashed_password = get_password_hash(new_password)
+        db.commit()
+

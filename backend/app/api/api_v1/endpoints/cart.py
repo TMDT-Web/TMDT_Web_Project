@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Path
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.cart import CartResponse, CartItemCreate, CartItemUpdate, CartSummary
+from app.schemas.cart import CartResponse, CartItemCreate, CartItemUpdate, CartSummary, CollectionAddToCart
 from app.services.cart_service import CartService
 from app.api.deps import get_current_user
 from app.models.user import User
@@ -39,8 +39,35 @@ def add_to_cart(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Add product to cart (or update quantity if exists)"""
+    """Add product or collection to cart (or update quantity if exists)
+    
+    - **product_id**: ID of product to add (for regular items)
+    - **collection_id**: ID of collection/combo to add (mutually exclusive with product_id)
+    - **quantity**: Quantity to add (for combos, this is number of combo sets)
+    """
     cart = CartService.add_item(db, current_user.id, data)
+    return cart
+
+
+@router.post("/collections/{collection_id}", response_model=CartResponse)
+def add_collection_to_cart(
+    collection_id: int = Path(..., gt=0, description="Collection/combo ID to add to cart"),
+    data: CollectionAddToCart = CollectionAddToCart(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add a collection/combo to cart as a single bundled item
+    
+    This endpoint adds the entire collection as one cart item with the bundle price.
+    The quantity parameter specifies how many complete combo sets to add.
+    
+    - **collection_id**: ID of the collection/combo to add
+    - **quantity**: Number of complete combo sets to add (default: 1)
+    
+    Example: If a combo contains "1 Table + 4 Chairs" and you set quantity=2,
+    you'll get 2 complete sets (2 tables + 8 chairs) at 2x the combo price.
+    """
+    cart = CartService.add_collection(db, current_user.id, collection_id, data)
     return cart
 
 

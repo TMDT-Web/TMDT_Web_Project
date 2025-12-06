@@ -2,6 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { CollectionItemCreate } from './CollectionItemCreate';
+/**
+ * Collection create schema with bundle items
+ */
 export type CollectionCreate = {
     name: string;
     slug: string;

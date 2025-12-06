@@ -77,7 +77,7 @@ export function setupApiClient() {
   // Configure base URL from environment variable with fallback
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   OpenAPI.BASE = API_URL;
-  
+
   // Debug log to verify API URL configuration
   console.log('🔌 API Base URL:', OpenAPI.BASE);
 
@@ -138,7 +138,7 @@ export function setupApiClient() {
 
         try {
           const newToken = await refreshAccessToken();
-          
+
           if (newToken) {
             isRefreshing = false;
             onTokenRefreshed(newToken);
@@ -208,5 +208,6 @@ export function isAuthenticated(): boolean {
   return !!getAccessToken();
 }
 
-// Initialize the client immediately
-setupApiClient();
+// Initialize the client immediately and export the axios instance
+export const apiClient = setupApiClient();
+

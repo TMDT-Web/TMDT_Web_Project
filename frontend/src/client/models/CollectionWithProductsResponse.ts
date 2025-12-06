@@ -2,9 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { CollectionItemResponse } from './CollectionItemResponse';
 import type { ProductResponse } from './ProductResponse';
 /**
- * Collection response with products included
+ * Collection response with bundle items and pricing details
  */
 export type CollectionWithProductsResponse = {
     name: string;
@@ -14,6 +15,11 @@ export type CollectionWithProductsResponse = {
     is_active?: boolean;
     sale_price?: (number | null);
     id: number;
+    sale_price?: (number | null);
+    total_original_price?: number;
+    discount_amount?: number;
+    discount_percentage?: number;
+    items?: Array<CollectionItemResponse>;
     products?: Array<ProductResponse>;
 };
 

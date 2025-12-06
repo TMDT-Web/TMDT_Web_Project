@@ -39,6 +39,8 @@ export type { ChatSendResponse } from './models/ChatSendResponse';
 export type { ChatSessionListResponse } from './models/ChatSessionListResponse';
 export { ChatStatus } from './models/ChatStatus';
 export type { CollectionCreate } from './models/CollectionCreate';
+export type { CollectionItemCreate } from './models/CollectionItemCreate';
+export type { CollectionItemResponse } from './models/CollectionItemResponse';
 export type { CollectionListResponse } from './models/CollectionListResponse';
 export type { CollectionResponse } from './models/CollectionResponse';
 export type { CollectionUpdate } from './models/CollectionUpdate';

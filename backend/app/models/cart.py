@@ -1,7 +1,7 @@
 """
 Shopping Cart Models
 """
-from sqlalchemy import Column, Integer, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -24,17 +24,20 @@ class Cart(Base):
 
 
 class CartItem(Base):
-    """Cart item - product in cart"""
+    """Cart item - product or collection in cart"""
     __tablename__ = "cart_items"
     
     id = Column(Integer, primary_key=True, index=True)
     cart_id = Column(Integer, ForeignKey("carts.id", ondelete="CASCADE"), nullable=False)
-    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=True)  # Nullable for combo items
+    collection_id = Column(Integer, ForeignKey("collections.id", ondelete="CASCADE"), nullable=True, index=True)  # For combo/bundle items
+    is_collection = Column(Boolean, default=False, nullable=False)  # Explicit flag to prevent ID collision
     quantity = Column(Integer, nullable=False, default=1)
     
     # Relationships
     cart = relationship("Cart", back_populates="items")
     product = relationship("Product")
+    collection = relationship("Collection")
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

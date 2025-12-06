@@ -43,7 +43,7 @@ export class CollectionsService {
     }
     /**
      * Create Collection
-     * Create new collection (admin only)
+     * Create new collection/bundle (admin only)
      *
      * If product_ids are provided, those products will be assigned to this collection.
      * @returns CollectionResponse Successful Response
@@ -88,7 +88,7 @@ export class CollectionsService {
     }
     /**
      * Update Collection
-     * Update collection (admin only)
+     * Update collection/bundle (admin only)
      *
      * If product_ids are provided, the collection's products will be replaced with these products.
      * Existing products will be removed from the collection.

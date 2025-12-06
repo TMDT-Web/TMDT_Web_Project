@@ -19,7 +19,8 @@ class OrderItemBase(BaseModel):
 
 class OrderItemCreate(OrderItemBase):
     """Order item create schema"""
-    pass
+    is_collection: bool = False  # Explicitly mark if this is a collection to prevent ID collision
+    price_override: Optional[float] = None  # Used for collection items to preserve bundle pricing
 
 
 class OrderCollectionCreate(BaseModel):

@@ -12,10 +12,11 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
     # Database
-    DATABASE_URL: str = "postgresql://postgres:postgres123@localhost:5432/luxefurniture"
+    DATABASE_URL: str = "postgresql://postgres:postgres@db:5432/luxefurniture"
     
     # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str = "redis://redis:6379/0"
+    
     
     # Security
     SECRET_KEY: str = "your-super-secret-jwt-key-change-in-production"
@@ -34,7 +35,7 @@ class Settings(BaseSettings):
     ]
     
     # File Upload
-    MAX_FILE_SIZE: int = 10485760  # 10MB
+    MAX_UPLOAD_SIZE: int = 5242880  # 5MB
     UPLOAD_DIR: str = "static/images"
     ALLOWED_EXTENSIONS: Union[List[str], str] = ["jpg", "jpeg", "png", "gif", "webp"]
     

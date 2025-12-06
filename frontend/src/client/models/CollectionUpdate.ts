@@ -2,6 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { CollectionItemCreate } from './CollectionItemCreate';
+/**
+ * Collection update schema
+ */
 export type CollectionUpdate = {
     name?: (string | null);
     slug?: (string | null);

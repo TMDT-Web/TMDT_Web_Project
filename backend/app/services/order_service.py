@@ -9,6 +9,7 @@ import asyncio
 
 from app.models.order import Order, OrderItem, OrderStatus, PaymentMethod
 from app.models.product import Product
+from app.models.collection import Collection
 from app.models.user import User
 from app.schemas.order import OrderCreate, OrderUpdate
 from app.core.exceptions import NotFoundException, BadRequestException
@@ -22,6 +23,72 @@ class OrderService:
     """Order service for managing orders with race condition prevention"""
     
     @staticmethod
+    def _expand_cart_items_from_collections(db: Session, user_id: int, order_items: List) -> List:
+        """
+        Expand cart items: if any item is explicitly marked as a collection (is_collection=True),
+        replace it with actual products from that collection.
+        
+        This prevents ID collision between Products and Collections by checking the explicit flag.
+        
+        Returns: List of expanded OrderItemCreate objects with real product_ids and price_override
+        """
+        from app.schemas.order import OrderItemCreate
+        
+        expanded_items = []
+        
+        for order_item_data in order_items:
+            # CRITICAL: Check explicit is_collection flag to prevent ID collision
+            # Without this, Product ID 1 would be mistaken for Collection ID 1
+            if hasattr(order_item_data, 'is_collection') and order_item_data.is_collection:
+                # This is explicitly a collection - query Collection table
+                collection = db.query(Collection).filter(Collection.id == order_item_data.product_id).first()
+                
+                if collection and collection.items:
+                    # This is a collection - expand it into actual products
+                    # BUT preserve the bundle price by distributing it proportionally
+                    
+                    # Calculate total original price of all products in collection
+                    total_original_price = sum(
+                        (item.product.sale_price or item.product.price) * item.quantity 
+                        for item in collection.items if item.product
+                    )
+                    
+                    # Bundle price from collection (sale_price)
+                    bundle_price = collection.sale_price * order_item_data.quantity
+                    
+                    # Calculate price ratio to distribute bundle discount
+                    price_ratio = bundle_price / total_original_price if total_original_price > 0 else 1.0
+                    
+                    for coll_item in collection.items:
+                        if coll_item.product:  # Ensure product exists
+                            # Calculate this product's share of the bundle price
+                            original_price = coll_item.product.sale_price or coll_item.product.price
+                            adjusted_price = original_price * price_ratio
+                            
+                            # Create order item with price override
+                            expanded_items.append(OrderItemCreate(
+                                product_id=coll_item.product_id,
+                                quantity=coll_item.quantity * order_item_data.quantity,
+                                variant=None,
+                                price_override=adjusted_price,
+                                is_collection=False  # These are now regular products
+                            ))
+                else:
+                    # Collection not found - keep the item (will fail with proper error later)
+                    expanded_items.append(order_item_data)
+            else:
+                # NOT a collection - treat as regular product
+                # Skip Collection lookup entirely to avoid ID collision
+                product = db.query(Product).filter(Product.id == order_item_data.product_id).first()
+                if product:
+                    expanded_items.append(order_item_data)
+                else:
+                    # Product not found - keep it (will fail with proper error later)
+                    expanded_items.append(order_item_data)
+        
+        return expanded_items
+    
+    @staticmethod
     def create_order(db: Session, user_id: int, data: OrderCreate) -> Order:
         """Create new order with pessimistic locking to prevent race conditions"""
         # Validate input
@@ -32,7 +99,18 @@ class OrderService:
             raise BadRequestException("Deposit cannot be negative")
         
         try:
-            # Calculate order totals
+            import logging
+            logger = logging.getLogger("order_debug")
+            logger.setLevel(logging.INFO)
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+            if not logger.hasHandlers():
+                logger.addHandler(handler)
+
+            # 1. Expand any collections into constituent products with DISCOUNTED prices
+            expanded_items = OrderService._expand_cart_items_from_collections(db, user_id, data.items)
+            
+            # Calculate order totals and validate stock
             subtotal: float = 0
             order_items_data: List[dict] = []
             collection_products_map: dict = {}  # Track which products belong to collections
@@ -73,21 +151,21 @@ class OrderService:
                 # CRITICAL: Use pessimistic locking to prevent race conditions
                 # Lock the product row until transaction completes
                 product = db.query(Product)\
-                    .filter(Product.id == item_data.product_id)\
+                    .filter(Product.id == product_id)\
                     .with_for_update()\
                     .first()
                 
                 if not product:
-                    raise NotFoundException(f"Product {item_data.product_id} not found")
+                    raise NotFoundException(f"Product {product_id} not found")
                 
                 if not product.is_active:
                     raise BadRequestException(f"Product {product.name} is no longer available")
                 
-                # CRITICAL: Validate stock AFTER acquiring lock to prevent race conditions
-                if product.stock < item_data.quantity:
+                # Validate stock
+                if product.stock < quantity:
                     raise BadRequestException(
                         f"Insufficient stock for product {product.name}. "
-                        f"Available: {product.stock}, Requested: {item_data.quantity}"
+                        f"Available: {product.stock}, Requested: {quantity}"
                     )
             
                 # Check if this product is part of a collection
@@ -104,8 +182,20 @@ class OrderService:
                     item_subtotal = actual_price * item_data.quantity
                     subtotal += item_subtotal
                 
-                # CRITICAL: Deduct stock immediately within transaction (with lock held)
-                product.stock -= item_data.quantity
+                # Use price_override if available (from collection discount), otherwise use sale_price or regular price
+                if hasattr(item_data, 'price_override') and item_data.price_override is not None:
+                    actual_price = item_data.price_override
+                else:
+                    actual_price = product.sale_price if product.sale_price else product.price
+                
+                item_subtotal = actual_price * quantity
+                subtotal += item_subtotal
+                logger.info(f"[ORDER] Product: {product.name} | ProductID: {product.id} | Qty: {quantity} | Price: {actual_price}")
+                logger.info(f"[ORDER]   - Add subtotal: {item_subtotal} | Running subtotal: {subtotal}")
+                
+                # Deduct stock
+                product.stock -= quantity
+                logger.info(f"[ORDER]   - Deduct stock: {product.name} | ProductID: {product.id} | Deduct: {quantity} | Remain: {product.stock}")
                 
                 order_items_data.append({
                     "product_id": product.id,
@@ -114,6 +204,7 @@ class OrderService:
                     "quantity": item_data.quantity,
                     "variant": item_data.variant
                 })
+                logger.info(f"[ORDER]   - Add order item: {product.name} | ProductID: {product.id} | Qty: {quantity} | Price: {actual_price}")
             
             # Calculate shipping fee (can be dynamic based on location)
             shipping_fee: float = 50000.0  # 50k VND flat rate
@@ -140,6 +231,7 @@ class OrderService:
                 coupon_obj = coupon_result.get("coupon")
             
             total_amount: float = subtotal + shipping_fee - discount_amount
+            logger.info(f"[ORDER] FINAL subtotal: {subtotal} | shipping_fee: {shipping_fee} | discount: {discount_amount} | total: {total_amount}")
             
             # Calculate deposit and remaining
             deposit_amount: float = data.deposit_amount if hasattr(data, 'deposit_amount') else 0.0

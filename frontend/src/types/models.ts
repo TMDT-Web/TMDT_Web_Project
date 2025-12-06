@@ -70,6 +70,8 @@ export interface Product {
 export interface CartItem {
   product: Product
   quantity: number
+  is_collection?: boolean  // Flag to identify if this is a collection/bundle
+  collection_id?: number   // Collection ID if this is a collection
 }
 
 export interface OrderItem {

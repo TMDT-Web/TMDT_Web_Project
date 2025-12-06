@@ -33,6 +33,26 @@ export default function Profile() {
     }
   })
 
+  // Address state
+  const [userAddress, setUserAddress] = useState<UserAddress | null>(null)
+  const [addressData, setAddressData] = useState({
+    province_code: 0,
+    province_name: '',
+    district_code: 0,
+    district_name: '',
+    ward_code: 0,
+    ward_name: '',
+    street_address: '',
+    address_type: 'Nhà riêng' // Default value
+  })
+
+  const [provinces, setProvinces] = useState<Province[]>([])
+  const [districts, setDistricts] = useState<District[]>([])
+  const [wards, setWards] = useState<Ward[]>([])
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(false)
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false)
+  const [isLoadingWards, setIsLoadingWards] = useState(false)
+
   const [passwordData, setPasswordData] = useState({
     current_password: '',
     new_password: '',
@@ -251,6 +271,36 @@ export default function Profile() {
     }
   }
 
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="section-padding bg-[rgb(var(--color-bg-light))] min-h-screen">
+        <div className="container-custom flex justify-center items-center min-h-[400px]">
+          <div className="text-center">
+            <div className="inline-block w-8 h-8 border-4 border-gray-300 border-t-[rgb(var(--color-wood))] rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600">Đang tải...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading while redirecting to login
+  if (!user) {
+    return (
+      <div className="section-padding bg-[rgb(var(--color-bg-light))] min-h-screen">
+        <div className="container-custom flex justify-center items-center min-h-[400px]">
+          <div className="text-center">
+            <div className="inline-block w-8 h-8 border-4 border-gray-300 border-t-[rgb(var(--color-wood))] rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600">Đang chuyển hướng...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+
+
   return (
     <div className="section-padding bg-[rgb(var(--color-bg-light))] min-h-screen">
       <div className="container-custom">
@@ -262,9 +312,9 @@ export default function Profile() {
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="text-center mb-6 pb-6 border-b">
                 <div className="w-20 h-20 bg-[rgb(var(--color-moss))] rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-3">
-                  {user.full_name.charAt(0).toUpperCase()}
+                  {user.full_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                <h3 className="font-bold text-lg">{user.full_name}</h3>
+                <h3 className="font-bold text-lg">{user.full_name || 'Người dùng'}</h3>
                 <p className="text-sm text-gray-600">{user.email}</p>
                 
                 {/* VIP Badge */}

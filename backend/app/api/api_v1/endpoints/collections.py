@@ -63,12 +63,12 @@ def create_collection(
     db: Session = Depends(get_db)
 ):
     """
-    Create new collection (admin only)
+    Create new collection/bundle (admin only)
     
-    If product_ids are provided, those products will be assigned to this collection.
+    Provide 'items' array with product_id and quantity for bundle items.
+    Set 'sale_price' for the special combo price.
     """
-    product_ids = data.product_ids if hasattr(data, 'product_ids') else None
-    collection = CollectionService.create_collection(db, data, product_ids)
+    collection = CollectionService.create_collection(db, data)
     return collection
 
 
@@ -80,13 +80,12 @@ def update_collection(
     db: Session = Depends(get_db)
 ):
     """
-    Update collection (admin only)
+    Update collection/bundle (admin only)
     
-    If product_ids are provided, the collection's products will be replaced with these products.
-    Existing products will be removed from the collection.
+    Update 'items' to change bundle contents with quantities.
+    Update 'sale_price' to change the combo price.
     """
-    product_ids = data.product_ids if hasattr(data, 'product_ids') else None
-    collection = CollectionService.update_collection(db, collection_id, data, product_ids)
+    collection = CollectionService.update_collection(db, collection_id, data)
     return collection
 
 

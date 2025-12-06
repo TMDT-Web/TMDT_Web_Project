@@ -21,7 +21,8 @@ from app.models.base import Base
 
 # Import all models here to ensure they're registered with Base
 from app.models.user import User
-from app.models.product import Product, Category, Collection
+from app.models.product import Product, Category
+from app.models.collection import Collection, CollectionItem
 from app.models.order import Order, OrderItem
 from app.models.chat import ChatSession, ChatMessage
 

@@ -1,6 +1,6 @@
 /**
- * Collections Page - Bộ sưu tập
- * Minimal Scandinavian Design
+ * Collections Page - Product Bundles/Combos
+ * Horizontal Card Layout with Add to Cart + Buy Now buttons
  */
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -11,6 +11,10 @@ import { formatImageUrl, formatPrice } from '@/utils/format'
 export default function Collections() {
   const [collections, setCollections] = useState<CollectionResponse[]>([])
   const [loading, setLoading] = useState(true)
+  const [addingToCart, setAddingToCart] = useState<number | null>(null)
+  const { isAuthenticated } = useAuth()
+  const { addItem } = useCart()
+  const navigate = useNavigate()
 
   useEffect(() => {
     loadCollections()
@@ -28,12 +32,93 @@ export default function Collections() {
     }
   }
 
+  const handleBuyCombo = async (collection: CollectionWithProductsResponse) => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng')
+      navigate('/login')
+      return
+    }
+
+    setAddingToCart(collection.id)
+    try {
+      // Add collection as a single cart item with bundle price
+      const collectionCartItem = {
+        id: collection.id,
+        name: collection.name,
+        slug: collection.slug || `collection-${collection.id}`,
+        price: collection.sale_price || 0,
+        sale_price: collection.sale_price,
+        thumbnail_url: collection.banner_url,
+        stock: 999, // Collections don't have direct stock
+        isCollection: true,
+        is_active: true,
+        is_featured: false,
+        views_count: 0,
+        sales_count: 0,
+        category_id: 0,
+        discount_percent: collection.discount_percentage || 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+
+      await addItem(collectionCartItem, 1)
+
+      toast.success(`Đã thêm combo "${collection.name}" vào giỏ hàng!`, { duration: 3000 })
+      window.dispatchEvent(new Event('cartUpdated'))
+    } catch (error: any) {
+      console.error('Error adding bundle to cart:', error)
+      toast.error(error.message || 'Không thể thêm vào giỏ hàng')
+    } finally {
+      setAddingToCart(null)
+    }
+  }
+
+  const handleBuyNow = async (collection: CollectionWithProductsResponse) => {
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để mua hàng')
+      navigate('/login')
+      return
+    }
+
+    setAddingToCart(collection.id)
+    try {
+      // Add collection as a single cart item with bundle price
+      const collectionCartItem = {
+        id: collection.id,
+        name: collection.name,
+        slug: collection.slug || `collection-${collection.id}`,
+        price: collection.sale_price || 0,
+        sale_price: collection.sale_price,
+        thumbnail_url: collection.banner_url,
+        stock: 999, // Collections don't have direct stock
+        isCollection: true,
+        is_active: true,
+        is_featured: false,
+        views_count: 0,
+        sales_count: 0,
+        category_id: 0,
+        discount_percent: collection.discount_percentage || 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+
+      await addItem(collectionCartItem, 1)
+
+      window.dispatchEvent(new Event('cartUpdated'))
+      navigate('/cart')
+    } catch (error: any) {
+      console.error('Error adding bundle to cart:', error)
+      toast.error(error.message || 'Không thể thêm vào giỏ hàng')
+      setAddingToCart(null)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="section-padding bg-[rgb(var(--color-bg-offwhite))]">
         <div className="container-custom text-center">
-          <h1 className="heading-minimal mb-6">Bộ Sưu Tập</h1>
+          <h1 className="heading-minimal mb-6">Bộ Sưu Tập Combo</h1>
           <p className="text-minimal max-w-2xl mx-auto">
             Mua trọn bộ sưu tập nội thất với giá ưu đãi đặc biệt. 
             Tiết kiệm hơn khi mua combo thay vì mua lẻ từng sản phẩm!
@@ -99,7 +184,7 @@ export default function Collections() {
                       </span>
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
@@ -151,11 +236,11 @@ export default function Collections() {
       <section className="section-padding bg-[rgb(var(--color-deep-green))] text-white">
         <div className="container-narrow text-center">
           <h2 className="text-3xl md:text-4xl font-semibold mb-6">
-            Bộ Sưu Tập Mùa Đông 2025
+            Tư Vấn Thiết Kế Miễn Phí
           </h2>
           <p className="text-lg text-gray-300 mb-8 leading-relaxed">
-            Tạo nên không gian ấm cúng với những món đồ nội thất tinh tế, 
-            mang hơi thở Scandinavian thuần khiết
+            Chưa chắc chắn bộ combo nào phù hợp?
+            Liên hệ với đội ngũ thiết kế của chúng tôi để được tư vấn
           </p>
           <Link to="/products?is_featured=true" className="btn-secondary bg-transparent border-white text-white hover:bg-white hover:text-[rgb(var(--color-deep-green))]">
             Xem Sản Phẩm Nổi Bật
